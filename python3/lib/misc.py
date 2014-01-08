@@ -8,7 +8,11 @@ import zlib
 import hashlib
 import collections
 
-from pyramid.settings import asbool
+try:
+    from pyramid.settings import asbool
+except ImportError:
+    # Fallback without pyramid - This fallback needs consideration
+    asbool = bool
 
 import logging
 log = logging.getLogger(__name__)
