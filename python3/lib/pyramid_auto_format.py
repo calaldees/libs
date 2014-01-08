@@ -108,8 +108,9 @@ def auto_format_output(target, *args, **kwargs):
     try   : formats.append(format_regex_qs.match(request.path_qs).group('format'))
     except: pass
     # add 'format' from request content type
-    try   : formats.append(format_request_accept[request.accept.header_value.split(',')[0]])
-    except: pass
+    # Possible bug: This could lead to caching inconsitencys as etags and other caching must key the 'request-accept' before this is enabled
+    #try   : formats.append(format_request_accept[request.accept.header_value.split(',')[0]])
+    #except: pass
     # add default format
     formats.append(request.registry.settings.get('api.format.default', 'html'))
     formats = [format for format in formats if format] # remove any blank entries in formats list
@@ -142,7 +143,7 @@ def auto_format_output(target, *args, **kwargs):
             except FormatError:
                 log.warn('format refused')
                 # TODO - useful error message .. what was the exceptions message
-            except Exception as e:
+            except Exception:
                 log.warn('format rendering erorrs', exc_info=True)
         else:
             raise Exception('no format was able to render')
