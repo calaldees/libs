@@ -2,18 +2,18 @@
 # Imports
 #-------------------------------------------------------------------------------
 
-import pyramid.request
-import pyramid.response
-
 from decorator import decorator
 import re
 import copy
 
+import pyramid.request
+import pyramid.response
+
 import logging
 log = logging.getLogger(__name__)
 
-from .pyramid_helpers import request_from_args
-from .misc import json_object_handler
+from ..misc import json_object_handler
+from . import request_from_args
 
 #-------------------------------------------------------------------------------
 # Constants
@@ -83,9 +83,7 @@ def auto_format_output(target, *args, **kwargs):
     """
     # Extract request object from args
     request = request_from_args(args)
-    
-    # Abort if internal call
-    if 'internal_request' in request.matchdict:
+    if 'internal_request' in request.matchdict: # Abort if internal call
         return target(*args, **kwargs)
     
     # Pre Processing -----------------------------------------------------------

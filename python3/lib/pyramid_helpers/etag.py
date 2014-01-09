@@ -1,26 +1,16 @@
-import datetime
-import dateutil.parser
-
-import pyramid.request
-import pyramid.registry
-from pyramid.httpexceptions import exception_response
-
 from decorator import decorator
-
-from .misc import normalize_datetime
+from pyramid.httpexceptions import exception_response
 
 import logging
 log = logging.getLogger(__name__)
 
+from . import request_from_args
+from ..misc import normalize_datetime
 
 
-def request_from_args(args):
-    # Extract request object from args
-    for arg in args:
-        if isinstance(arg, pyramid.request.Request):
-            return arg
-    raise Exception('no pyramid.request.Request in args')
-
+#-------------------------------------------------------------------------------
+# etag
+#-------------------------------------------------------------------------------
 
 # TODO: cahce decorator to store plain python dict returns
 # TODO: etag should be the cache key - maybe rename method?
@@ -87,3 +77,4 @@ def etag(request, cache_key=_generate_cache_key_default):
             else:
                 log.debug('etag set - %s' % etag)
                 request.response.etag = etag
+
