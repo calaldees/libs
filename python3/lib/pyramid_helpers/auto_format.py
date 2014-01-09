@@ -65,6 +65,18 @@ def register_formater(format_name, format_func):
 def registered_formats():
     return _auto_formaters.keys()
 
+
+#-------------------------------------------------------------------------------
+# Route Creator helper
+#-------------------------------------------------------------------------------
+def append_format_pattern(route):
+    """
+    to be used like:
+        config.add_route('home'          , append_format_pattern('/')              )
+        config.add_route('track'         , append_format_pattern('/track/{id}')    )
+    """
+    return re.sub(r'{(.*)}', r'{\1:[^/\.]+}', route) + r'{spacer:[.]?}{format:(%s)?}' % '|'.join(registered_formats())
+
 #-------------------------------------------------------------------------------
 # Decorator
 #-------------------------------------------------------------------------------
@@ -215,7 +227,7 @@ def format_json(request, result):
 register_formater('json', format_json)
 
 # XML -------------------------------
-from .xml import dictToXMLString
+from ..xml import dictToXMLString
 def format_xml(request, result):
     xml_head = '<?xml version="1.0" encoding="UTF-8"?>'.encode('utf-8')
     request.response.body = xml_head + dictToXMLString(result)
