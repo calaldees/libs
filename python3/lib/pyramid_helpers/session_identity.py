@@ -12,7 +12,7 @@ from .auto_format import action_error
 # Overlay Identity
 #-------------------------------------------------------------------------------
 
-def overlay_session_identity(session_keys=('id')):
+def overlay_session_identity(session_keys=('id',)):
     """
     Decorator to post process an action_ok dict and append the current users details to the return
     This ensure that our local templates and external client's have the same data to work with when rendering
