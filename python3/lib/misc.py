@@ -41,11 +41,20 @@ def json_object_handler(obj):
     Used with json lib to serialize json output
     e.g
     text = json.dumps(result, default=json_object_handler)
+    
+    >>> json_object_handler(datetime.datetime(year=2000, month=1, day=1))
+    '2000-01-01T00:00:00'
+    >>> json_object_handler(datetime.timedelta(days=1, seconds=1))
+    86401.0
+    >>> sorted(json_object_handler({'a','b','c'}))
+    ['a', 'b', 'c']
     """
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
     if isinstance(obj, datetime.timedelta):
         return obj.total_seconds()
+    if isinstance(obj, set):
+        return tuple(obj)
     raise TypeError
 
 def read_json(filename):
