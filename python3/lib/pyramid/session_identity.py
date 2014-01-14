@@ -3,7 +3,7 @@ from decorator import decorator
 import logging
 log = logging.getLogger(__name__)
 
-from ..misc import random_string
+from ..misc import random_string, now
 from . import request_from_args
 from .auto_format import action_error
 
@@ -11,6 +11,9 @@ from .auto_format import action_error
 #-------------------------------------------------------------------------------
 # Overlay Identity
 #-------------------------------------------------------------------------------
+GENERATED_IDENTITY_OVERLAYS = {
+    'timestamp': lambda session: now()
+}
 
 def overlay_session_identity(session_keys=('id',)):
     """
@@ -31,7 +34,10 @@ def overlay_session_identity(session_keys=('id',)):
         def overlay_identity_onto(target_dict):
             identity_dict = {}
             for key in session_keys:
-                identity_dict[key] = request.session.get(key,None)
+                if key in GENERATED_IDENTITY_OVERLAYS:
+                    identity_dict[key] = GENERATED_IDENTITY_OVERLAYS[key](request.session)
+                else:
+                    identity_dict[key] = request.session.get(key,None)
             target_dict['identity'] = identity_dict
     
         try:

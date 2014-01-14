@@ -1,6 +1,10 @@
+import json
+
 from decorator import decorator
 import pyramid.request
 import pyramid.registry
+
+from ..misc import json_object_handler
 
 import logging
 log = logging.getLogger(__name__)
@@ -50,6 +54,7 @@ def gzip(target, *args, **kwargs):
     
     return result
 
+
 #-------------------------------------------------------------------------------
 # Predicates
 #-------------------------------------------------------------------------------
@@ -62,3 +67,18 @@ def method_put_router(info, request):
     if request.method == 'PUT' or request.params.get('method','GET').upper() == 'PUT':
         return True
 
+
+#-------------------------------------------------------------------------------
+# Headers
+#-------------------------------------------------------------------------------
+
+def set_cookie(request, name, data, path='/'):
+    """
+    (Hand rolled json cookie setter because webob had crazy encode issues)
+    """
+    request.response.headerlist.append((
+        'Set-Cookie', '{name}={json_string}; Path={path}'.format(
+            name = name,
+            path = path,
+            json_string = json.dumps(data, default=json_object_handler),
+    )))
