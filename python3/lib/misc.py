@@ -1,12 +1,14 @@
 import re
 import random
 import datetime
-import dateutil
+import dateutil.parser
 import os
 import json
 import zlib
 import hashlib
 import collections
+
+dateutil_parser = dateutil.parser.parser()
 
 try:
     from pyramid.settings import asbool
@@ -56,6 +58,9 @@ def json_object_handler(obj):
     if isinstance(obj, set):
         return tuple(obj)
     raise TypeError
+
+def json_string(data):
+    return json.dumps(data, default=json_object_handler)
 
 def read_json(filename):
     with open(filename, 'r') as source:
@@ -279,6 +284,8 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     5
     >>> convert_str_with_type("00:00:01 -> timedelta")
     datetime.timedelta(0, 1)
+    >>> convert_str_with_type("2000-01-01 -> datetime")
+    datetime.datetime(2000, 1, 1, 0, 0)
     """
     try:
         value, return_type = value_string.split(value_split)
@@ -317,11 +324,11 @@ def convert_str(value, return_type):
     if return_type=='float' or return_type==float:
         return float(value)
     if return_type=='time' or return_type==datetime.time:
-        return dateutil.parser.parse(value).time()
+        return dateutil_parser.parse(value).time()
     if return_type=='date' or return_type==datetime.date:
-        return dateutil.parser.parse(value).date()
+        return dateutil_parser.parse(value).date()
     if return_type=='datetime' or return_type==datetime.datetime:
-        return dateutil.parser.parse(value)
+        return dateutil_parser.parse(value)
     if return_type=='timedelta' or return_type==datetime.timedelta:
         return parse_timedelta(value)
     if return_type=='list' or return_type==list:
