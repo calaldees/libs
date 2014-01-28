@@ -70,6 +70,9 @@ def etag(request, cache_key=_generate_cache_key_default):
         except LookupError:
             log.debug('etag generation aborted, unique response detected')
             etag = None
+        except Exception as e:
+            log.debug('etag generation aborted, unable to generate etag')
+            etag = None
         if etag:
             if etag in request.if_none_match:
                 log.debug('etag matched - aborting render - %s' % etag)
