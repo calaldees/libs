@@ -59,8 +59,24 @@ def json_object_handler(obj):
         return tuple(obj)
     raise TypeError
 
+def json_object_handler_inverse(obj):
+    """
+    Totally inefficent re-date json parser thing ... blarg ...
+    """
+    if isinstance(obj, dict):
+        return {k:json_object_handler_inverse(v) for k,v in obj.items()}
+    if isinstance(obj, list):
+        return [json_object_handler_inverse(o) for o in obj]
+    if isinstance(obj, str):
+        if re.match(r'\d+-\d+-\d+T\d+:\d+:\d+',obj):
+            return convert_str(obj, datetime.datetime)
+    return obj
+
 def json_string(data):
     return json.dumps(data, default=json_object_handler)
+
+def json_load(json_string):
+    return json_object_handler_inverse(json.loads(json_string))
 
 def read_json(filename):
     with open(filename, 'r') as source:
