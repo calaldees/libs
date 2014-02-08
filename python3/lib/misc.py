@@ -293,7 +293,6 @@ def strip_non_base_types(d):
             return [strip_non_base_types(value) for value in d]
     return None
 
-
 def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     """
     >>> convert_str_with_type("5 -> int")
@@ -314,25 +313,40 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
 
 def convert_str(value, return_type):
     """
+    >>> convert_str('', 'None')
+    
     >>> convert_str('bob', None)
     'bob'
     >>> convert_str('1', int)
     1
     >>> convert_str('yes', 'bool')
     True
+    >>> convert_str('[]', None)
+    []
+    >>> convert_str('[bob]', None)
+    ['bob']
+    >>> convert_str('[a  ,b,c]', None)
+    ['a', 'b', 'c']
     >>> convert_str('a,b ,c', 'list')
     ['a', 'b', 'c']
     >>> convert_str('[true, yes, no, false]', 'bool')
     [True, True, False, False]
-    >>> convert_str('', 'None')
-    
+    >>> convert_str('2000-01-01', 'datetime')
+    datetime.datetime(2000, 1, 1, 0, 0)
+    >>> convert_str('0:00:01', 'timedelta')
+    datetime.timedelta(0, 1)
     """
     if return_type=='None':
         return None
-    if not value or not isinstance(value, str) or not return_type or return_type==str or return_type=='str':
+    if not value or not isinstance(value, str) or return_type==str or return_type=='str':
         return value
     if value.startswith('[') and value.endswith(']'):
-        return [convert_str(v.strip(), return_type) for v in value[1:-1].split(',')]
+        value = value[1:-1]
+        if not value:
+            return []
+        return [convert_str(v.strip(), return_type) for v in value.split(',')] 
+    if not return_type:
+        return value
     if return_type=='bool' or return_type==bool:
         return asbool(value)
     if return_type=='int' or return_type==int:
