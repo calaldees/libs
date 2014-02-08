@@ -301,15 +301,17 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     datetime.timedelta(0, 1)
     >>> convert_str_with_type("2000-01-01 -> datetime")
     datetime.datetime(2000, 1, 1, 0, 0)
+    >>> convert_str_with_type("[]")
+    []
     """
+    if not isinstance(value_string, str):
+        return value_string
     try:
         value, return_type = value_string.split(value_split)
         return convert_str(value.strip(), return_type.strip())
     except (ValueError, AttributeError) as e:
-        if fallback_type:
-            return convert_str(value_string.strip(), fallback_type)
-        else:
-            return value_string
+        return convert_str(value_string.strip(), fallback_type)
+
 
 def convert_str(value, return_type):
     """
