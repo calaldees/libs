@@ -74,6 +74,7 @@ def etag(request, cache_key=_generate_cache_key_default):
             log.debug('etag generation aborted, unable to generate etag')
             etag = None
         if etag:
+            etag += request.registry.settings.get('server.etag.cache_buster','')
             if etag in request.if_none_match:
                 log.debug('etag matched - aborting render - %s' % etag)
                 raise exception_response(304)
