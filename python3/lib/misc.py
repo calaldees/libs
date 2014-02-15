@@ -333,6 +333,8 @@ def convert_str(value, return_type):
     ['a', 'b', 'c']
     >>> convert_str('[true, yes, no, false]', 'bool')
     [True, True, False, False]
+    >>> convert_str('{"a":1}', None)
+    {'a': 1}
     >>> convert_str('2000-01-01', 'datetime')
     datetime.datetime(2000, 1, 1, 0, 0)
     >>> convert_str('0:00:01', 'timedelta')
@@ -346,7 +348,9 @@ def convert_str(value, return_type):
         value = value[1:-1]
         if not value:
             return []
-        return [convert_str(v.strip(), return_type) for v in value.split(',')] 
+        return [convert_str(v.strip(), return_type) for v in value.split(',')]
+    if value.startswith('{') and value.endswith('}'):
+        return json_load(value)
     if not return_type:
         return value
     if return_type=='bool' or return_type==bool:
