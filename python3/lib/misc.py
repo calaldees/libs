@@ -30,6 +30,12 @@ def now(new_override=None):
         return _now_override
     return datetime.datetime.now()
 
+import inspect
+def funcname(level=1):
+    """Use: print("My name is: %s" % inspect.stack()[0][3])"""
+    return inspect.stack()[level][3]
+
+
 # Reference - http://stackoverflow.com/questions/2182858/how-can-i-pack-serveral-decorators-into-one
 def decorator_combine(*dec_funs):
     def _inner_chain(f):
