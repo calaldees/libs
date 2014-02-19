@@ -331,6 +331,8 @@ def convert_str(value, return_type):
     ['a', 'b', 'c']
     >>> convert_str('a,b ,c', 'list')
     ['a', 'b', 'c']
+    >>> convert_str('[a,b,c]', 'list')
+    ['a', 'b', 'c']
     >>> convert_str('[true, yes, no, false]', 'bool')
     [True, True, False, False]
     >>> convert_str('{"a":1}', None)
@@ -348,6 +350,8 @@ def convert_str(value, return_type):
         value = value[1:-1]
         if not value:
             return []
+        if return_type=='list' or return_type==list: #If already a list, revert to string contents
+            return_type=str
         return [convert_str(v.strip(), return_type) for v in value.split(',')]
     if value.startswith('{') and value.endswith('}'):
         return json_load(value)
@@ -369,6 +373,8 @@ def convert_str(value, return_type):
         return parse_timedelta(value)
     if return_type=='list' or return_type==list:
         return [v.strip() for v in value.split(',') if v.strip()]
+    if return_type=='jsonfile':
+        return read_json(value)
     assert False, 'unable to convert {0} to {1}'.format(value, return_type)
 
 
