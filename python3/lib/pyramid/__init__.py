@@ -35,6 +35,7 @@ def mark_external_request(target, *args, **kwargs):
     request_from_args(args).matchdict['internal_request'] = True
     return target(*args, **kwargs)
 
+
 @decorator
 def gzip(target, *args, **kwargs):
     """
@@ -53,6 +54,30 @@ def gzip(target, *args, **kwargs):
     result = target(*args, **kwargs)
     
     return result
+
+
+def _generate_max_age_seconds_default(request):
+    return request.registry.settings.get('server.max_age.default')
+def max_age(gen_max_age_seconds=_generate_max_age_seconds_default, **options):
+    """
+    Decorator to set cache_expires
+    """
+    def _max_age(target, *args, **kwargs):
+        request = request_from_args(args)
+        if 'internal_request' in request.matchdict:  # Abort if internal call
+            return target(*args, **kwargs)
+
+        _return = target(*args, **kwargs) # Execute the wrapped function
+
+        if hasattr(gen_max_age_seconds, '__call__'):
+            max_age_seconds = gen_max_age_seconds(request)
+        else:
+            max_age_seconds = gen_max_age_seconds
+        if max_age_seconds:
+            _return.cache_expires(max_age_seconds, **options)
+
+        return _return
+    return decorator(_max_age)
 
 
 #-------------------------------------------------------------------------------
