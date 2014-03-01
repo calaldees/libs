@@ -81,5 +81,5 @@ def etag(request, cache_key=_generate_cache_key_default):
                 raise exception_response(304)
             else:
                 log.debug('etag set - %s' % etag)
-                request.response.etag = etag
+                request.response.etag = (etag, False)  # The tuple and 'False' signifys a weak etag that can be gziped later
 
