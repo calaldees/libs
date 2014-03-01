@@ -46,12 +46,12 @@ def gzip(target, *args, **kwargs):
     # Abort if internal call
     if 'internal_request' in request.matchdict:
         return target(*args, **kwargs)
-
-    # Enable Pyramid GZip on all responses - NOTE! In a production this should be handled by nginx for performance!
-    if request.registry.settings.get('server.gzip'):
-        request.response.encode_content(encoding='gzip', lazy=False)
     
     result = target(*args, **kwargs)
+
+    # Enable Pyramid GZip on all responses - NOTE! In a production this should be handled by nginx for performance!
+    if request.registry.settings.get('server.gzip') and 'gzip' in request.headers.get('Accept-Encoding',''):
+        request.response.encode_content(encoding='gzip', lazy=False)
     
     return result
 
