@@ -247,6 +247,16 @@ def format_html(request, result):
     request.response = render_template(request, result, 'html')
     return request.response
 register_formater('html', format_html)
+def format_html_template(request, result):
+    """
+    Return html content with no head/body tags
+    Base templates must support result['format'] for this to function
+    """
+    result['format'] = 'html_template'
+    request.response = render_template(request, result, 'html')
+    return request.response
+register_formater('html_template', format_html_template)
+
 
 # Redirect---------------------------
 from pyramid.httpexceptions import HTTPFound
