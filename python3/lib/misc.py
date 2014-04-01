@@ -411,3 +411,24 @@ class OrderedDefaultdict(collections.OrderedDict):
 
 def defaultdict_recursive():
     return collections.defaultdict(defaultdict_recursive)
+
+def backup(source_filename, destination_folder=None):
+    if not destination_folder:
+        destination_folder = os.path.dirname(source_filename)
+    def get_backup_number_from_filename(filename):
+        try:
+            int(re.match('r.*\(.\d+)\.bak', filename).group(1))
+        except AttributeError:
+            return 0
+    new_backup_number = (
+        max([0] + 
+            map(
+                get_backup_number_from_filename,
+                filter(
+                    lambda f: not f.endswith('.bak'),
+                    os.listdir(destination_folder)
+                )
+            )
+        )
+    ) + 1
+    # copy source_filename to '{0}.{1}.bak'.format(source_filename, backup_number)
