@@ -7,6 +7,8 @@ import json
 import zlib
 import hashlib
 import collections
+import shutil
+import itertools
 
 dateutil_parser = dateutil.parser.parser()
 
@@ -412,23 +414,28 @@ class OrderedDefaultdict(collections.OrderedDict):
 def defaultdict_recursive():
     return collections.defaultdict(defaultdict_recursive)
 
-def backup(source_filename, destination_folder=None):
+def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func_list=os.listdir):
+    """
+    >>> func_copy = lambda a,b: '{0} -> {1}'.format(a,b)
+    >>> func_list = lambda a  : ['a.txt', 'a.txt.1.bak', 'a.txt.2.bak']
+    >>> backup('./a.txt', func_copy=func_copy, func_list=func_list)
+    './a.txt -> ./a.txt.3.bak'
+    >>> backup('./b.txt', func_copy=func_copy, func_list=func_list)
+    './b.txt -> ./b.txt.1.bak'
+    >>> backup('./c.txt', '/home/test/', func_copy=func_copy, func_list=func_list)
+    './c.txt -> /home/test/c.txt.1.bak'
+    """
     if not destination_folder:
         destination_folder = os.path.dirname(source_filename)
     def get_backup_number_from_filename(filename):
         try:
-            int(re.match('r.*\(.\d+)\.bak', filename).group(1))
-        except AttributeError:
+            return int(re.match(r'.*\.(\d+)\.bak', filename).group(1))
+        except (AttributeError, TypeError):
             return 0
-    new_backup_number = (
-        max([0] + 
-            map(
-                get_backup_number_from_filename,
-                filter(
-                    lambda f: not f.endswith('.bak'),
-                    os.listdir(destination_folder)
-                )
-            )
-        )
-    ) + 1
-    # copy source_filename to '{0}.{1}.bak'.format(source_filename, backup_number)
+    filename = os.path.basename(source_filename)
+    new_backup_number = 1 + max(
+            [0] + [get_backup_number_from_filename(f) for f in func_list(destination_folder) if filename in f]
+    )
+    backup_filename = os.path.join(destination_folder, '{0}.{1}.bak'.format(filename, new_backup_number))
+    return func_copy(source_filename, backup_filename)
+    
