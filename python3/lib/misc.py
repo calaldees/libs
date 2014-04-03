@@ -414,19 +414,24 @@ class OrderedDefaultdict(collections.OrderedDict):
 def defaultdict_recursive():
     return collections.defaultdict(defaultdict_recursive)
 
-def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func_list=os.listdir):
+def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func_list=os.listdir, func_exisits=os.path.exists):
     """
-    >>> func_copy = lambda a,b: '{0} -> {1}'.format(a,b)
-    >>> func_list = lambda a  : ['a.txt', 'a.txt.1.bak', 'a.txt.2.bak']
-    >>> backup('./a.txt', func_copy=func_copy, func_list=func_list)
+    >>> _func = dict(
+    >>>     func_copy    = lambda a,b: '{0} -> {1}'.format(a,b)
+    >>>     func_list    = lambda a  : ['a.txt', 'a.txt.1.bak', 'a.txt.2.bak']
+    >>>     func_exisits = lambda a  : True
+    >>> )
+    >>> backup('./a.txt', **_func)
     './a.txt -> ./a.txt.3.bak'
-    >>> backup('./b.txt', func_copy=func_copy, func_list=func_list)
+    >>> backup('./b.txt', **_func)
     './b.txt -> ./b.txt.1.bak'
-    >>> backup('./c.txt', '/home/test/', func_copy=func_copy, func_list=func_list)
+    >>> backup('./c.txt', '/home/test/', **_func)
     './c.txt -> /home/test/c.txt.1.bak'
     """
     if not destination_folder:
         destination_folder = os.path.dirname(source_filename)
+    if not func_exisits(destination_folder):
+        os.makedirs(destination_folder)
     def get_backup_number_from_filename(filename):
         try:
             return int(re.match(r'.*\.(\d+)\.bak', filename).group(1))
