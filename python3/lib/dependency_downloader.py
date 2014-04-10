@@ -73,13 +73,14 @@ def fetch_dependencys(dependecys, tracker, destination_path):
                     continue
             
             source = info['source'].replace('VERSION', target_version)
+            destination_subpath = info.get('destination_subpath', '')
             target = info['target']
             if isinstance(target, list):
                 for t in target:
                     destination = t.replace(VERSION_IDENTIFYER, target_version)
-                    get_file(source+t, os.path.join(destination_path, destination), overwrite=target_version)
+                    get_file(source+t, os.path.join(destination_path, destination_subpath, destination), overwrite=target_version)
             else:
-                get_file(source, os.path.join(destination_path, target.replace(VERSION_IDENTIFYER, target_version)), overwrite=target_version)
+                get_file(source, os.path.join(destination_path, destination_subpath, target.replace(VERSION_IDENTIFYER, target_version)), overwrite=target_version)
             
             tracker[name]['version'] = target_version
             tracker[name]['filenames_hash'] = filenames_hash
