@@ -416,11 +416,11 @@ def defaultdict_recursive():
 
 def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func_list=os.listdir, func_exisits=os.path.exists):
     """
-    >>> _func = dict(
-    >>>     func_copy    = lambda a,b: '{0} -> {1}'.format(a,b)
-    >>>     func_list    = lambda a  : ['a.txt', 'a.txt.1.bak', 'a.txt.2.bak']
-    >>>     func_exisits = lambda a  : True
-    >>> )
+    >>> _func = dict( \
+            func_copy    = lambda a,b: '{0} -> {1}'.format(a,b), \
+            func_list    = lambda a  : ['a.txt', 'a.txt.1.bak', 'a.txt.2.bak'], \
+            func_exisits = lambda a  : True, \
+        )
     >>> backup('./a.txt', **_func)
     './a.txt -> ./a.txt.3.bak'
     >>> backup('./b.txt', **_func)
