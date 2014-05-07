@@ -69,13 +69,14 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
         super().__init__(request)
         chunk = request.body
         
+        # Extract and validate chunk filename
+        self.name = urllib.parse.unquote_plus(self.RE_CONTENT_DISPOSITION.match(self.header('Content-Disposition')).group(1))
+        assert not os.path.exists(self.path_destination), 'destination file already exisits - {0}'.format(self.path_destination)
+        
         # Extract and validate type
         self.type = self.header('Content-Type')
         for content_type in ('multipart/form-data',):  #, 'text/html', 'application/json'
             assert content_type not in self.type, 'The specification explicitly states that for chuncked uploads the forms should not be submitted as {0}'.format(content_type)
-        
-        # Extract and validate chunk filename
-        self.name = urllib.parse.unquote_plus(self.RE_CONTENT_DISPOSITION.match(self.header('Content-Disposition')).group(1))
         
         # Extract and validate chunk range
         range_dict = {k:int(v) for k, v in self.RE_CONTENT_RANGE.match(self.header('Content-Range')).groupdict().items()}
@@ -113,21 +114,25 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
     @property
     @lru_cache()
     def path_destination(self):
-        return os.path.join(self.path, self.name)
+        return os.path.join(self._path_upload, self.name)
 
     @property
     @lru_cache()
     def chunk_filenames(self):
-        return (os.path.join(self.path, filename) for filename in sorted(os.listdir(self.path)))
+        return tuple(os.path.join(self.path, filename) for filename in sorted(os.listdir(self.path), key=lambda f: '{0}-{1}'.format(len(f),f)))
 
     @property
     @lru_cache()
     def bytes_recived(self):
-        return sum(os.path.getsize(filename) for filename in self.chunk_filenames)
+        bytes_recived = sum(os.path.getsize(filename) for filename in self.chunk_filenames)
+        if bytes_recived >= self.size:
+            import pdb ; pdb.set_trace()
+        assert bytes_recived < self.size, 'recived more data than total filesize'
+        return bytes_recived
 
     @property
     def progress(self):
-        return self.bytes_recived / (self.size - 1)
+        return (self.bytes_recived + 1) / self.size
 
     @property
     def range_recived(self):
@@ -140,7 +145,7 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
 
     @property
     def complete(self):
-        return self.bytes_recived == self.size - 1
+        return self.bytes_recived + 1 == self.size  # +1 because we include the 0'th position
 
     @property
     @lru_cache()
@@ -153,7 +158,7 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
         """
         try:
             log.info('Cleaning up chunks for {0}'.format(self.path))
-            os.rmdir(self.path)
+            shutil.rmtree(self.path)
         except os.error:
             log.warn('unable to remove'.format(self.path))
 
@@ -171,9 +176,6 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
         list the files in the folder and sort them by
         """
         assert self.complete, 'Cant reconstitue incomplete file'
-        if os.path.exists(self.path_destination):
-            log.debug('Destination exisits - aborting reconstitution {0}'.format(self.name))
-            return
         try:
             with open(self.path_destination, 'wb') as destination:
                 for chunk_filename in self.chunk_filenames:
@@ -258,12 +260,10 @@ class Upload():
     
     @view_config(request_method='POST', xhr=True, accept="application/json", renderer='json')
     def post(self):
-        log.info('post')
-        
         if self.request.matchdict.get('_method') == "DELETE":
             return self.delete()
         
-        if self.request.headers.get('Content-Range') and self.request.headers.get('Content-Disposition'):
+        if set(self.request.headers) & {'Content-Range', 'Content-Disposition', 'X-Content-Range', 'X-Content-Disposition'}:
             handler = FileUploadHandlerChunked(self.request)
             if handler.complete:
                 log.debug('Reconstituting file {0}'.format(handler.name))
