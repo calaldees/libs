@@ -125,14 +125,12 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
     @lru_cache()
     def bytes_recived(self):
         bytes_recived = sum(os.path.getsize(filename) for filename in self.chunk_filenames)
-        if bytes_recived >= self.size:
-            import pdb ; pdb.set_trace()
-        assert bytes_recived < self.size, 'recived more data than total filesize'
+        assert bytes_recived <= self.size, 'recived more data than total filesize'
         return bytes_recived
 
     @property
     def progress(self):
-        return (self.bytes_recived + 1) / self.size
+        return self.bytes_recived / self.size
 
     @property
     def range_recived(self):
@@ -141,11 +139,12 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
         Although the spec states that the chunks can arrive in any order,
         There is no mention of how it reports this.
         """
-        return "{start}-{end}/{size}".format(start=0, end=self.bytes_recived, size=self.size)
+        #import pdb ; pdb.set_trace()
+        return "{start}-{end}/{size}".format(start=0, end=self.bytes_recived-1, size=self.size)
 
     @property
     def complete(self):
-        return self.bytes_recived + 1 == self.size  # +1 because we include the 0'th position
+        return self.bytes_recived == self.size
 
     @property
     @lru_cache()
