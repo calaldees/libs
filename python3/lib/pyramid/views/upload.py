@@ -37,13 +37,66 @@ class FileHandle(object):
 class AbstractFileUploadHandler(object):
     def __init__(self, request):
         self.request = request
+        
+        # Identify user session
+        #   This is probably not wise to hash the cookie.
+        #   The cookie could change at at any point, (hopefully not during an upload).
+        #   Could be a sbaility bug waiting to happen
+        self.session_id = self.header('Session-ID') or hash_data(self.header('Cookie'))
+        assert self.session_id
+
+    def header(self, header_name):
+        return self.request.headers.get(header_name) or self.request.headers.get('X-{0}'.format(header_name))
+
+    @property
+    @lru_cache()
+    def path_session(self):
+        """
+        A path area that is unique to this user
+        Used for temporary files
+        """
+        return os.path.join(self._path_upload, self.session_id)
 
     @property
     def _path_upload(self):
         return self.request.registry.settings.get('upload.path','upload')
+    
+    def file_route(self, name):
+        return self.request.route_url(self.request.registry.settings.get('upload.file_route','uploaded')) + name
+    
+    @property
+    def delete_method(self):
+        return self.request.registry.settings.get('upload.delete.method','DELETE')
+    
+    def delete_route(self, name):
+        url =  self.request.route_url(
+            self.request.registry.settings.get('upload.route','upload'),
+            sep='/', name=name
+        )
+        if self.delete_method != 'DELETE':  # can this be part of the route_url() call?
+            url += '&_method=DELETE'
+        return url
+    
+    def filelist(self):
+        return [f for f in os.listdir(self._path_upload())]
+    
+    def fileinfo(self, name=None):
+        if name==None and hasattr(self, name):
+            name = self.name
+        assert name, 'filename required to aquire file info'
+        filename = os.path.join(self._path_upload, name)
+        if os.path.exists(filename):
+            return {
+                'name': name,
+                'size': os.path.getsize(filename),
+                'type': None,  # Todo, magic?
+                'url': self.file_route(name),
+                'thumbnail_url': None,
+                'delete_type': self.delete_method,
+                'delete_url': self.delete_route(name),
+            }
 
-
-class FileUploadHandlerMultiple(AbstractFileUploadHandler):
+class FileUploadMultipleHandler(AbstractFileUploadHandler):
     
     def __init__(self, request):
         super().__init__(request)
@@ -55,61 +108,18 @@ class FileUploadHandlerMultiple(AbstractFileUploadHandler):
             with open(os.path.join(self._path_upload, file_handle.name), 'wb') as f:
                 shutil.copyfileobj(file_handle.file, f)
 
+class FileUploadChunkDetails(AbstractFileUploadHandler):
 
-
-class FileUploadHandlerChunked(AbstractFileUploadHandler):
-    """
-    Todo: keep track of chunks uploaded (out of sequence).
-    e.g: it is possible for the last chunk is uploaded before the first chunk
-    """
-    RE_CONTENT_RANGE = re.compile(r'bytes (?P<data_start>\d+)-(?P<data_end>\d{1,9})/(?P<size>\d{1,9})')
-    RE_CONTENT_DISPOSITION = re.compile(r'attachment; filename="(.*?)"')
-
-    def __init__(self, request):
+    def __init__(self, request, name=None):
         super().__init__(request)
-        chunk = request.body
-        
-        # Extract and validate chunk filename
-        self.name = urllib.parse.unquote_plus(self.RE_CONTENT_DISPOSITION.match(self.header('Content-Disposition')).group(1))
-        assert not os.path.exists(self.path_destination), 'destination file already exisits - {0}'.format(self.path_destination)
-        
-        # Extract and validate type
-        self.type = self.header('Content-Type')
-        for content_type in ('multipart/form-data',):  #, 'text/html', 'application/json'
-            assert content_type not in self.type, 'The specification explicitly states that for chuncked uploads the forms should not be submitted as {0}'.format(content_type)
-        
-        # Extract and validate chunk range
-        range_dict = {k:int(v) for k, v in self.RE_CONTENT_RANGE.match(self.header('Content-Range')).groupdict().items()}
-        self.data_start = range_dict['data_start']
-        self.data_end = range_dict['data_end']
-        self.size = range_dict['size']
-        assert len(chunk) == self.chunk_size, 'Content-Range does not match filesize'
-
-        # Identify user session
-        #   This is probably not wise to hash the cookie.
-        #   The cookie could change at at any point, (hopefully not during an upload).
-        #   Could be a sbaility bug waiting to happen
-        self.session_id = self.header('Session-ID') or hash_data(self.header('Cookie'))
-        assert self.session_id
-
-        try:
-            os.makedirs(os.path.dirname(self.path_chunk_current))
-        except os.error:
-            pass
-        with open(self.path_chunk_current, 'wb') as f:
-            f.write(chunk)
-
-    def header(self, header_name):
-        return self.request.headers.get(header_name) or self.request.headers.get('X-{0}'.format(header_name))
-
-    @property
-    def chunk_size(self):
-        return self.data_end - self.data_start + 1
+        if name:
+            self.name = name
+            assert os.path.exists(self.path)
 
     @property
     @lru_cache()
     def path(self):
-        return os.path.join(self._path_upload, '{0}-{1}'.format(self.name, self.session_id))
+        return os.path.join(self.path_session, self.name)
 
     @property
     @lru_cache()
@@ -128,6 +138,83 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
         assert bytes_recived <= self.size, 'recived more data than total filesize'
         return bytes_recived
 
+    def incomplete_file_details(self):
+        return (FileUploadChunkDetails(self.request, incomplete_filename) for incomplete_filename in os.listdir(self.path_session))
+    
+    def cleanup_chunks(self):
+        """
+        Remove all traces of all files associated with this upload
+        """
+        try:
+            log.info('Cleaning up chunks for {0}'.format(self.path))
+            shutil.rmtree(self.path)
+        except os.error:
+            log.warn('unable to remove'.format(self.path))
+        if not os.path.listdir(self.path_session):
+            os.rmdir(self.path_session)
+
+    def cleanup_destination(self):
+        try:
+            log.info('Cleaning up destination for {0}'.format(self.path_destination))
+            os.remove(self.path_destination)
+        except os.error:
+            log.warn('unable to remove'.format(self.path_destination))
+
+    def fileinfo(self):
+        return {
+            'name': self.name,
+            'size': self.bytes_recived,
+        }
+
+    
+
+class FileUploadChunkHandler(FileUploadChunkDetails):
+    """
+    Todo: keep track of chunks uploaded (out of sequence).
+    e.g: it is possible for the last chunk is uploaded before the first chunk
+    """
+    RE_CONTENT_RANGE = re.compile(r'bytes (?P<data_start>\d+)-(?P<data_end>\d{1,9})/(?P<size>\d{1,9})')
+    RE_CONTENT_DISPOSITION = re.compile(r'attachment; filename="(.*?)"')
+
+    def __init__(self, request):
+        super().__init__(request)
+        self.handle_chunk()
+
+    def handle_chunk(self):
+        chunk = self.request.body
+        
+        # Extract and validate chunk filename
+        self.name = urllib.parse.unquote_plus(self.RE_CONTENT_DISPOSITION.match(self.header('Content-Disposition')).group(1))
+        assert not os.path.exists(self.path_destination), 'destination file already exisits - {0}'.format(self.path_destination)
+        
+        # Extract and validate type
+        self.type = self.header('Content-Type')
+        for content_type in ('multipart/form-data',):  #, 'text/html', 'application/json'
+            assert content_type not in self.type, 'The specification explicitly states that for chuncked uploads the forms should not be submitted as {0}'.format(content_type)
+        
+        # Extract and validate chunk range
+        range_dict = {k:int(v) for k, v in self.RE_CONTENT_RANGE.match(self.header('Content-Range')).groupdict().items()}
+        self.data_start = range_dict['data_start']
+        self.data_end = range_dict['data_end']
+        self.size = range_dict['size']
+        assert len(chunk) == self.chunk_size, 'Content-Range does not match filesize'
+
+        try:
+            os.makedirs(os.path.dirname(self.path_chunk_current))
+        except os.error:
+            pass
+        with open(self.path_chunk_current, 'wb') as f:
+            f.write(chunk)
+    
+    @property
+    @lru_cache()
+    def path_chunk_current(self):
+        return os.path.join(self.path, str(self.data_start))
+
+    @property
+    def chunk_size(self):
+        return self.data_end - self.data_start + 1
+
     @property
     def progress(self):
         return self.bytes_recived / self.size
@@ -139,35 +226,11 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
         Although the spec states that the chunks can arrive in any order,
         There is no mention of how it reports this.
         """
-        #import pdb ; pdb.set_trace()
         return "{start}-{end}/{size}".format(start=0, end=self.bytes_recived-1, size=self.size)
 
     @property
     def complete(self):
         return self.bytes_recived == self.size
-
-    @property
-    @lru_cache()
-    def path_chunk_current(self):
-        return os.path.join(self.path, str(self.data_start))
-
-    def cleanup_chunks(self):
-        """
-        Remove all traces of all files associated with this upload
-        """
-        try:
-            log.info('Cleaning up chunks for {0}'.format(self.path))
-            shutil.rmtree(self.path)
-        except os.error:
-            log.warn('unable to remove'.format(self.path))
-
-    def cleanup_destination(self):
-        try:
-            log.info('Cleaning up destination for {0}'.format(self.path_destination))
-            os.remove(self.path_destination)
-        except os.error:
-            log.warn('unable to remove'.format(self.path_destination))
-
 
     def reconstitue_chunked_file(self):
         """
@@ -188,7 +251,7 @@ class FileUploadHandlerChunked(AbstractFileUploadHandler):
 
     def files(self):
         return (self, )
-        
+
 
 @view_defaults(route_name='upload')
 class Upload():
@@ -234,7 +297,7 @@ class Upload():
     @view_config(request_method='OPTIONS')
     def options(self):
         log.info('options')
-        return pyramid.response.Response(body='')
+        return self.head()
 
     @view_config(request_method='HEAD')
     def head(self):
@@ -244,8 +307,18 @@ class Upload():
     @view_config(request_method='GET', renderer="json")
     def get(self):
         log.info('get')
-        filename = self.request.matchdict.get('name')
-        return [f for f in os.listdir(self._path_upload())]
+        name = self.request.matchdict.get('name') or self.request.params.get('file')
+        if not name:
+            return AbstractFileUploadHandler(self.request).filelist()
+        try:
+            return {'file': AbstractFileUploadHandler(self.request).fileinfo(name)}
+        except AssertionError:
+            pass
+        try:
+            return {'file': FileUploadChunkDetails(self.request, name).fileinfo()}
+        except AssertionError:
+            pass
+        return {'file': None}
 
     @view_config(request_method='DELETE', xhr=True, accept="application/json", renderer='json')
     def delete(self):
@@ -263,7 +336,7 @@ class Upload():
             return self.delete()
         
         if set(self.request.headers) & {'Content-Range', 'Content-Disposition', 'X-Content-Range', 'X-Content-Disposition'}:
-            handler = FileUploadHandlerChunked(self.request)
+            handler = FileUploadChunkHandler(self.request)
             if handler.complete:
                 log.debug('Reconstituting file {0}'.format(handler.name))
                 handler.reconstitue_chunked_file()
@@ -273,7 +346,7 @@ class Upload():
                 self.request.response.headerlist.append(('Range', handler.range_recived))
                 return handler.range_recived
         else:
-            handler = FileUploadHandlerMultiple(self.request)
+            handler = FileUploadMultipleHandler(self.request)
         
         files = []
         for file_handle in handler.files():
