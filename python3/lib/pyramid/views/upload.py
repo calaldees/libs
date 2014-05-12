@@ -96,17 +96,23 @@ class AbstractFileUploadHandler(object):
                 'delete_url': self.delete_route(name),
             }
 
+
 class FileUploadMultipleHandler(AbstractFileUploadHandler):
     
     def __init__(self, request):
         super().__init__(request)
-        self.files = FileHandle.get_files_from_request(request)
-        assert self.files, 'No file data in request'
-        
+        self.file_handles = FileHandle.get_files_from_request(request)
+        assert self.file_handles, 'No file data in request'
+        self.save()
+
     def save(self):
-        for file_handle in self.files:
+        for file_handle in self.file_handles:
             with open(os.path.join(self._path_upload, file_handle.name), 'wb') as f:
                 shutil.copyfileobj(file_handle.file, f)
+
+    def files(self):
+        return tuple(self.fileinfo(file_handle.name) for file_handle in self.file_handles)
+
 
 class FileUploadChunkDetails(AbstractFileUploadHandler):
 
@@ -150,7 +156,7 @@ class FileUploadChunkDetails(AbstractFileUploadHandler):
             shutil.rmtree(self.path)
         except os.error:
             log.warn('unable to remove'.format(self.path))
-        if not os.path.listdir(self.path_session):
+        if not os.listdir(self.path_session):
             os.rmdir(self.path_session)
 
     def cleanup_destination(self):
@@ -193,11 +199,16 @@ class FileUploadChunkHandler(FileUploadChunkDetails):
             assert content_type not in self.type, 'The specification explicitly states that for chuncked uploads the forms should not be submitted as {0}'.format(content_type)
         
         # Extract and validate chunk range
-        range_dict = {k:int(v) for k, v in self.RE_CONTENT_RANGE.match(self.header('Content-Range')).groupdict().items()}
-        self.data_start = range_dict['data_start']
-        self.data_end = range_dict['data_end']
-        self.size = range_dict['size']
-        assert len(chunk) == self.chunk_size, 'Content-Range does not match filesize'
+        if self.header('Content-Range'):
+            range_dict = {k:int(v) for k, v in self.RE_CONTENT_RANGE.match(self.header('Content-Range')).groupdict().items()}
+            self.size = range_dict['size']
+            self.data_start = range_dict['data_start']
+            self.data_end = range_dict['data_end']
+        else:
+            self.size = int(self.header('Content-Length'))
+            self.data_start = 0
+            self.data_end = self.size - 1
+        assert self.chunk_size == len(chunk), 'Content-Range [{0}] does not match filesize [{1}]'.format(self.chunk_size, len(chunk))
 
         try:
             os.makedirs(os.path.dirname(self.path_chunk_current))
@@ -249,8 +260,15 @@ class FileUploadChunkHandler(FileUploadChunkDetails):
             self.cleanup_chunks()
             self.cleanup_destination()
 
+    def fileinfo(self):
+        if self.complete:
+            import pdb ; pdb.set_trace()
+            return super(AbstractFileUploadHandler, self).fileinfo()
+        else:
+            return super().fileinfo()
+
     def files(self):
-        return (self, )
+        return (self.fileinfo(),)
 
 
 @view_defaults(route_name='upload')
@@ -347,25 +365,7 @@ class Upload():
                 return handler.range_recived
         else:
             handler = FileUploadMultipleHandler(self.request)
-        
-        files = []
-        for file_handle in handler.files():
-            file = {attr: getattr(file_handle, attr) for attr in ('name', 'type', 'size')}
-            #if self._validate(result):
-                #with open( self.imagepath(result['name'] + '.type'), 'w') as f:
-                #    f.write(result['type'])
-                #self.createthumbnail(result['name'])
 
-            file['delete_type'] = self.DELETEMETHOD
-            file['delete_url'] = self.request.route_url('upload') + '/' + file['name']
-            file['url'] = 'needs_implementing' # self.request.route_url('comunity',)
-            if self.DELETEMETHOD != 'DELETE':
-                file['delete_url'] += '&_method=DELETE'
-                #if (IMAGE_TYPES.match(result['type'])):
-                #    try:
-                #        result['thumbnail_url'] = self.thumbnailurl(result['name'])
-                #    except: # Could not get an image serving url
-                #        pass
-            files.append(file)
+        files = handler.files()
         log.debug(files)
         return {'files': files}
