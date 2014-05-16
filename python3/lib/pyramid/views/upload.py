@@ -135,7 +135,7 @@ class FileUploadChunkDetails(AbstractFileUploadHandler):
     @property
     @lru_cache()
     def chunk_filenames(self):
-        return tuple(os.path.join(self.path, filename) for filename in sorted(os.listdir(self.path), key=lambda f: '{0}-{1}'.format(len(f),f)))
+        return tuple(os.path.join(self.path, filename) for filename in sorted(os.listdir(self.path), key=lambda f: '{0:010}'.format(f)))
 
     @property
     @lru_cache()
