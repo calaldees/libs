@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 from ..misc import random_string, now
 from . import request_from_args
 from .auto_format import action_error
-
+from .events import SessionCreated
 
 #-------------------------------------------------------------------------------
 # Overlay Identity
@@ -30,6 +30,7 @@ def overlay_session_identity(session_keys=('id',)):
         # The session id is abstracted from the framework. Keep a count/track id's as session values
         if 'id' not in request.session:
             request.session['id'] = random_string()
+            request.registry.notify(SessionCreated(request))
         
         def overlay_identity_onto(target_dict):
             identity_dict = {}
