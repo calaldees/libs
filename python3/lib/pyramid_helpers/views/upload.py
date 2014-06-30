@@ -262,7 +262,6 @@ class FileUploadChunkHandler(FileUploadChunkDetails):
 
     def fileinfo(self):
         if self.complete:
-            import pdb ; pdb.set_trace()
             return super(AbstractFileUploadHandler, self).fileinfo()
         else:
             return super().fileinfo()
