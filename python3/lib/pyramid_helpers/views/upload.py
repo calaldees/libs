@@ -294,8 +294,16 @@ class Upload():
     #ACCEPT_FILE_TYPES = IMAGE_TYPES
     EXPIRATION_TIME = 300  # seconds
     
-    def __init__(self, request):
+    def __init__(self, request, **options):
         self.request = request
+        
+        # Set default options (useful for overriding in tests or other file uses)
+        # (this is truly a dangerious approach, set anything!?)
+        for key, value in options.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        
+        # Pre populate response headers
         request.response.headers['Access-Control-Allow-Origin'] = '*'
         request.response.headers['Access-Control-Allow-Methods'] = 'OPTIONS, HEAD, GET, POST, PUT, DELETE'
         request.response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Content-Range, Content-Disposition'
