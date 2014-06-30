@@ -1,7 +1,8 @@
 import copy
 
-from pyramid.request import Request
 from pyramid.views.upload import Upload
+from pyramid.request import Request
+
 
 request_environ = {
     'HTTP_HOST': 'localhost:6543',
