@@ -55,7 +55,7 @@ class AbstractFileUploadHandler(object):
         A path area that is unique to this user
         Used for temporary files
         """
-        return os.path.join(self._path_upload, self.session_id)
+        return os.path.join(self._path_upload, str(self.session_id))
 
     @property
     def _path_upload(self):
@@ -135,7 +135,7 @@ class FileUploadChunkDetails(AbstractFileUploadHandler):
     @property
     @lru_cache()
     def chunk_filenames(self):
-        return tuple(os.path.join(self.path, filename) for filename in sorted(os.listdir(self.path), key=lambda f: '{0:010}'.format(f)))
+        return tuple(os.path.join(self.path, filename) for filename in sorted(os.listdir(self.path), key=lambda f: '{0:010}'.format(int(f))))
 
     @property
     @lru_cache()
