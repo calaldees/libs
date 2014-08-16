@@ -1,6 +1,7 @@
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+#sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from unittest.mock import Mock
 
 import pytest
 import tempfile
@@ -109,6 +110,7 @@ def test_upload():
             'Session-ID': 1111215056,
         })
         request.registry.settings = {'upload.path': tempdir}
+        request.route_url = Mock(return_value='')
         request.body = ('y' * 51111).encode('utf-8')  # fake body content
         response = Upload(request).post()
         
@@ -123,4 +125,8 @@ def test_upload():
         #<response body>
         
         assert response['files'][0]['name'] == 'big.TXT'
-        
+        assert response['files'][0]['size'] == 511920
+        with open(os.path.join(tempdir, 'big.TXT'), 'rb') as file:
+            data = file.read()
+            assert chr(data[0]) == 'x'
+            assert chr(data[-1]) == 'y'

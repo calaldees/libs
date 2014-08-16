@@ -81,7 +81,7 @@ class AbstractFileUploadHandler(object):
         return [f for f in os.listdir(self._path_upload())]
     
     def fileinfo(self, name=None):
-        if name==None and hasattr(self, name):
+        if name==None:  # and hasattr(self, name):  # Why the fuck was this ever here?
             name = self.name
         assert name, 'filename required to aquire file info'
         filename = os.path.join(self._path_upload, name)
@@ -264,9 +264,10 @@ class FileUploadChunkHandler(FileUploadChunkDetails):
 
     def fileinfo(self):
         if self.complete:
-            return super(AbstractFileUploadHandler, self).fileinfo()
+            return super(FileUploadChunkDetails, self).fileinfo()
         else:
-            return super().fileinfo()
+            #return super().fileinfo()
+            return super(FileUploadChunkHandler, self).fileinfo()
 
     def files(self):
         return (self.fileinfo(),)
