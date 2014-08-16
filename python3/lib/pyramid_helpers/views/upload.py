@@ -216,6 +216,8 @@ class FileUploadChunkHandler(FileUploadChunkDetails):
             pass
         with open(self.path_chunk_current, 'wb') as f:
             f.write(chunk)
+        # After writing chunk self.bytes_recived and self.chunk_filenames need to be invalidated.
+        # If they havent been called before this point then everything is fine.
     
     @property
     @lru_cache()

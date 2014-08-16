@@ -1,11 +1,10 @@
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-import copy
 import tempfile
 
-#from pyramid.request import Request
 from pyramid.testing import DummyRequest
 from lib.pyramid_helpers.views.upload import Upload
 
@@ -86,6 +85,10 @@ def test_upload():
         assert response == '0-51200/511920'
         assert request.response.headers['Range'] == '0-51200/511920'
         
+        # Simulate writing the middle of file
+        with open(os.path.join(tempdir, '1111215056', 'big.TXT', '51200'), 'wb') as file:
+            file.write(('z' * 409608).encode('utf-8'))
+
         #Example 3: Request from client containing the last segment of the file
         #
         #POST /upload HTTP/1.1
