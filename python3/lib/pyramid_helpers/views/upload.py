@@ -62,7 +62,8 @@ class AbstractFileUploadHandler(object):
         return self.request.registry.settings.get('upload.path','upload')
     
     def file_route(self, name):
-        return self.request.route_url(self.request.registry.settings.get('upload.file_route','uploaded')) + name
+        # todo - urljoin? os.path.join?
+        return self.request.route_url(self.request.registry.settings.get('upload.url.path.uploaded','uploaded')) + name
     
     @property
     def delete_method(self):
@@ -78,7 +79,7 @@ class AbstractFileUploadHandler(object):
         return url
     
     def filelist(self):
-        return [f for f in os.listdir(self._path_upload())]
+        return [f for f in os.listdir(self._path_upload)]
     
     def fileinfo(self, name=None):
         if name==None:  # and hasattr(self, name):  # Why the fuck was this ever here?

@@ -46,12 +46,13 @@ def decorator_combine(*dec_funs):
         return f
     return _inner_chain
 
+
 def json_object_handler(obj):
     """
     Used with json lib to serialize json output
     e.g
     text = json.dumps(result, default=json_object_handler)
-    
+
     >>> json_object_handler(datetime.datetime(year=2000, month=1, day=1))
     '2000-01-01T00:00:00'
     >>> json_object_handler(datetime.timedelta(days=1, seconds=1))
@@ -67,24 +68,28 @@ def json_object_handler(obj):
         return tuple(obj)
     raise TypeError
 
+
 def json_object_handler_inverse(obj):
     """
     Totally inefficent re-date json parser thing ... blarg ...
     """
     if isinstance(obj, dict):
-        return {k:json_object_handler_inverse(v) for k,v in obj.items()}
+        return {k: json_object_handler_inverse(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [json_object_handler_inverse(o) for o in obj]
     if isinstance(obj, str):
-        if re.match(r'\d+-\d+-\d+T\d+:\d+:\d+',obj):
+        if re.match(r'\d+-\d+-\d+T\d+:\d+:\d+', obj):
             return convert_str(obj, datetime.datetime)
     return obj
+
 
 def json_string(data):
     return json.dumps(data, default=json_object_handler)
 
+
 def json_load(json_string):
     return json_object_handler_inverse(json.loads(json_string))
+
 
 def read_json(filename):
     with open(filename, 'r') as source:
@@ -97,7 +102,8 @@ def read_json(filename):
         #except Exception as e:
         #    log.warn('Failed to process %s' % source)
 
-FileScan = collections.namedtuple('FileScan',['folder', 'file', 'absolute','relative'])
+
+FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative'])
 def file_scan(path, file_regex, ignore_regex=r'\.git'):
     """
     return (folder, file, folder+file, folder-path+file)
@@ -112,7 +118,7 @@ def file_scan(path, file_regex, ignore_regex=r'\.git'):
     for root, dirs, files in os.walk(path):
         if ignore_regex.search(root):
             continue
-        file_list += [FileScan(root, f, os.path.join(root, f), os.path.join(root.replace(path, ''),f).strip('/'))
+        file_list += [FileScan(root, f, os.path.join(root, f), os.path.join(root.replace(path, ''), f).strip('/'))
                       for f in files if file_regex.match(f)]
     return file_list
 
@@ -121,7 +127,7 @@ def hash_data(data):
     hash = hashlib.sha1()
     hash.update(str(data).encode())
     return hash.hexdigest()
-    
+
 
 def hash_files(files):
     """
@@ -135,12 +141,12 @@ def get_fileext(filename):
         return re.search(r'\.([^\.]+)$', filename).group(1).lower()
     except:
         return None
-    
+
 
 def update_dict(dict_a, dict_b):
     """
     Because dict.update(d) does not return the new dict
-    
+
     Updates dict_a with the contents of dict_b
 
     ## Can't rely on dict order between versions of python - fix this test 
@@ -209,6 +215,7 @@ def substring_in(substrings, string_list, ignore_case=True):
                 return True
     return False
 
+
 def normalize_datetime(d=None, accuracy='hour'):
     """
     Normalizez datetime down to hour or day
@@ -216,15 +223,16 @@ def normalize_datetime(d=None, accuracy='hour'):
     """
     if not d:
         d = now()
-    if not accuracy or accuracy=='none':
+    if not accuracy or accuracy == 'none':
         return None
-    elif accuracy=='hour':
+    elif accuracy == 'hour':
         return d.replace(minute=0, second=0, microsecond=0)
-    elif accuracy=='day' :
+    elif accuracy == 'day' :
         return d.replace(minute=0, second=0, microsecond=0, hour=0)
-    elif accuracy=='week':
+    elif accuracy == 'week':
         return d.replace(minute=0, second=0, microsecond=0, hour=0) - datetime.timedelta(days=d.weekday())
     return d
+
 
 def parse_timedelta(text):
     """
@@ -232,7 +240,7 @@ def parse_timedelta(text):
 
     ##>>> parse_timedelta('00:01:00.01')
     ##datetime.timedelta(0, 60, 1)
-    
+
     >>> parse_timedelta('00:00:01.00')
     datetime.timedelta(0, 1)
     >>> parse_timedelta('01:00:00')
@@ -278,12 +286,12 @@ def strip_non_base_types(d):
     """
     Recursively steps though a python dictionary
     Identifies strings and removes/replaces harmful/unwanted characters + collapses white space
-    
+
     (The tests below rely on the dict ordering in the output, if pythons dict ordering changes this will break)
-    
+
     >>> strip_non_base_types('a')
     'a'
-    
+
     ## Cant reply on dict order between versions of python
     ##>>> strip_non_base_types({'a':1, 'b':'2', 'c':[3,4,5], 'd':{'e':'6'}})
     ##{'a': 1, 'c': [3, 4, 5], 'b': '2', 'd': {'e': '6'}}
@@ -291,15 +299,16 @@ def strip_non_base_types(d):
     ##{'a': 1, 'c': [3, 4, 5], 'b': '2', 'd': {'e': None}}
 
     """
-    for t in [str,int,float,bool]:
-        if isinstance(d,t):
+    for t in [str, int, float, bool]:
+        if isinstance(d, t):
             return d
     if hasattr(d, 'items'):
-        return {key:strip_non_base_types(value) for key, value in d.items()}
-    for t in [list,set,tuple]:
+        return {key: strip_non_base_types(value) for key, value in d.items()}
+    for t in [list, set, tuple]:
         if isinstance(d,t):
             return [strip_non_base_types(value) for value in d]
     return None
+
 
 def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     """
@@ -324,7 +333,7 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
 def convert_str(value, return_type):
     """
     >>> convert_str('', 'None')
-    
+
     >>> convert_str('bob', None)
     'bob'
     >>> convert_str('1', int)
@@ -350,38 +359,38 @@ def convert_str(value, return_type):
     >>> convert_str('0:00:01', 'timedelta')
     datetime.timedelta(0, 1)
     """
-    if return_type=='None':
+    if return_type == 'None':
         return None
-    if not value or not isinstance(value, str) or return_type==str or return_type=='str':
+    if not value or not isinstance(value, str) or return_type == str or return_type == 'str':
         return value
     if value.startswith('[') and value.endswith(']'):
         value = value[1:-1]
         if not value:
             return []
-        if return_type=='list' or return_type==list: #If already a list, revert to string contents
-            return_type=str
+        if return_type == 'list' or return_type == list:  # If already a list, revert to string contents
+            return_type = str
         return [convert_str(v.strip(), return_type) for v in value.split(',')]
     if value.startswith('{') and value.endswith('}'):
         return json_load(value)
     if not return_type:
         return value
-    if return_type=='bool' or return_type==bool:
+    if return_type == 'bool' or return_type == bool:
         return asbool(value)
-    if return_type=='int' or return_type==int:
+    if return_type == 'int' or return_type == int:
         return int(value)
-    if return_type=='float' or return_type==float:
+    if return_type == 'float' or return_type == float:
         return float(value)
-    if return_type=='time' or return_type==datetime.time:
+    if return_type == 'time' or return_type == datetime.time:
         return dateutil_parser.parse(value).time()
-    if return_type=='date' or return_type==datetime.date:
+    if return_type == 'date' or return_type == datetime.date:
         return dateutil_parser.parse(value).date()
-    if return_type=='datetime' or return_type==datetime.datetime:
+    if return_type == 'datetime' or return_type == datetime.datetime:
         return dateutil_parser.parse(value)
-    if return_type=='timedelta' or return_type==datetime.timedelta:
+    if return_type == 'timedelta' or return_type == datetime.timedelta:
         return parse_timedelta(value)
-    if return_type=='list' or return_type==list:
+    if return_type == 'list' or return_type == list:
         return [v.strip() for v in value.split(',') if v.strip()]
-    if return_type=='jsonfile':
+    if return_type == 'jsonfile':
         return read_json(value)
     assert False, 'unable to convert {0} to {1}'.format(value, return_type)
 
@@ -411,8 +420,10 @@ class OrderedDefaultdict(collections.OrderedDict):
     def last(self):
         return reversed(self).__next__()
 
+
 def defaultdict_recursive():
     return collections.defaultdict(defaultdict_recursive)
+
 
 def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func_list=os.listdir, func_exisits=os.path.exists):
     """
@@ -443,4 +454,3 @@ def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func
     )
     backup_filename = os.path.join(destination_folder, '{0}.{1}.bak'.format(filename, new_backup_number))
     return func_copy(source_filename, backup_filename)
-    
