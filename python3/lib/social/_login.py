@@ -1,3 +1,5 @@
+import hashlib
+import requests
 
 from collections import namedtuple
 
@@ -47,7 +49,7 @@ class FacebookLogin(LoginProvider):
                 permissions=request.registry.settings.get('facebook.permissions'),
                 redirect_uri=request.path_url,
             )
-            return dict(facebook_dialog_url=facebook_dialog_url)
+            return dict(redirect_url=facebook_dialog_url)
 
     def verify_cridentials(request):
         if request.params.get('code') and request.params.get('state'):
@@ -68,5 +70,47 @@ class FacebookLogin(LoginProvider):
     def aquire_additional_user_details(provider_token):
         fb = facebook.facebook(access_token=provider_token.token)
         user_data = fb.api('me')
-        user_data['avatar'] = facebook.endpoints['avatar'].format(user_data.get('id'))
+        user_data['avatar_img'] = facebook.endpoints['avatar'].format(user_data.get('id'))
         return user_data
+
+
+class PersonaLogin(LoginProvider):
+    """
+    https://developer.mozilla.org/en-US/Persona/Quick_Setup
+    """
+
+    #def header_include():
+    #    return '<script src="https://login.persona.org/include.js"></script>'
+
+    def display_login_dialog(request):
+        if not request.params.get('assertion'):
+            #facebook_dialog_url = facebook.login_dialog_url(
+            #    appid=request.registry.settings.get('facebook.appid'),
+            ##    csrf_token=request.session['csrf_token'],
+            #    permissions=request.registry.settings.get('facebook.permissions'),
+            #    redirect_uri=request.path_url,
+            #)
+            return dict(run_js='navigator.id.request();')
+
+    def verify_cridentials(request):
+        if request.params.get('assertion'):
+            "assertion=<ASSERTION>&audience=https://example.com:443" "https://verifier.login.persona.org/verify"
+            response = requests.post(
+                'https://verifier.login.persona.org/verify',
+                data={
+                    'assertion': request.params.get('assertion'),
+                    'audience': request.registry.settings.get('server.url')
+                },
+                verify=True
+            )
+            if response.ok and response.json['status'] == 'okay':
+                return ProviderToken('persona', response.json['email'])
+        raise LoginProviderException(response.content)
+
+
+    def aquire_additional_user_details(provider_token):
+        return dict(
+            avatar_img='http://www.gravatar.com/avatar/{0}'.format(
+                hashlib.md5(provider_token.encode('utf-8')).hexdigest()
+            )
+        )
