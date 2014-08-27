@@ -79,8 +79,42 @@ class PersonaLogin(LoginProvider):
     https://developer.mozilla.org/en-US/Persona/Quick_Setup
     """
 
-    #def header_include():
-    #    return '<script src="https://login.persona.org/include.js"></script>'
+    def html_include():
+        """
+        Rather than having to edit multiple static js files and headers
+        Keep all js and server flow in one place
+        Slightly fugly having js/html in a py file, but there are benefits
+
+        'currentUserEmail' needs to be set previously in the js for this to function
+        """
+        return """
+            <script src="https://login.persona.org/include.js"></script>
+            <script type="text/javascript">
+                navigator.id.watch({
+                    loggedInUser: currentUserEmail,
+                    onlogin: function(assertion) {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/auth/login',
+                            data: {assertion: assertion},
+                            success: function(res, status, xhr) { window.location.reload(); },
+                            error: function(xhr, status, err) {
+                                navigator.id.logout();
+                                alert("Login failure: " + err);
+                            }
+                        });
+                    },
+                    onlogout: function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/auth/logout',
+                            success: function(res, status, xhr) { window.location.reload(); },
+                            error: function(xhr, status, err) { alert("Logout failure: " + err); }
+                        });
+                    }
+                });
+            </script>
+        """
 
     def display_login_dialog(request):
         if not request.params.get('assertion'):
