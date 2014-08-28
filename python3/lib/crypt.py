@@ -23,23 +23,27 @@ class Cryptor(object):
         Add custom json serializer support
         pbkdf2 for keygen
     """
-    DEFAULT_METHOD = AES
+    SIGNITURE_SIZE = 16  # hmac is 24 bytes
     BLOCK_SIZE = 16
     PADDING = '|'
+    DEFAULT_METHOD = AES
+    DEFAULT_METHOD_KWARGS = dict(mode=AES.MODE_CBC)
 
-    def __init__(self, secret=None, method=DEFAULT_METHOD, block_size=BLOCK_SIZE, padding=PADDING):
+    def __init__(self, secret, block_size=BLOCK_SIZE, padding=PADDING, method=DEFAULT_METHOD, method_kwargs=DEFAULT_METHOD_KWARGS, iv=None):
         """
         secret: should be bytes and as long as possible (will accept strings)
         """
-        self.method = method
+        assert secret, 'A secret key is required'
         self.block_size = block_size
         self.padding = padding
-        if not secret:
-            secret = os.urandom(block_size)
+        self.method = method
+        self.method_kwargs = method_kwargs
         if isinstance(secret, str):
             secret = secret.encode('utf-8')
         self.secret_signiture = self._pad(secret[:len(secret)//2])
         self.secret_message = self._pad(secret[len(secret)//2:])
+        self.iv = iv if iv else os.urandom(block_size)
+        self.method_kwargs['IV'] = iv
 
     def _pad(self, data):
         padding = self.padding
@@ -52,33 +56,34 @@ class Cryptor(object):
         Encrypt a python datastructure with a key as a base 64 string
         The first 24 characters of the output will be an hmac signiture
         >>> data = {'a': [1, 2, 3]}
-        >>> Cryptor(secret='password').encrypt(data)
-        b'eL5bb+XudySkaU0xnoBHQg==eE+yuXQCMrMtpplSJ/2oAyyPd2oolF9sue4UkXsDx60='
+        >>> Cryptor(secret='password', iv=b'1'*16).encrypt(data)
+        b'IZYmd2E81RengaMT804WsDExMTExMTExMTExMTExMTEEeNyxU69k28VEyGKw8dLpMe3EPfJv81UGbNEK6iBZgw=='
         """
-        msg = base64.b64encode(
-            self.method.new(self.secret_message).encrypt(
-                self._pad(
-                    json.dumps(data)
-                ).encode('utf-8')
-            )
+        msg = self.method.new(key=self.secret_message, **self.method_kwargs).encrypt(
+            self._pad(
+                json.dumps(data)
+            ).encode('utf-8')
         )
-        signiture = base64.b64encode(hmac.new(self.secret_signiture, msg).digest())
-        return signiture + msg
+        signiture = hmac.new(self.secret_signiture, msg).digest()
+        return base64.b64encode(signiture + self.iv + msg)
 
     def decrypt(self, data):
         """
         Decrypt an encrypted base 64 string into a python datastructure using a key
         The first 24 characters of the input will be an hmac signiture
-        >>> data = b'eL5bb+XudySkaU0xnoBHQg==eE+yuXQCMrMtpplSJ/2oAyyPd2oolF9sue4UkXsDx60='
+        The next 'block_size' of bytes could be an IV (if one was used at setup)
+        >>> data = b'IZYmd2E81RengaMT804WsDExMTExMTExMTExMTExMTEEeNyxU69k28VEyGKw8dLpMe3EPfJv81UGbNEK6iBZgw=='
         >>> Cryptor(secret='password').decrypt(data)
         {'a': [1, 2, 3]}
         """
-        signiture = base64.b64decode(data[:24])
-        msg = data[24:]
+        data = base64.b64decode(data)
+        signiture = data[:self.SIGNITURE_SIZE]
+        self.method_kwargs['IV'] = data[self.SIGNITURE_SIZE: self.SIGNITURE_SIZE + self.block_size]
+        msg = data[self.SIGNITURE_SIZE + self.block_size:]
         if not hmac.compare_digest(signiture, hmac.new(self.secret_signiture, msg).digest()):
             raise Exception('Signiture not valid. We did not generate the encrypted message.')
         return json.loads(
-            self.method.new(self.secret_message).decrypt(
-                base64.b64decode(msg)
+            self.method.new(key=self.secret_message, **self.method_kwargs).decrypt(
+                msg
             ).decode('utf-8').rstrip(self.padding)
         )
