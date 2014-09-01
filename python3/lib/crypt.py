@@ -38,12 +38,14 @@ class Cryptor(object):
         self.padding = padding
         self.method = method
         self.method_kwargs = method_kwargs
+        # ensure our keys our just plain bytes (it is not recomended to use plain strings)
         if isinstance(secret, str):
             secret = secret.encode('utf-8')
+        # Split the key in two so we have differnt keys for signiture and msg
         self.secret_signiture = self._pad(secret[:len(secret)//2])
         self.secret_message = self._pad(secret[len(secret)//2:])
+        # initalise random iv (an iv can be passed for consistant testing)
         self.iv = iv if iv else os.urandom(block_size)
-        self.method_kwargs['IV'] = iv
 
     def _pad(self, data):
         padding = self.padding
@@ -54,12 +56,17 @@ class Cryptor(object):
     def encrypt(self, data):
         """
         Encrypt a python datastructure with a key as a base 64 string
-        The first 24 characters of the output will be an hmac signiture
+        The first 16 bytes of the output will be an hmac signiture
+        The next BLOCK_SIZE of bytes will the IV (initalisation vector)
         >>> data = {'a': [1, 2, 3]}
         >>> Cryptor(secret='password', iv=b'1'*16).encrypt(data)
         b'IZYmd2E81RengaMT804WsDExMTExMTExMTExMTExMTEEeNyxU69k28VEyGKw8dLpMe3EPfJv81UGbNEK6iBZgw=='
         """
-        msg = self.method.new(key=self.secret_message, **self.method_kwargs).encrypt(
+        # iv's are passed as kwarg params to the encryption method
+        method_kwargs = self.method_kwargs.copy()
+        method_kwargs['IV'] = self.iv
+
+        msg = self.method.new(key=self.secret_message, **method_kwargs).encrypt(
             self._pad(
                 json.dumps(data)
             ).encode('utf-8')
@@ -70,20 +77,24 @@ class Cryptor(object):
     def decrypt(self, data):
         """
         Decrypt an encrypted base 64 string into a python datastructure using a key
-        The first 24 characters of the input will be an hmac signiture
-        The next 'block_size' of bytes could be an IV (if one was used at setup)
+        The first 16 bytes of the input will be an hmac signiture
+        The next BLOCK_SIZE of bytes will be the IV (initalisation vector)
+        The rest of the bytes are the message
         >>> data = b'IZYmd2E81RengaMT804WsDExMTExMTExMTExMTExMTEEeNyxU69k28VEyGKw8dLpMe3EPfJv81UGbNEK6iBZgw=='
         >>> Cryptor(secret='password').decrypt(data)
         {'a': [1, 2, 3]}
         """
         data = base64.b64decode(data)
         signiture = data[:self.SIGNITURE_SIZE]
-        self.method_kwargs['IV'] = data[self.SIGNITURE_SIZE: self.SIGNITURE_SIZE + self.block_size]
+        iv = data[self.SIGNITURE_SIZE: self.SIGNITURE_SIZE + self.block_size]
         msg = data[self.SIGNITURE_SIZE + self.block_size:]
         if not hmac.compare_digest(signiture, hmac.new(self.secret_signiture, msg).digest()):
             raise Exception('Signiture not valid. We did not generate the encrypted message.')
+
+        method_kwargs = self.method_kwargs.copy()
+        method_kwargs['IV'] = iv
         return json.loads(
-            self.method.new(key=self.secret_message, **self.method_kwargs).decrypt(
+            self.method.new(key=self.secret_message, **method_kwargs).decrypt(
                 msg
             ).decode('utf-8').rstrip(self.padding)
         )
