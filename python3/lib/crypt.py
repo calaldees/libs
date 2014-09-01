@@ -32,6 +32,7 @@ class Cryptor(object):
     def __init__(self, secret, block_size=BLOCK_SIZE, padding=PADDING, method=DEFAULT_METHOD, method_kwargs=DEFAULT_METHOD_KWARGS, iv=None):
         """
         secret: should be bytes and as long as possible (will accept strings)
+        method: a cryptor method that has a .new() method - can be 'None' if you just want signed messages
         """
         assert secret, 'A secret key is required'
         self.block_size = block_size
@@ -45,7 +46,9 @@ class Cryptor(object):
         self.secret_signiture = self._pad(secret[:len(secret)//2])
         self.secret_message = self._pad(secret[len(secret)//2:])
         # initalise random iv (an iv can be passed for consistant testing)
-        self.iv = iv if iv else os.urandom(block_size)
+        self.iv = b''
+        if self.method:
+            self.iv = iv if iv else os.urandom(block_size)
 
     def _pad(self, data):
         padding = self.padding
@@ -62,16 +65,19 @@ class Cryptor(object):
         >>> Cryptor(secret='password', iv=b'1'*16).encrypt(data)
         b'IZYmd2E81RengaMT804WsDExMTExMTExMTExMTExMTEEeNyxU69k28VEyGKw8dLpMe3EPfJv81UGbNEK6iBZgw=='
         """
-        # iv's are passed as kwarg params to the encryption method
-        method_kwargs = self.method_kwargs.copy()
-        method_kwargs['IV'] = self.iv
+        # Json encode message
+        msg = self._pad(json.dumps(data)).encode('utf-8')
 
-        msg = self.method.new(key=self.secret_message, **method_kwargs).encrypt(
-            self._pad(
-                json.dumps(data)
-            ).encode('utf-8')
-        )
+        # Encrypt msg (if we have an encryption method)
+        if self.method:
+            method_kwargs = self.method_kwargs.copy()
+            method_kwargs['IV'] = self.iv  # iv's are passed as kwarg params to the encryption method
+            msg = self.method.new(key=self.secret_message, **method_kwargs).encrypt(msg)
+
+        # Generate signiture
         signiture = hmac.new(self.secret_signiture, msg).digest()
+
+        # base64 everything
         return base64.b64encode(signiture + self.iv + msg)
 
     def decrypt(self, data):
@@ -84,17 +90,26 @@ class Cryptor(object):
         >>> Cryptor(secret='password').decrypt(data)
         {'a': [1, 2, 3]}
         """
+        MSG_START = self.SIGNITURE_SIZE
+        if self.method:
+            MSG_START = self.SIGNITURE_SIZE + self.block_size
+
+        # base64 decode everything
         data = base64.b64decode(data)
+
+        # get signiture and msg
         signiture = data[:self.SIGNITURE_SIZE]
-        iv = data[self.SIGNITURE_SIZE: self.SIGNITURE_SIZE + self.block_size]
-        msg = data[self.SIGNITURE_SIZE + self.block_size:]
+        msg = data[MSG_START:]
+
+        # Check signiture
         if not hmac.compare_digest(signiture, hmac.new(self.secret_signiture, msg).digest()):
             raise Exception('Signiture not valid. We did not generate the encrypted message.')
 
-        method_kwargs = self.method_kwargs.copy()
-        method_kwargs['IV'] = iv
-        return json.loads(
-            self.method.new(key=self.secret_message, **method_kwargs).decrypt(
-                msg
-            ).decode('utf-8').rstrip(self.padding)
-        )
+        # Decrypt (if method provided)
+        if self.method:
+            method_kwargs = self.method_kwargs.copy()
+            method_kwargs['IV'] = data[self.SIGNITURE_SIZE: MSG_START]
+            msg = self.method.new(key=self.secret_message, **method_kwargs).decrypt(msg)
+
+        # Json decode
+        return json.loads(msg.decode('utf-8').rstrip(self.padding))
