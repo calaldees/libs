@@ -142,6 +142,12 @@ def get_fileext(filename):
     except:
         return None
 
+def extract_subkeys(data, subkey):
+    """
+    >>> frozenset(extract_subkeys({'a.a':1, 'a.b':2, 'b.a': 3}, 'a.'))
+    frozenset({'a', 'b'})
+    """
+    return {k.replace(subkey, ''): v for k, v in data.items() if k.startswith(subkey)}
 
 def update_dict(dict_a, dict_b):
     """
