@@ -91,6 +91,23 @@ def json_load(json_string):
     return json_object_handler_inverse(json.loads(json_string))
 
 
+class json_serializer(object):
+    """
+    http://docs.pylonsproject.org/projects/pyramid/en/master/api/session.html#pyramid.session.SignedCookieSessionFactory
+    An object with two methods:
+        loads and dumps.
+    The loads method should accept bytes and return a Python object.
+    The dumps method should accept a Python object and return bytes.
+    A ValueError should be raised for malformed inputs.
+    """
+    def loads(json_string):
+        if isinstance(json_string, bytes):
+            json_string = json_string.decode('utf-8')
+        return json_load(json_string)
+    def dumps(obj):
+        return json_string(obj).encode('utf-8')
+
+
 def read_json(filename):
     with open(filename, 'r') as source:
         #try:
