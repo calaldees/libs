@@ -161,8 +161,8 @@ def get_fileext(filename):
 
 def extract_subkeys(data, subkey):
     """
-    >>> frozenset(extract_subkeys({'a.a':1, 'a.b':2, 'b.a': 3}, 'a.'))
-    frozenset({'a', 'b'})
+    >>> sorted(extract_subkeys({'a.a':1, 'a.b':2, 'b.a': 3}, 'a.').items())
+    [('a', 1), ('b', 2)]
     """
     return {k.replace(subkey, ''): v for k, v in data.items() if k.startswith(subkey)}
 
