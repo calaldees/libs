@@ -172,10 +172,9 @@ def update_dict(dict_a, dict_b):
 
     Updates dict_a with the contents of dict_b
 
-    ## Can't rely on dict order between versions of python - fix this test 
-    ##>>> a = {'a': 1, 'b': 2}
-    ##>>> update_dict(a, {'b': 3, 'c': 3})
-    ##{'a': 1, 'c': 3, 'b': 3}
+    >>> a = {'a': 1, 'b': 2}
+    >>> sorted(update_dict(a, {'b': 3, 'c': 3}).items())
+    [('a', 1), ('b', 3), ('c', 3)]
     """
     dict_a.update(dict_b)
     return dict_a
@@ -193,9 +192,8 @@ def random_string(length=8):
 
     If random, it should compress pretty badly:
 
-    # TODO (python3 needs a buffer here)
-    #>>> import zlib
-    #>>> len(zlib.compress(random_string(100))) > 50
+    >>> import zlib
+    >>> len(zlib.compress(random_string(100).encode('utf-8'))) > 50
     True
     """
     random_symbols = '1234567890bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
