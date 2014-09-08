@@ -115,11 +115,11 @@ def websocket_frame_decode_hybi10(data):
     if   payload_length == 126:
         extended_payload_length = 2
         data_start_point += extended_payload_length
-        raise Exception('unsuported payload length')
+        #raise Exception('unsuported payload length')  # Exceptions were here because the payload length was not tested, they seem to work?
     elif payload_length == 127:
         extended_payload_length = 8
         data_start_point += extended_payload_length
-        raise Exception('unsuported payload length')
+        #raise Exception('unsuported payload length')
     
     # Mask
     masking_key = [0,0,0,0]
