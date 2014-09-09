@@ -143,7 +143,9 @@ def auto_format_output(target, *args, **kwargs):
     # Attempt auto_format if result is a plain python dict and auto_format func exisits
     if isinstance(result, dict):
         # Add pending flash messages to result dict
-        result['messages'] = result.get('messages',[]) + request.session.pop_flash()
+        result['messages'] = result.get('messages',[])
+        if request.session.peek_flash():
+            result['messages'] += request.session.pop_flash()
 
         for formatter in filter(lambda i: i, [_auto_formaters.get(format) for format in formats]):
             try:
