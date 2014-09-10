@@ -85,7 +85,7 @@ def max_age(gen_max_age_seconds=_generate_max_age_seconds_default, **options):
 #-------------------------------------------------------------------------------
 
 def method_delete_router(info, request):
-    if request.method == 'DELETE' or request.params.get('method','GET').upper() == 'DELETE':
+    if request.method.upper() == 'DELETE' or request.params.get('method','GET').upper() == 'DELETE':
         return True
 
 def method_put_router(info, request):
