@@ -63,7 +63,10 @@ class AbstractFileUploadHandler(object):
     
     def file_route(self, name):
         # todo - urljoin? os.path.join?
-        return self.request.route_url(self.request.registry.settings.get('upload.url.path.uploaded','uploaded')) + name
+        return '{0}/{1}'.format(
+            self.request.route_url(self.request.registry.settings.get('upload.route.uploaded','uploaded')),
+            name,
+        )
     
     @property
     def delete_method(self):
