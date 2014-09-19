@@ -54,7 +54,7 @@ class IUserStore(object):
         """
         pass
 
-    def create_user(self, data):
+    def create_user(self, provider_token, data):
         """
         No need to return anything
         This function creates a user in perisistant store.
