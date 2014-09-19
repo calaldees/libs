@@ -8,7 +8,7 @@ ProviderToken = namedtuple('ProviderToken', ['provider', 'token'])
 from . import facebook
 
 
-class LoginProvider(object):
+class ILoginProvider(object):
     """
     Not needed, but here to document the methods a LoginProvider should implement
     """
@@ -16,50 +16,95 @@ class LoginProvider(object):
     def __init__(self):
         pass
 
-    def display_login_dialog(request):
+    def html_include(self):
+        return ''
+
+    def login_dialog_data(self, request):
         """
         Should check if the required state is present to show dialog
         Then return dict with details for this provider for the template to render
         """
-        return False
+        return {}
 
-    def verify_cridentials(request):
+    def verify_cridentials(self, request):
         """
         Returns a ProviderToken
         """
         return None
 
-    def aquire_additional_user_details(provider_token):
+    def aquire_additional_user_details(self, provider_token):
         """
         """
         return {}
+
+
+class IUserStore(object):
+    """
+    """
+    def __init__(self):
+        pass
+
+    def get_user_from_token(self, provider_token):
+        """
+        a provider_token has
+          .provider (the string of the provider)
+          .token (the token given)
+        This is to lookup a user from a local db store
+        should return None if no user is found
+        """
+        pass
+
+    def create_user(self, data):
+        """
+        No need to return anything
+        This function creates a user in perisistant store.
+        The user is always retrived by .get_user_from_token
+        """
+        pass
+
+    def user_to_session_dict(self, user):
+        """
+        Convert a user object into a dict for the session
+        We may not want all of the data in the object in the session
+        """
+        pass
+
+
+class NullLoginProvider(ILoginProvider):
+
+    def verify_cridentials(self, request):
+        return ProviderToken('', '')
 
 
 class LoginProviderException(Exception):
     failed_to_verify_cridentials = 1
 
 
-class FacebookLogin(LoginProvider):
+class FacebookLogin(ILoginProvider):
 
-    def display_login_dialog(request):
-        if not request.params.get('code'):
-            facebook_dialog_url = facebook.login_dialog_url(
-                appid=request.registry.settings.get('facebook.appid'),
-                csrf_token=request.session['csrf_token'],
-                permissions=request.registry.settings.get('facebook.permissions'),
-                redirect_uri=request.path_url,
-            )
-            return dict(redirect_url=facebook_dialog_url)
+    def __init__(self, appid, secret, permissions):
+        self.appid = appid
+        self.secret = secret
+        self.permissions = permissions
 
-    def verify_cridentials(request):
+    def login_dialog_data(self, request):
+        facebook_dialog_url = facebook.login_dialog_url(
+            appid=self.appid,
+            csrf_token=request.session['csrf_token'],
+            permissions=self.permissions,
+            redirect_uri=request.path_url,
+        )
+        return dict(redirect_url=facebook_dialog_url)
+
+    def verify_cridentials(self, request):
         if request.params.get('code') and request.params.get('state'):
             if request.params.get('state') != request.session.get('csrf_token'):
                 raise LoginProviderException('csrf mismatch')  # 400
             # Check submited code with facebook
             response = facebook.call_api(
                 'oauth/access_token',
-                client_id     = request.registry.settings.get('facebook.appid'),
-                client_secret = request.registry.settings.get('facebook.secret'),
+                client_id     = self.appid,
+                client_secret = self.secret,
                 redirect_uri  = request.path_url,
                 code          = request.params.get('code'),
             )
@@ -74,12 +119,12 @@ class FacebookLogin(LoginProvider):
         return user_data
 
 
-class PersonaLogin(LoginProvider):
+class PersonaLogin(ILoginProvider):
     """
     https://developer.mozilla.org/en-US/Persona/Quick_Setup
     """
 
-    def html_include():
+    def html_include(self):
         """
         Rather than having to edit multiple static js files and headers
         Keep all js and server flow in one place
@@ -116,19 +161,13 @@ class PersonaLogin(LoginProvider):
             </script>
         """
 
-    def display_login_dialog(request):
+    def display_login_dialog(self, request):
         if not request.params.get('assertion'):
-            #facebook_dialog_url = facebook.login_dialog_url(
-            #    appid=request.registry.settings.get('facebook.appid'),
-            ##    csrf_token=request.session['csrf_token'],
-            #    permissions=request.registry.settings.get('facebook.permissions'),
-            #    redirect_uri=request.path_url,
-            #)
             return dict(run_js='navigator.id.request();')
 
-    def verify_cridentials(request):
+    def verify_cridentials(self, request):
         if request.params.get('assertion'):
-            "assertion=<ASSERTION>&audience=https://example.com:443" "https://verifier.login.persona.org/verify"
+            #"assertion=<ASSERTION>&audience=https://example.com:443" "https://verifier.login.persona.org/verify"
             response = requests.post(
                 'https://verifier.login.persona.org/verify',
                 data={
@@ -141,8 +180,7 @@ class PersonaLogin(LoginProvider):
                 return ProviderToken('persona', response.json['email'])
         raise LoginProviderException(response.content)
 
-
-    def aquire_additional_user_details(provider_token):
+    def aquire_additional_user_details(self, provider_token):
         return dict(
             avatar_img='http://www.gravatar.com/avatar/{0}'.format(
                 hashlib.md5(provider_token.encode('utf-8')).hexdigest()
