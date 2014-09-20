@@ -21,7 +21,7 @@ def login(request, login_provider, user_store):
     """
     assert login_provider
     assert user_store
-    user = None
+
     provider_token = None
 
     # Step 1 - Direct user to 3rd party login dialog ---------------------------
