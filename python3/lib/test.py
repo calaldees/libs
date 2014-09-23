@@ -1,4 +1,5 @@
-from unittest.mock import mock_open
+from unittest.mock import Mock
+
 
 
 class MultiMockOpen(object):
@@ -11,6 +12,10 @@ class MultiMockOpen(object):
     def open(self, full_path, *args, **kwargs):
         for filename, reads in self.handlers.items():
             if filename in full_path:
-                return mock_open(read_data=self.handlers[filename])
+                _open = Mock()
+                _open.read.return_value = reads
+                _open.__exit__ = lambda *args, **kwargs: None
+                _open.__enter__ = lambda *args, **kwargs: _open
+                return _open
         assert full_path in self.handlers, 'Unknown file to mock {0}'.format(full_path)
 
