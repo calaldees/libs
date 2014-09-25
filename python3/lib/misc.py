@@ -121,7 +121,7 @@ def read_json(filename):
 
 
 FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative'])
-def file_scan(path, file_regex, ignore_regex=r'\.git'):
+def file_scan(path, file_regex='.*', ignore_regex=r'\.git'):
     """
     return (folder, file, folder+file, folder-path+file)
     """
