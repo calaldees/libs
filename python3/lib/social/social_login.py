@@ -6,9 +6,6 @@ from ..pyramid_helpers.auto_format import action_ok, action_error
 import logging
 log = logging.getLogger(__name__)
 
-login_provider = None
-user_store = None
-
 
 def logout(request):
     request.session['user'] = {}

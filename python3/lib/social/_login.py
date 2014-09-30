@@ -12,6 +12,7 @@ class ILoginProvider(object):
     """
     Not needed, but here to document the methods a LoginProvider should implement
     """
+    name = 'unknown'
 
     def __init__(self):
         pass
@@ -81,6 +82,7 @@ class LoginProviderException(Exception):
 
 
 class FacebookLogin(ILoginProvider):
+    name = 'facebook'
 
     def __init__(self, appid, secret, permissions):
         self.appid = appid
@@ -110,7 +112,7 @@ class FacebookLogin(ILoginProvider):
             )
             if response.get('error'):
                 raise LoginProviderException(response.get('error'))
-            return ProviderToken('facebook', response.get('access_token'))
+            return ProviderToken(self.name, response.get('access_token'))
 
     def aquire_additional_user_details(provider_token):
         fb = facebook.facebook(access_token=provider_token.token)
@@ -123,6 +125,7 @@ class PersonaLogin(ILoginProvider):
     """
     https://developer.mozilla.org/en-US/Persona/Quick_Setup
     """
+    name = 'persona'
 
     def html_include(self):
         """
@@ -177,12 +180,12 @@ class PersonaLogin(ILoginProvider):
                 verify=True
             )
             if response.ok and response.json['status'] == 'okay':
-                return ProviderToken('persona', response.json['email'])
+                return ProviderToken(self.name, response.json['email'])
         raise LoginProviderException(response.content)
 
     def aquire_additional_user_details(self, provider_token):
         return dict(
             avatar_img='http://www.gravatar.com/avatar/{0}'.format(
-                hashlib.md5(provider_token.encode('utf-8')).hexdigest()
+                hashlib.md5(provider_token.token.encode('utf-8')).hexdigest()
             )
         )
