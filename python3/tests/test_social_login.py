@@ -17,6 +17,7 @@ def test_logout():
 def test_login_step1_login_dialog():
     request = DummyRequest()
     login_provider = Mock()
+    login_provider.name = 'test_provider'
     user_store = Mock()
 
     login_provider.login_dialog_data = lambda request: {'dialog_instructions': 'redirect_or_something'}
@@ -25,7 +26,7 @@ def test_login_step1_login_dialog():
 
     assert response.get('status') == 'ok'
     assert request.session.get('csrf_token')
-    assert response['data'] == {'dialog_instructions': 'redirect_or_something'}
+    assert response['data']['test_provider'] == {'dialog_instructions': 'redirect_or_something'}
 
 
 def test_login_step2_verify_cridentials_fail():
