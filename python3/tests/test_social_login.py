@@ -4,7 +4,11 @@ from pyramid.testing import DummyRequest
 from lib.pyramid_helpers.auto_format import action_error
 
 from lib.social._login import ProviderToken
-from lib.social.social_login import SocialLogin  #login, logout
+from lib.social.social_login import SocialLogin
+
+# TODO
+#  Test multiple providers
+#  Test html_include
 
 
 def test_logout():
