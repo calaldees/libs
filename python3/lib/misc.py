@@ -22,6 +22,12 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def first(iterable):
+    for i in iterable:
+        if i:
+            return i
+
+
 # TODO - @property to get/set now?
 _now_override = None
 def now(new_override=None):
