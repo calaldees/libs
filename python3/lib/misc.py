@@ -38,6 +38,11 @@ def now(new_override=None):
         return _now_override
     return datetime.datetime.now()
 
+
+def epoc(datetime_obj):
+    return (datetime_obj - datetime.datetime.utcfromtimestamp(0)).total_seconds()
+
+
 import inspect
 def funcname(level=1):
     """Use: print("My name is: %s" % inspect.stack()[0][3])"""
