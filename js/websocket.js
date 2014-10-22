@@ -1,42 +1,51 @@
 // Websocket -------------------------------
 var socket_retry_interval = null;
+
+// Authenicate client with session key on socket connect
+function _websocket_first_message_auth(socket, session_cookie_name) {
+	session_cookie_name = session_cookie_name || "_session";
+	socket.send(document.cookie.match(/session_cookie_name=([^;\s]+)/)[1]);  // Um? this needs to be a variable
+}
+
 function setup_websocket(on_connect, on_message, options) {
-	console.log("setup_websocket");
+	console.debug("setup_websocket", options);
 	
 	//default options
-	//  port
-	//  first_message_session_id_auth
+	options = _.extend({
+		port: 9873,
+		format: 'json',
+		auth: function(socket) {},
+		disconnected_retry_interval: 5,
+	}, options) 
 	
 	$('body').addClass('websocket_disconnected');
 
 	var socket = new WebSocket("ws://"+location.hostname+":"+options.port+"/");
 
-	socket.onopen = function(){ // Authenicate client with session key on socket connect
-		var cookie = document.cookie.match(/_session=(.+?)(\;|\b)/);  // TODO - replace with use of settings['session_key'] or server could just use the actual http-header
-		if (cookie) {
-			socket.send(cookie[1]);
-		}
-		else {
-			console.warn("No session cookie to authenticate websocket write access");
-		}
+	socket.onopen = function() {
+		options.auth(socket);  // optional function to auth once connected
 		$('body').removeClass('websocket_disconnected');
 		if (socket_retry_interval) {
 			clearInterval(socket_retry_interval);
 			socket_retry_interval = null;
 		}
-		console.log("Websocket: Connected");
+		console.debug("websocket: Connected");
 		on_connect();
 	};
 	socket.onclose  = function() {
 		socket = null;
 		$('body').addClass('websocket_disconnected');
-		console.log("Websocket: Disconnected");
+		console.debug("websocket: Disconnected");
 		if (!socket_retry_interval) {
-			socket_retry_interval = setInterval(function(){setup_websocket(on_connect, on_message)}, battlescape.data.settings.websocket.disconnected_retry_interval * 1000);
+			socket_retry_interval = setInterval(function(){setup_websocket(on_connect, on_message, options)}, options.disconnected_retry_interval * 1000);
 		}
 	};
 	socket.onmessage = function(msg) {
-		var data = JSON.parse(msg.data);
-		on_message(data);
+		msg = msg.data;
+		if (options.format=='json') {
+			msg = JSON.parse(msg);
+		}
+		on_message(msg);
 	};
+	
 }
