@@ -8,11 +8,13 @@ function _websocket_first_message_auth(socket, session_cookie_name) {
 
 
 
-function WebSocketReconnect(onopen, onmessage, options) {
+function WebSocketReconnect(options) {
 	console.debug("WebSocketReconnect", options);
 	
 	//default options
 	options = _.extend({
+		onopen: function(){},
+		onmessage: function(){},
 		hostname: location.hostname,
 		port: 9873,
 		format: 'json',
@@ -38,22 +40,22 @@ function WebSocketReconnect(onopen, onmessage, options) {
 	};
 	
 	// Internal method
-	function _init() {__init(onopen, onmessage, options);}
-	function __init(onopen, onmessage, options) {
+	function _init() {__init(options);}
+	function __init(options) {
 		var socket = new WebSocket("ws://"+options.hostname+":"+options.port+"/");
 	
 		socket.onopen = function() {
-			console.debug("WebSocketReconnect: Connected");
+			console.debug("WebSocketReconnect: onopen");
 			options.auth(socket);  // optional function to auth once connected
 			$('body').removeClass(options.disconnected_class);
 			if (websocket_wrapper.retry_interval) {
 				clearInterval(websocket_wrapper.retry_interval);
 				websocket_wrapper.retry_interval = null;
 			}
-			onopen();
+			options.onopen();
 		};
 		socket.onclose  = function() {
-			console.debug("WebSocketReconnect: Disconnected");
+			console.debug("WebSocketReconnect: onclose");
 			socket = null;
 			websocket_wrapper.send = send_disconnected;
 			$('body').addClass(options.disconnected_class);
@@ -66,7 +68,7 @@ function WebSocketReconnect(onopen, onmessage, options) {
 			if (options.format=='json') {
 				msg = JSON.parse(msg);
 			}
-			onmessage(msg);
+			options.onmessage(msg);
 		};
 		
 		function socket_send(msg) {
