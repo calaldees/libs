@@ -73,9 +73,9 @@ function WebSocketReconnect(options) {
 		
 		function socket_send(msg) {
 			if (options.format=='json') {
-				msg = JSON.stringify(msg)+"\n";
+				msg = JSON.stringify(msg);
 			}
-			return socket.send(msg);
+			return socket.send(msg+"\n");
 		}
 		
 		websocket_wrapper.send = socket_send;
