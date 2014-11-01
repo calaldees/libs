@@ -7,6 +7,7 @@ import threading
 import time
 import socketserver
 import socket
+import struct
 
 import logging
 logger = {
@@ -118,22 +119,24 @@ def websocket_frame_decode_hybi10(data):
     if not fin:
         raise Exception('unsuported fragmented frames')
 
-    # Payload Length
+    # Payload Length - decode the length in bytes of the payload,
+    # 126 and 127 are special values to decode the subsiquent bytes in another way
     data_start_point = 2
+    extended_payload_length = 0
     if payload_length == 126:
         extended_payload_length = 2
-        data_start_point += extended_payload_length
-        #raise Exception('unsuported payload length')  # Exceptions were here because the payload length was not tested, they seem to work?
+        payload_length = struct.unpack('>H', data[data_start_point:data_start_point+extended_payload_length])[0]
     elif payload_length == 127:
         extended_payload_length = 8
-        data_start_point += extended_payload_length
-        #raise Exception('unsuported payload length')
+        payload_length = struct.unpack('>L', data[data_start_point:data_start_point+extended_payload_length])[0]
+    data_start_point += extended_payload_length
 
     # Mask
     masking_key = [0, 0, 0, 0]
     if masked:
-        masking_key = data[data_start_point:data_start_point+4]
-        data_start_point += 4
+        mask_length = len(masking_key)
+        masking_key = data[data_start_point:data_start_point+mask_length]
+        data_start_point += mask_length
 
     # Convert payload_data to python type
     data_convert_function = lambda i: i  # AllanC - close frames can have data in, int's cant be concatinated with b''.join ... humm
@@ -144,7 +147,10 @@ def websocket_frame_decode_hybi10(data):
         raise Exception('untested binary characters')
         pass
 
-    payload_data = bytes([data_convert_function(item ^ masking_key[index % 4]) for index, item in enumerate(data[data_start_point:])]) #b''.join(
+    payload_data = data[data_start_point:]
+    assert len(payload_data) == payload_length, 'expected payload data size of {} but recived {}'.format(payload_length, len(payload_data))
+    if masked:
+        payload_data = bytes([data_convert_function(item ^ masking_key[index % 4]) for index, item in enumerate(payload_data)]) #b''.join(
     # AllanC - !? what about binary data? here we are just using a string. Wont that error on some values? advice?s
 
     return payload_data, opcode
@@ -159,19 +165,20 @@ def websocket_frame_encode_hybi10(data, opcode=OPCODE_TEXT, fin=True, masked=Fal
 
     # Create payload_length and extended_payload_length bytes
     payload_length = len(data)
+    extended_payload_length = b''
     if payload_length > 65535:
+        extended_payload_length = struct.pack('>L', payload_length)
         payload_length = 127
-        raise Exception('unsuported payload length')
     elif payload_length > 125:
+        extended_payload_length = struct.pack('>H', payload_length)
         payload_length = 126
-        raise Exception('unsuported payload length')
-    payload_length = int(masked) << 7 | payload_length 
+    payload_length = int(masked) << 7 | payload_length
 
     # Create mask bytes
     if masked:
         raise Exception('unsuported masked')
 
-    return bytes([control, payload_length]) + data
+    return bytes([control, payload_length]) + extended_payload_length + data
 
 # HYBI00 ----
 
