@@ -17,8 +17,7 @@ class SocialLogin(object):
     def add_login_provider(self, login_provider):
         self.login_providers[login_provider.name] = login_provider
 
-    @property
-    def html_includes(self):
+    def html_includes(self, *args, **kwargs):
         return tuple((login_provider.html_include for login_provider in self.login_providers.values() if login_provider.html_include))
 
     def logout(self, request):
