@@ -73,6 +73,10 @@ class IUserStore(object):
 
 class NullLoginProvider(ILoginProvider):
 
+    @property
+    def html_include(self):
+        return """<!-- NullLoginProvider javascript -->"""
+
     def verify_cridentials(self, request):
         return ProviderToken('', '')
 

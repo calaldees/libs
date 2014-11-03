@@ -19,7 +19,7 @@ class SocialLogin(object):
 
     @property
     def html_includes(self):
-        return ((login_provider.html_include for login_provider in self.login_providers.values() if login_provider.html_include))
+        return tuple((login_provider.html_include for login_provider in self.login_providers.values() if login_provider.html_include))
 
     def logout(self, request):
         request.session['user'] = {}
