@@ -17,6 +17,7 @@ class ILoginProvider(object):
     def __init__(self):
         pass
 
+    @property
     def html_include(self):
         return ''
 
@@ -131,23 +132,36 @@ class PersonaLogin(ILoginProvider):
     """
     name = 'persona'
 
+    def __init__(self, site_url=None, site_url_settings_key=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.site_url = site_url
+        self.site_url_settings_key = site_url_settings_key or 'server.url'
+
+    @property
     def html_include(self):
         """
         Rather than having to edit multiple static js files and headers
         Keep all js and server flow in one place
         Slightly fugly having js/html in a py file, but there are benefits
 
-        'currentUserEmail' needs to be set previously in the js for this to function
+        needs to be set previously in the js for this to function
+        var mozilla_persona = {
+            currentUserEmail: null || 'email_of_logged_in_user@site.com',
+            login_url: "/login",
+            logout_url: "/logout"
+        }
+
+        'server.url' should be set in the pyramid registry
         """
         return """
             <script src="https://login.persona.org/include.js"></script>
             <script type="text/javascript">
                 navigator.id.watch({
-                    loggedInUser: currentUserEmail,
+                    loggedInUser: typeof(mozilla_persona) == "object" ? mozilla_persona.currentUserEmail : null,
                     onlogin: function(assertion) {
                         $.ajax({
                             type: 'POST',
-                            url: '/auth/login',
+                            url: mozilla_persona.login_url,
                             data: {assertion: assertion},
                             success: function(res, status, xhr) { window.location.reload(); },
                             error: function(xhr, status, err) {
@@ -159,7 +173,7 @@ class PersonaLogin(ILoginProvider):
                     onlogout: function() {
                         $.ajax({
                             type: 'POST',
-                            url: '/auth/logout',
+                            url: mozilla_persona.logout_url,
                             success: function(res, status, xhr) { window.location.reload(); },
                             error: function(xhr, status, err) { alert("Logout failure: " + err); }
                         });
@@ -179,7 +193,7 @@ class PersonaLogin(ILoginProvider):
                 'https://verifier.login.persona.org/verify',
                 data={
                     'assertion': request.params.get('assertion'),
-                    'audience': request.registry.settings.get('server.url')
+                    'audience': self.site_url or request.registry.settings.get(self.site_url_settings_key),
                 },
                 verify=True
             )
