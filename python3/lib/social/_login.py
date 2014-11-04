@@ -182,7 +182,7 @@ class PersonaLogin(ILoginProvider):
             </script>
         """
 
-    def display_login_dialog(self, request):
+    def login_dialog_data(self, request):
         if not request.params.get('assertion'):
             return dict(run_js='navigator.id.request();')
 
@@ -199,7 +199,8 @@ class PersonaLogin(ILoginProvider):
             )
             if response.ok and response.json['status'] == 'okay':
                 return ProviderToken(self.name, response.json['email'])
-        raise LoginProviderException(response.content)
+            raise LoginProviderException(response.content)
+        #raise LoginProviderException('no assertion provided')
 
     def aquire_additional_user_details(self, provider_token):
         return dict(
