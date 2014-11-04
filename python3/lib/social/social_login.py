@@ -49,7 +49,7 @@ class SocialLogin(object):
             for login_provider in login_providers.values():
                 data[login_provider.name] = login_provider.login_dialog_data(request)
             if any(data.values()):
-                return action_ok(data=data)  # template will be rendered with the data from these providers
+                return action_ok(data={'login_providers': data})  # template will be rendered with the data from these providers
             # else this provider dose not require a dialog or redirect step - could be a mock for testing
 
         # Step 2 - Lookup full 3rd party access_token with token from dialog -------
