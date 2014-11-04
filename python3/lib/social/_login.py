@@ -156,29 +156,39 @@ class PersonaLogin(ILoginProvider):
         return """
             <script src="https://login.persona.org/include.js"></script>
             <script type="text/javascript">
-                navigator.id.watch({
-                    loggedInUser: typeof(mozilla_persona) == "object" ? mozilla_persona.currentUserEmail : null,
-                    onlogin: function(assertion) {
-                        $.ajax({
-                            type: 'POST',
-                            url: mozilla_persona.login_url,
-                            data: {assertion: assertion},
-                            success: function(res, status, xhr) { window.location.reload(); },
-                            error: function(xhr, status, err) {
-                                navigator.id.logout();
-                                alert("Login failure: " + err);
-                            }
-                        });
-                    },
-                    onlogout: function() {
-                        $.ajax({
-                            type: 'POST',
-                            url: mozilla_persona.logout_url,
-                            success: function(res, status, xhr) { window.location.reload(); },
-                            error: function(xhr, status, err) { alert("Logout failure: " + err); }
-                        });
-                    }
-                });
+                (function() {
+                    if (
+                        typeof(navigator) != "object" ||
+                        typeof(navigator.id) != "object"
+                    ) {console.warn("Mozilla Persona not included. Login disabled"); return;}
+                    if (
+                        typeof(mozilla_persona) != "object"
+                    ) {console.warn("Mozilla Persona settings not avalable. Login disabled"); return;}
+
+                    navigator.id.watch({
+                        loggedInUser: typeof(mozilla_persona) == "object" ? mozilla_persona.currentUserEmail : null,
+                        onlogin: function(assertion) {
+                            $.ajax({
+                                type: 'POST',
+                                url: mozilla_persona.login_url,
+                                data: {assertion: assertion},
+                                success: function(res, status, xhr) { window.location.reload(); },
+                                error: function(xhr, status, err) {
+                                    navigator.id.logout();
+                                    alert("Login failure: " + err);
+                                }
+                            });
+                        },
+                        onlogout: function() {
+                            $.ajax({
+                                type: 'POST',
+                                url: mozilla_persona.logout_url,
+                                success: function(res, status, xhr) { window.location.reload(); },
+                                error: function(xhr, status, err) { alert("Logout failure: " + err); }
+                            });
+                        }
+                    });
+                })();
             </script>
         """
 
