@@ -33,12 +33,15 @@ class SocialLogin(object):
         assert login_providers
         assert user_store
 
+        if request.session.get('user'):
+            return action_ok()
+
         # Ensure login_provider is a dict - if single item, insert into dict
         if not isinstance(login_providers, dict):
             login_providers = {login_providers.name: login_providers}
 
         # Step 1 - Direct user to 3rd party login dialog ---------------------------
-        if not request.session.get('user') and not request.params:
+        if not request.params:
             # Create CSRF token
             if 'csrf_token' not in request.session:
                 sha1_hash = hashlib.sha1()
