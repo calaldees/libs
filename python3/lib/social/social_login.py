@@ -66,7 +66,7 @@ class SocialLogin(object):
         if not user:
             user_store.create_user(
                 provider_token,
-                login_providers[provider_token.provider].aquire_additional_user_details(provider_token),
+                **login_providers[provider_token.provider].aquire_additional_user_details(provider_token)
             )
             user = user_store.get_user_from_token(provider_token)
 

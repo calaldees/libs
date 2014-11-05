@@ -3,7 +3,7 @@ import requests
 
 from collections import namedtuple
 
-ProviderToken = namedtuple('ProviderToken', ['provider', 'token'])
+ProviderToken = namedtuple('ProviderToken', ['provider', 'token', 'response'])
 
 from . import facebook
 
@@ -207,14 +207,19 @@ class PersonaLogin(ILoginProvider):
                 },
                 verify=True
             )
-            if response.ok and response.json()['status'] == 'okay':
-                return ProviderToken(self.name, response.json()['email'])
+            if response.ok:
+                data = response.json()
+                if data['status'] == 'okay':
+                    return ProviderToken(self.name, data['email'], data)
             raise LoginProviderException(response.content)
         #raise LoginProviderException('no assertion provided')
 
     def aquire_additional_user_details(self, provider_token):
-        return dict(
+        data = dict(
             avatar_img='http://www.gravatar.com/avatar/{0}'.format(
                 hashlib.md5(provider_token.token.encode('utf-8')).hexdigest()
             )
         )
+        data.update(provider_token.response)
+        data['name'] = data['email']
+        return data
