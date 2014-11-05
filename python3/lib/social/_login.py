@@ -207,8 +207,8 @@ class PersonaLogin(ILoginProvider):
                 },
                 verify=True
             )
-            if response.ok and response.json['status'] == 'okay':
-                return ProviderToken(self.name, response.json['email'])
+            if response.ok and response.json()['status'] == 'okay':
+                return ProviderToken(self.name, response.json()['email'])
             raise LoginProviderException(response.content)
         #raise LoginProviderException('no assertion provided')
 
