@@ -216,7 +216,7 @@ class PersonaLogin(ILoginProvider):
 
     def aquire_additional_user_details(self, provider_token):
         data = dict(
-            avatar_img='http://www.gravatar.com/avatar/{0}'.format(
+            avatar_url='http://www.gravatar.com/avatar/{0}'.format(
                 hashlib.md5(provider_token.token.encode('utf-8')).hexdigest()
             )
         )
