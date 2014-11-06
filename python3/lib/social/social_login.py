@@ -28,17 +28,18 @@ class SocialLogin(object):
         """
 
         """
+        # Assert and setup login_providers and user_store
         login_providers = login_providers or self.login_providers
         user_store = user_store or self.user_store
         assert login_providers
         assert user_store
-
-        if request.session.get('user'):
-            return action_ok()
-
         # Ensure login_provider is a dict - if single item, insert into dict
         if not isinstance(login_providers, dict):
             login_providers = {login_providers.name: login_providers}
+
+        # If already logged in, perform no action
+        if request.session.get('user'):
+            return action_ok()
 
         # Step 1 - Direct user to 3rd party login dialog ---------------------------
         if not request.params:
