@@ -490,7 +490,7 @@ class TCPServerWrapper(ServerWrapper):
             self.id = str(client_obj.client_address)
             super().__init__(server_wrapper, client_obj)
         def send(self, data, source=None):
-            self.client_obj.request.send(data)
+            self.client_obj.request.sendall(data)
         def close(self):
             self.client_obj.request.shutdown(socket.SHUT_RDWR)
 
@@ -520,9 +520,9 @@ class WebsocketServerWrapper(ServerWrapper):
             self.id = str(client_obj.client_address)
             super().__init__(server_wrapper, client_obj)
         def send(self, data, source=None):
-            self.client_obj.request.send(self.client_obj.frame_encode_func(data))
+            self.client_obj.request.sendall(self.client_obj.frame_encode_func(data))
         def close(self):
-            self.client_obj.request.send(self.client_obj.frame_encode_func(b'', opcode=OPCODE_CLOSE))  # ?? Close frame? not needed in all version of websockets
+            self.client_obj.request.sendall(self.client_obj.frame_encode_func(b'', opcode=OPCODE_CLOSE))  # ?? Close frame? not needed in all version of websockets
             self.client_obj.request.shutdown(socket.SHUT_RDWR)
 
     # Server Implementation ----
