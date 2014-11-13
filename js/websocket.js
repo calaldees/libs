@@ -7,7 +7,6 @@ function _websocket_first_message_auth(socket, session_cookie_name) {
 }
 
 
-
 function WebSocketReconnect(options) {
 	console.debug("WebSocketReconnect", options);
 	
@@ -66,9 +65,16 @@ function WebSocketReconnect(options) {
 		socket.onmessage = function(msg) {
 			msg = msg.data;
 			if (options.format=='json') {
-				msg = JSON.parse(msg);
+				var msg_split = msg.split("\n");
+				for (var i=0 ; i<msg_split.length ; i++) {var m = msg_split[i];
+					if (m.trim() != "") {
+						options.onmessage(JSON.parse(m));
+					}
+				}
 			}
-			options.onmessage(msg);
+			else {
+				options.onmessage(msg);
+			}
 		};
 		
 		function socket_send(msg) {
