@@ -183,7 +183,7 @@ class PersonaLogin(ILoginProvider):
                             $.ajax({
                                 type: 'POST',
                                 url: mozilla_persona.logout_url,
-                                success: function(res, status, xhr) { window.location.reload(); },
+                                success: function(res, status, xhr) { window.location = "/"; },
                                 error: function(xhr, status, err) { alert("Logout failure: " + err); }
                             });
                         }
