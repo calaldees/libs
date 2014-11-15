@@ -79,7 +79,7 @@ class NullLoginProvider(ILoginProvider):
         return """<!-- NullLoginProvider javascript -->"""
 
     def verify_cridentials(self, request):
-        return ProviderToken('', '')
+        return ProviderToken('', '', '')
 
 
 class LoginProviderException(Exception):
