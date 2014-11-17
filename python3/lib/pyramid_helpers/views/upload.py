@@ -62,9 +62,11 @@ class AbstractFileUploadHandler(object):
         return self.request.registry.settings.get('upload.path','upload')
     
     def file_route(self, name):
-        # todo - urljoin? os.path.join?
-        return '{0}/{1}'.format(
-            self.request.route_url(self.request.registry.settings.get('upload.route.uploaded','uploaded')),
+        # todo - urljoin? ?
+        #return '{0}/{1}'.format(
+        return os.path.join(
+            #self.request.route_url(  # static views are not routable paths so this fails
+            self.request.registry.settings.get('upload.route.uploaded', 'uploaded'),
             name,
         )
     
