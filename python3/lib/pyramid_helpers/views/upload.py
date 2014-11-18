@@ -13,6 +13,17 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class EventFileUploaded(object):
+    """
+    to use
+    request.registry.notify(EventFileUploaded(request))
+    """
+    def __init__(self, request, files=None, method=None):
+        self.request = request
+        self.files = files
+        self.method = self.request.matchdict.get('_method')
+
+
 class FileHandle(object):
     
     @staticmethod
@@ -359,7 +370,8 @@ class Upload():
         log.info('delete')
         filename = self.request.matchdict.get('name')
         try:
-            os.remove()
+            os.remove()  # um? this does nothing?! - FIX IT
+            self.request.registry.notify(EventFileUploaded(self.request, {'files': (filename,)}))
         except IOError:
             return False
         return True
@@ -384,4 +396,6 @@ class Upload():
 
         files = handler.files()
         log.debug(files)
+
+        self.request.registry.notify(EventFileUploaded(self.request, files))
         return {'files': files}
