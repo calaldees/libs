@@ -23,6 +23,9 @@ log = logging.getLogger(__name__)
 
 
 def first(iterable):
+    """
+    Return the first non null value in an iterable
+    """
     for i in iterable:
         if i:
             return i
