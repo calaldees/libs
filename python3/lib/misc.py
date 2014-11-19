@@ -8,7 +8,6 @@ import zlib
 import hashlib
 import collections
 import shutil
-import itertools
 
 dateutil_parser = dateutil.parser.parser()
 
@@ -173,12 +172,14 @@ def get_fileext(filename):
     except:
         return None
 
+
 def extract_subkeys(data, subkey):
     """
     >>> sorted(extract_subkeys({'a.a':1, 'a.b':2, 'b.a': 3}, 'a.').items())
     [('a', 1), ('b', 2)]
     """
     return {k.replace(subkey, ''): v for k, v in data.items() if k.startswith(subkey)}
+
 
 def update_dict(dict_a, dict_b):
     """
@@ -213,7 +214,7 @@ def random_string(length=8):
     random_symbols = '1234567890bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
     r = ''
     for i in range(length):
-        r += random_symbols[random.randint(0,len(random_symbols)-1)]
+        r += random_symbols[random.randint(0, len(random_symbols)-1)]
     return r
 
 
@@ -222,7 +223,7 @@ def substring_in(substrings, string_list, ignore_case=True):
     Find a substrings in a list of string_list
     Think of it as
       is 'bc' in ['abc', 'def']
-    
+
     >>> substring_in( 'bc'      , ['abc','def','ghi'])
     True
     >>> substring_in( 'jkl'     , ['abc','def','ghi'])
@@ -290,30 +291,30 @@ def parse_timedelta(text):
     seconds = "0"
     milliseconds = "0"
     time_components = text.strip().split(':')
-    if   len(time_components) == 1:
+    if len(time_components) == 1:
         seconds = time_components[0]
     elif len(time_components) == 2:
         hours = time_components[0]
         minutes = time_components[1]
     elif len(time_components) == 3:
-        hours   = time_components[0]
+        hours = time_components[0]
         minutes = time_components[1]
         seconds = time_components[2]
     second_components = seconds.split('.')
     if len(second_components) == 2:
-        seconds      = second_components[0]
+        seconds = second_components[0]
         milliseconds = second_components[1]
     hours = int(hours)
     minutes = int(minutes)
     seconds = int(seconds)
     milliseconds = int(milliseconds)
-    assert hours>=0
-    assert minutes>=0
-    assert seconds>=0
-    assert milliseconds==0, 'milliseconds are not implemented properly .01 is parsed as int(01), this is incorrect, fix this!' 
+    assert hours >= 0
+    assert minutes >= 0
+    assert seconds >= 0
+    assert milliseconds == 0, 'milliseconds are not implemented properly .01 is parsed as int(01), this is incorrect, fix this!' 
     return datetime.timedelta(
-        seconds      = seconds + minutes*60 + hours*60*60,
-        milliseconds = milliseconds
+        seconds=seconds + minutes*60 + hours*60*60,
+        milliseconds=milliseconds
     )
 
 
@@ -340,8 +341,8 @@ def strip_non_base_types(d):
     if hasattr(d, 'items'):
         return {key: strip_non_base_types(value) for key, value in d.items()}
     for t in [list, set, tuple]:
-        if isinstance(d,t):
-            return [strip_non_base_types(value) for value in d]
+        if isinstance(d, t):
+            return [strip_non_base_types(v) for v in d]
     return None
 
 
@@ -361,7 +362,7 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     try:
         value, return_type = value_string.split(value_split)
         return convert_str(value.strip(), return_type.strip())
-    except (ValueError, AttributeError) as e:
+    except (ValueError, AttributeError):
         return convert_str(value_string.strip(), fallback_type)
 
 
@@ -442,7 +443,7 @@ class OrderedDefaultdict(collections.OrderedDict):
             args = args[1:]
         super(OrderedDefaultdict, self).__init__(*args, **kwargs)
 
-    def __missing__ (self, key):
+    def __missing__(self, key):
         if self.default_factory is None:
             raise KeyError(key)
         self[key] = default = self.default_factory()

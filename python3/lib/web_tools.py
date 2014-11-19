@@ -17,12 +17,15 @@ DEFAULT_REQUEST_HEADERS = {
 
 last_url_request_datetime = None
 DEFAULT_THROTTLE_DELTA = datetime.timedelta(seconds=30)
+
+
 def wait_throttle(throttle_delta):
     if throttle_delta:
         global last_url_request_datetime
         while last_url_request_datetime and last_url_request_datetime > datetime.datetime.now() - throttle_delta:
             time.sleep(1)
         last_url_request_datetime = datetime.datetime.now()
+
 
 def safe_filename(filename):
     filename = re.sub(r'[\\/]', r'.', filename)
@@ -50,7 +53,7 @@ def get_html_data(url, cached_filename=None, cache_path=DEFAULT_CACHE_PATH, head
             url_request = urllib.request.urlopen(url_request)
             html_data = url_request.read()
             url_request.close()
-        
+
             file = open(cached_filename, 'wb')
             file.write(html_data)
             file.close()

@@ -20,8 +20,8 @@ from . import request_from_args
 #-------------------------------------------------------------------------------
 
 # Regex to extract 'format' from request URL
-format_regex_path = re.compile(r'.*\.(?P<format>.*?)($|\?|#)'    , flags=re.IGNORECASE)
-format_regex_qs   = re.compile(r'.*(^|,)format=(?P<format>.*?)($|,)', flags=re.IGNORECASE) # AllanC - this could be replaced at a later date when web_params_to_kwargs is implemented , used to use r'.*\?.*format=(.*?)($|,)' for whole url
+format_regex_path = re.compile(r'.*\.(?P<format>.*?)($|\?|#)', flags=re.IGNORECASE)
+format_regex_qs = re.compile(r'.*(^|,)format=(?P<format>.*?)($|,)', flags=re.IGNORECASE)  # AllanC - this could be replaced at a later date when web_params_to_kwargs is implemented , used to use r'.*\?.*format=(.*?)($|,)' for whole url
 format_request_accept = {
     'text/html'           : 'html',
     'text/csv'            : 'csv' ,
@@ -34,6 +34,7 @@ format_request_accept = {
     'application/xml+rss' : 'rss' ,
     'application/pdf'     : 'pdf' ,
 }
+
 
 #-------------------------------------------------------------------------------
 # Class's
@@ -48,19 +49,22 @@ class FormatError(Exception):
 #-------------------------------------------------------------------------------
 
 _auto_formaters = {}
+
+
 def register_formater(format_name, format_func):
     """
     Register a format processor with a key
     e.g
     register_formater('json', dict_to_json_response_func)
-    
+
     the format func could look up templates or call other libs to process the return
-    
+
     format_funcs should return a Pyramid Response object
     """
     assert isinstance(format_name, str )
     assert callable(format_func)
     _auto_formaters[format_name] = format_func
+
 
 def registered_formats():
     return _auto_formaters.keys()
@@ -69,6 +73,7 @@ def registered_formats():
 #-------------------------------------------------------------------------------
 # Route Creator helper
 #-------------------------------------------------------------------------------
+
 def append_format_pattern(route):
     """
     to be used like:
@@ -76,6 +81,7 @@ def append_format_pattern(route):
         config.add_route('track'         , append_format_pattern('/track/{id}')    )
     """
     return re.sub(r'{(.*)}', r'{\1:[^/\.]+}', route) + r'{spacer:[.]?}{format:(%s)?}' % '|'.join(registered_formats())
+
 
 #-------------------------------------------------------------------------------
 # Decorator
@@ -85,37 +91,36 @@ def append_format_pattern(route):
 def auto_format_output(target, *args, **kwargs):
     """
     A decorator to decarate a Pyramid view
-    
+
     The view could return a plain python dict
-    
+
     it will try to:
      - extract a sutable format string from the URL e.g html,json,xml,pdf,rss,etc
      - apply a format function to the plain python dict return
-    
     """
     # Extract request object from args
     request = request_from_args(args)
-    if 'internal_request' in request.matchdict: # Abort if internal call
+    if 'internal_request' in request.matchdict:  # Abort if internal call
         return target(*args, **kwargs)
-    
+
     # Pre Processing -----------------------------------------------------------
 
     # Find format string 'format' based on input params, to then find a render func 'formatter'  - add potential formats in order of precidence
     formats = []
     # add kwarg 'format'
-    try   : formats.append(kwargs['format'])
+    try: formats.append(kwargs['format'])
     except: pass
     # From GET/POST params
-    try   : formats.append(request.params['format'])
+    try: formats.append(request.params['format'])
     except: pass
     # matched route 'format' key
-    try   : formats.append(request.matchdict['format'])
+    try: formats.append(request.matchdict['format'])
     except: pass
     # add 'format' from URL path
-    try   : formats.append(format_regex_path.match(request.path).group('format'))
+    try: formats.append(format_regex_path.match(request.path).group('format'))
     except: pass
     # add 'format' from URL query string
-    try   : formats.append(format_regex_qs.match(request.path_qs).group('format'))
+    try: formats.append(format_regex_qs.match(request.path_qs).group('format'))
     except: pass
     # add 'format' from request content type
     # Possible bug: This could lead to caching inconsitencys as etags and other caching must key the 'request-accept' before this is enabled
@@ -123,21 +128,21 @@ def auto_format_output(target, *args, **kwargs):
     #except: pass
     # add default format
     formats.append(request.registry.settings.get('api.format.default', 'html'))
-    formats = [format for format in formats if format] # remove any blank entries in formats list
-    
-    request.matchdict['format'] = formats[0] # A way for all methods wraped by this decorator to determin what format they are targeted for
-    
+    formats = [format for format in formats if format]  # remove any blank entries in formats list
+
+    request.matchdict['format'] = formats[0]  # A way for all methods wraped by this decorator to determin what format they are targeted for
+
     # Execute ------------------------------------------------------------------
     try:
         result = target(*args, **kwargs)
     except action_error as ae:
         result = ae.d
         #log.warn("Auto format exception needs to be handled")
-    
+
     # Post Processing ----------------------------------------------------------
 
     # the result may have an overriding format that should always take precident
-    try   : formats.insert(0,result['format'])
+    try: formats.insert(0,result['format'])
     except: pass
 
     # Attempt auto_format if result is a plain python dict and auto_format func exisits
@@ -159,35 +164,37 @@ def auto_format_output(target, *args, **kwargs):
                 log.warn('format rendering erorrs', exc_info=True)
         else:
             raise Exception('no format was able to render')
-        
+
         # Set http response code
         if isinstance(response, pyramid.response.Response) and result.get('code'):
             response.status_int = result.get('code')
-        
+
         request.response = response
         result = response
-    
+
     return result
+
 
 #-------------------------------------------------------------------------------
 # Action Returns
 #-------------------------------------------------------------------------------
 
 def action_ok(message='', data={}, code=200, status='ok', **kwargs):
-    assert isinstance(message, str )
-    assert isinstance(data   , dict)
-    assert isinstance(code   , int )
+    assert isinstance(message, str)
+    assert isinstance(data, dict)
+    assert isinstance(code, int)
     d = {
-        'status'  : status  ,
-        'messages': []      ,
-        'data'    : data    ,
-        'code'    : code    ,
+        'status': status,
+        'messages': [],
+        'data': data,
+        'code': code,
     }
     d.update(kwargs)
     if message:
         d['messages'].append(message)
     return d
-    
+
+
 class action_error(Exception):
     def __init__(self, message='', data={}, code=500, status='error', **kwargs):
         self.d = action_ok(message=message, data=data, code=code, status=status, **kwargs)
@@ -200,7 +207,6 @@ class action_error(Exception):
 #-------------------------------------------------------------------------------
 from pyramid.renderers import render_to_response
 import os.path
-import copy
 
 def render_template(request, result, format, template_data_param='d'):
     #template_params = {template_data_param:result}

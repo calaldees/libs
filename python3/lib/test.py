@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 
 
-
 class MultiMockOpen(object):
     def __init__(self, *args, **kwargs):
         self.handlers = {}

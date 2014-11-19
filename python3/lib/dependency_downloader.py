@@ -22,6 +22,7 @@ DEFAULT_TRACKER = 'dependencys_installed.json'
 
 VERSION_IDENTIFYER = 'VERSION'
 
+
 #-------------------------------------------------------------------------------
 # Utils
 #-------------------------------------------------------------------------------
@@ -37,6 +38,7 @@ def hash_data(data):
 class DownloadException(Exception):
     pass
 
+
 def get_file(source, destination, overwrite=False):
     # rm file if exisits - not needed
     log.debug("{0} -> {1}".format(source, destination))
@@ -44,7 +46,7 @@ def get_file(source, destination, overwrite=False):
         log.debug('{0} already exisits'.format(destination))
         return
     try:
-       os.makedirs(os.path.dirname(destination))
+        os.makedirs(os.path.dirname(destination))
     except:
         pass
     try:
@@ -52,6 +54,7 @@ def get_file(source, destination, overwrite=False):
     except (ValueError, IOError):
         log.info('Unable to download {0}'.format(source))
         raise DownloadException()
+
 
 #-------------------------------------------------------------------------------
 # Download dependencys
@@ -71,7 +74,7 @@ def fetch_dependencys(dependecys, tracker, destination_path):
                 else:
                     log.info('Already up to date {0}'.format(name))
                     continue
-            
+
             source = info['source'].replace('VERSION', target_version)
             destination_subpath = info.get('destination_subpath', '')
             target = info['target']
@@ -81,10 +84,10 @@ def fetch_dependencys(dependecys, tracker, destination_path):
                     get_file(source+t, os.path.join(destination_path, destination_subpath, destination), overwrite=target_version)
             else:
                 get_file(source, os.path.join(destination_path, destination_subpath, target.replace(VERSION_IDENTIFYER, target_version)), overwrite=target_version)
-            
+
             tracker[name]['version'] = target_version
             tracker[name]['filenames_hash'] = filenames_hash
-        
+
         except DownloadException:
             # Continue to download others, but do not update the tracker version for the errored dependency
             continue
@@ -93,7 +96,7 @@ def fetch_dependencys(dependecys, tracker, destination_path):
 def open_dependencys(dependency_filename, tracker_filename, destination_path):
     dependencys = {}
     tracker = {}
-    
+
     with open(dependency_filename, 'r') as datastream:
         dependencys = json.load(datastream)
     try:
@@ -101,9 +104,9 @@ def open_dependencys(dependency_filename, tracker_filename, destination_path):
             tracker = json.load(trackerstream)
     except IOError:
         pass
-    
+
     fetch_dependencys(dependencys, tracker, destination_path)
-    
+
     with open(tracker_filename, 'w') as trackerstream:
         json.dump(tracker, trackerstream)
 
@@ -126,15 +129,16 @@ def get_args():
 
     return parser.parse_args()
 
+
 def main():
     args = get_args()
-    
+
     logging.basicConfig(level=logging.INFO)
-    
+
     open_dependencys(
-        dependency_filename = args.dependencys,
-        tracker_filename    = args.tracker,
-        destination_path    = args.destination
+        dependency_filename=args.dependencys,
+        tracker_filename=args.tracker,
+        destination_path=args.destination
     )
 
 if __name__ == "__main__":

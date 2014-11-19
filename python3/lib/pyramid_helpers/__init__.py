@@ -10,7 +10,6 @@ import logging
 log = logging.getLogger(__name__)
 
 
-
 def request_from_args(args):
     # Extract request object from args
     for arg in args:
@@ -18,11 +17,13 @@ def request_from_args(args):
             return arg
     raise Exception('no pyramid.request.Request in args')
 
+
 def get_setting(key):
     """
     convenience global settings
     """
     return pyramid.threadlocal.get_current_registry().settings.get(key)
+
 
 #-------------------------------------------------------------------------------
 # Web view decorators
@@ -47,17 +48,17 @@ def gzip(target, *args, **kwargs):
     The base instructions to be executed for most calls
     """
     request = request_from_args(args)
-    
+
     # Abort if internal call
     if 'internal_request' in request.matchdict:
         return target(*args, **kwargs)
-    
+
     result = target(*args, **kwargs)
 
     # Enable Pyramid GZip on all responses - NOTE! In a production this should be handled by nginx for performance!
     if request.registry.settings.get('server.gzip') and 'gzip' in request.headers.get('Accept-Encoding',''):
         request.response.encode_content(encoding='gzip', lazy=False)
-    
+
     return result
 
 
@@ -72,7 +73,7 @@ def max_age(gen_max_age_seconds=_generate_max_age_seconds_default, **options):
         if 'internal_request' in request.matchdict:  # Abort if internal call
             return target(*args, **kwargs)
 
-        _return = target(*args, **kwargs) # Execute the wrapped function
+        _return = target(*args, **kwargs)  # Execute the wrapped function
 
         if hasattr(gen_max_age_seconds, '__call__'):
             max_age_seconds = gen_max_age_seconds(request)
@@ -90,11 +91,12 @@ def max_age(gen_max_age_seconds=_generate_max_age_seconds_default, **options):
 #-------------------------------------------------------------------------------
 
 def method_delete_router(info, request):
-    if request.method.upper() == 'DELETE' or request.params.get('method','GET').upper() == 'DELETE':
+    if request.method.upper() == 'DELETE' or request.params.get('method', 'GET').upper() == 'DELETE':
         return True
 
+
 def method_put_router(info, request):
-    if request.method == 'PUT' or request.params.get('method','GET').upper() == 'PUT':
+    if request.method == 'PUT' or request.params.get('method', 'GET').upper() == 'PUT':
         return True
 
 
@@ -108,7 +110,8 @@ def set_cookie(request, name, data, path='/'):
     """
     request.response.headerlist.append((
         'Set-Cookie', '{name}={json_string}; Path={path}'.format(
-            name = name,
-            path = path,
-            json_string = json.dumps(data, default=json_object_handler),
-    )))
+            name=name,
+            path=path,
+            json_string=json.dumps(data, default=json_object_handler),
+        )
+    ))
