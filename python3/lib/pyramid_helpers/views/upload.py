@@ -25,7 +25,7 @@ class EventFileUploaded(object):
 
 
 class FileHandle(object):
-    
+
     @staticmethod
     def get_files_from_request(request):
         return [FileHandle(fieldStorage) for name, fieldStorage in request.POST.items() if hasattr(fieldStorage, 'filename')]
@@ -41,14 +41,15 @@ class FileHandle(object):
         size = file.tell()  # Get the position of EOF
         file.seek(0)  # Reset the file position to the beginning
         return size
-    
+
     def to_dict(self):
         return vars(self)
+
 
 class AbstractFileUploadHandler(object):
     def __init__(self, request):
         self.request = request
-        
+
         # Identify user session
         #   This is probably not wise to hash the cookie.
         #   The cookie could change at at any point, (hopefully not during an upload).
@@ -71,7 +72,7 @@ class AbstractFileUploadHandler(object):
     @property
     def _path_upload(self):
         return self.request.registry.settings.get('upload.path','upload')
-    
+
     def file_route(self, name):
         # todo - urljoin? ?
         #return '{0}/{1}'.format(
@@ -80,25 +81,25 @@ class AbstractFileUploadHandler(object):
             self.request.registry.settings.get('upload.route.uploaded', 'uploaded'),
             name,
         )
-    
+
     @property
     def delete_method(self):
         return self.request.registry.settings.get('upload.delete.method','DELETE')
-    
+
     def delete_route(self, name):
-        url =  self.request.route_url(
+        url = self.request.route_url(
             self.request.registry.settings.get('upload.route','upload'),
             sep='/', name=name
         )
         if self.delete_method != 'DELETE':  # can this be part of the route_url() call?
             url += '&_method=DELETE'
         return url
-    
+
     def filelist(self):
         return [f for f in os.listdir(self._path_upload)]
-    
+
     def fileinfo(self, name=None):
-        if name==None:  # and hasattr(self, name):  # Why the fuck was this ever here?
+        if name==None:   #  and hasattr(self, name):  # Why the fuck was this ever here?
             name = self.name
         assert name, 'filename required to aquire file info'
         filename = os.path.join(self._path_upload, name)
@@ -115,7 +116,7 @@ class AbstractFileUploadHandler(object):
 
 
 class FileUploadMultipleHandler(AbstractFileUploadHandler):
-    
+
     def __init__(self, request):
         super().__init__(request)
         self.file_handles = FileHandle.get_files_from_request(request)
@@ -163,7 +164,7 @@ class FileUploadChunkDetails(AbstractFileUploadHandler):
 
     def incomplete_file_details(self):
         return (FileUploadChunkDetails(self.request, incomplete_filename) for incomplete_filename in os.listdir(self.path_session))
-    
+
     def cleanup_chunks(self):
         """
         Remove all traces of all files associated with this upload
@@ -189,7 +190,6 @@ class FileUploadChunkDetails(AbstractFileUploadHandler):
             'size': self.bytes_recived,
         }
 
-    
 
 class FileUploadChunkHandler(FileUploadChunkDetails):
     """
@@ -205,19 +205,19 @@ class FileUploadChunkHandler(FileUploadChunkDetails):
 
     def handle_chunk(self):
         chunk = self.request.body
-        
+
         # Extract and validate chunk filename
         self.name = urllib.parse.unquote_plus(self.RE_CONTENT_DISPOSITION.match(self.header('Content-Disposition')).group(1))
         assert not os.path.exists(self.path_destination), 'destination file already exisits - {0}'.format(self.path_destination)
-        
+
         # Extract and validate type
         self.type = self.header('Content-Type')
-        for content_type in ('multipart/form-data',):  #, 'text/html', 'application/json'
+        for content_type in ('multipart/form-data',):  # , 'text/html', 'application/json'
             assert content_type not in self.type, 'The specification explicitly states that for chuncked uploads the forms should not be submitted as {0}'.format(content_type)
-        
+
         # Extract and validate chunk range
         if self.header('Content-Range'):
-            range_dict = {k:int(v) for k, v in self.RE_CONTENT_RANGE.match(self.header('Content-Range')).groupdict().items()}
+            range_dict = {k: int(v) for k, v in self.RE_CONTENT_RANGE.match(self.header('Content-Range')).groupdict().items()}
             self.size = range_dict['size']
             self.data_start = range_dict['data_start']
             self.data_end = range_dict['data_end']
@@ -235,7 +235,7 @@ class FileUploadChunkHandler(FileUploadChunkDetails):
             f.write(chunk)
         # After writing chunk self.bytes_recived and self.chunk_filenames need to be invalidated.
         # If they havent been called before this point then everything is fine.
-    
+
     @property
     @lru_cache()
     def path_chunk_current(self):
@@ -295,34 +295,34 @@ class Upload():
     """
     Pyramid route class that supports segmented file upload from jQuery-File-Upload
     https://github.com/blueimp/jQuery-File-Upload/wiki/
-    
+
     HTML 5 Spec refernce
     http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16
-    
+
     https://github.com/blueimp/jQuery-File-Upload/wiki/Chunked-file-uploads
      - The byte range of the blob is transmitted via the Content-Range header.
      - The file name of the blob is transmitted via the Content-Disposition header.
-     
+
     http://stackoverflow.com/questions/21352995/how-to-handle-file-upload-asynchronously-in-pyramid
-    
+
     http://www.grid.net.ru/nginx/resumable_uploads.en.html
     """
     DELETEMETHOD = 'DELETE'
-    MIN_FILE_SIZE = 1  #  1 * 1000 * 1000  # 1mb - A video smaller than that is not worth having
+    MIN_FILE_SIZE = 1  # 1 * 1000 * 1000  # 1mb - A video smaller than that is not worth having
     MAX_FILE_SIZE = 200 * 1000 * 1000  # 200Mb
     #IMAGE_TYPES = re.compile('image/(gif|p?jpeg|(x-)?png)')
     #ACCEPT_FILE_TYPES = IMAGE_TYPES
     #EXPIRATION_TIME = 300  # seconds
-    
+
     def __init__(self, request, **options):
         self.request = request
-        
+
         # Set default options (useful for overriding in tests or other file uses)
         # (this is truly a dangerious approach, set anything!?)
         for key, value in options.items():
             if hasattr(self, key):
                 setattr(self, key, value)
-        
+
         # Pre populate response headers
         request.response.headers['Access-Control-Allow-Origin'] = '*'
         request.response.headers['Access-Control-Allow-Methods'] = 'OPTIONS, HEAD, GET, POST, PUT, DELETE'
@@ -375,12 +375,12 @@ class Upload():
         except IOError:
             return False
         return True
-    
+
     @view_config(request_method='POST', xhr=True, accept="application/json", renderer='json')
     def post(self):
         if self.request.matchdict.get('_method') == "DELETE":
             return self.delete()
-        
+
         if set(self.request.headers) & {'Content-Range', 'Content-Disposition', 'X-Content-Range', 'X-Content-Disposition'}:
             handler = FileUploadChunkHandler(self.request)
             if handler.complete:
