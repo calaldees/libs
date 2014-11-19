@@ -18,6 +18,11 @@ def request_from_args(args):
             return arg
     raise Exception('no pyramid.request.Request in args')
 
+def get_setting(key):
+    """
+    convenience global settings
+    """
+    return pyramid.registry.global_registry.settings.get(key)
 
 #-------------------------------------------------------------------------------
 # Web view decorators
