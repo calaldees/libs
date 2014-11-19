@@ -2,7 +2,7 @@ import json
 
 from decorator import decorator
 import pyramid.request
-import pyramid.registry
+import pyramid.threadlocal
 
 from ..misc import json_object_handler
 
@@ -22,7 +22,7 @@ def get_setting(key):
     """
     convenience global settings
     """
-    return pyramid.registry.global_registry.settings.get(key)
+    return pyramid.threadlocal.get_current_registry().settings.get(key)
 
 #-------------------------------------------------------------------------------
 # Web view decorators
