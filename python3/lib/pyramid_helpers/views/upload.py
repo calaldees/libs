@@ -308,11 +308,11 @@ class Upload():
     http://www.grid.net.ru/nginx/resumable_uploads.en.html
     """
     DELETEMETHOD = 'DELETE'
-    MIN_FILE_SIZE =   1 * 1000 * 1000  # 1mb - A video smaller than that is not worth having
-    MAX_FILE_SIZE = 100 * 1000 * 1000  # 100Mb
+    MIN_FILE_SIZE = 1  #  1 * 1000 * 1000  # 1mb - A video smaller than that is not worth having
+    MAX_FILE_SIZE = 200 * 1000 * 1000  # 200Mb
     #IMAGE_TYPES = re.compile('image/(gif|p?jpeg|(x-)?png)')
     #ACCEPT_FILE_TYPES = IMAGE_TYPES
-    EXPIRATION_TIME = 300  # seconds
+    #EXPIRATION_TIME = 300  # seconds
     
     def __init__(self, request, **options):
         self.request = request
