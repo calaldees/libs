@@ -179,9 +179,11 @@ def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
     while len(buf) > 0:
         hasher.update(buf)
         buf = filehandle.read(blocksize)
+    digest = hasher.hexdigest()
     if filename:
         filehandle.close()
-    return hasher.digest()
+        log.debug('hashfile - {0} - {1}'.format(digest, filename))
+    return digest
 
 
 def hash_files(files, hasher=zlib.adler32):
