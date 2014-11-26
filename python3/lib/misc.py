@@ -133,11 +133,12 @@ def read_json(filename):
         #    log.warn('Failed to process %s' % source)
 
 
-FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative'])
-def file_scan(path, file_regex='.*', ignore_regex=r'\.git'):
+FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash'])
+def file_scan(path, file_regex='.*', ignore_regex=r'\.git', hasher=None):
     """
     return (folder, file, folder+file, folder-path+file)
     """
+    hasher = hasher or (lambda f: None)
     if isinstance(file_regex, str):
         file_regex = re.compile(file_regex)
     if isinstance(ignore_regex, str):
@@ -148,22 +149,46 @@ def file_scan(path, file_regex='.*', ignore_regex=r'\.git'):
     for root, dirs, files in os.walk(path):
         if ignore_regex.search(root):
             continue
-        file_list += [FileScan(root, f, os.path.join(root, f), os.path.join(root.replace(path, ''), f).strip('/'))
-                      for f in files if file_regex.match(f)]
+        file_list += [
+            FileScan(
+                folder=root,
+                file=f,
+                absolute=os.path.join(root, f),
+                relative=os.path.join(root.replace(path, ''), f).strip('/'),
+                hash=hashfile(os.path.join(root, f), hasher),
+            )
+            for f in files if file_regex.match(f)
+        ]
     return file_list
 
 
-def hash_data(data):
-    hash = hashlib.sha1()
-    hash.update(str(data).encode())
-    return hash.hexdigest()
+def hash_data(data, hasher=hashlib.sha256):
+    hasher = hasher()
+    hasher.update(str(data).encode())
+    return hasher.hexdigest()
 
 
-def hash_files(files):
+def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
+    if not hasher:
+        return
+    if isinstance(filehandle, str):
+        filename = filehandle
+        filehandle = open(filename, 'rb')
+    hasher = hasher()
+    buf = filehandle.read(blocksize)
+    while len(buf) > 0:
+        hasher.update(buf)
+        buf = filehandle.read(blocksize)
+    if filename:
+        filehandle.close()
+    return hasher.digest()
+
+
+def hash_files(files, hasher=zlib.adler32):
     """
     adler32 is a good-enough checksum that's fast to compute.
     """
-    return "%X" % abs(hash(frozenset(zlib.adler32(open(_file,'rb').read()) for _file in files)))
+    return "%X" % abs(hash(frozenset(hasher(open(_file, 'rb').read()) for _file in files)))
 
 
 def get_fileext(filename):
