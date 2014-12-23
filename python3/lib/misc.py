@@ -30,6 +30,10 @@ def first(iterable):
             return i
 
 
+def subdict(d, keys):
+    return {k: v for k, v in d.items() if k in keys}
+
+
 # TODO - @property to get/set now?
 _now_override = None
 def now(new_override=None):
