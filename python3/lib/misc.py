@@ -137,6 +137,14 @@ def read_json(filename):
         #    log.warn('Failed to process %s' % source)
 
 
+def read_file_list(filename):
+    data = []
+    with open(filename, 'r') as source:
+        for line in source:
+            data.append(line)
+    return data
+
+
 FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash'])
 def file_scan(path, file_regex='.*', ignore_regex=r'\.git', hasher=None):
     """
@@ -459,6 +467,8 @@ def convert_str(value, return_type):
         return [v.strip() for v in value.split(',') if v.strip()]
     if return_type == 'jsonfile':
         return read_json(value)
+    if return_type == 'listfile':
+        return read_file_list(value)
     assert False, 'unable to convert {0} to {1}'.format(value, return_type)
 
 
