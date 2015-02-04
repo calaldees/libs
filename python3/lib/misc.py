@@ -146,11 +146,13 @@ def read_file_list(filename):
 
 
 FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats'])
-def file_scan(path, file_regex='.*', ignore_regex=r'\.git', hasher=None, stats=False):
+def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False):
     """
     return (folder, file, folder+file, folder-path+file)
     """
-    stater = lambda f: os.stat(f) if stats else lambda f: None
+    stater = (lambda f: os.stat(f)) if stats else (lambda f: None)
+    if not file_regex:
+        file_regex = '.*'
     if isinstance(file_regex, str):
         file_regex = re.compile(file_regex)
     if isinstance(ignore_regex, str):
