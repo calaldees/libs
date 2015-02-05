@@ -6,14 +6,15 @@ python3 apps/hash_mover.py -s ./lib/ | python3 apps/hash_mover.py -d ./lib/ --dr
 
 """
 import sys
+import os
 import hashlib
 import json
-import select
-import signal
-from functools import partial
 import shutil
-import os
+from functools import partial
 
+
+# Some kind of fix for piping
+import signal
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 from lib.misc import file_scan
@@ -28,15 +29,12 @@ DEFAULT_FILE_REGEX = r'.*'
 
 # Encode --------
 
-import pickle
-data_load = pickle.load
-data_dump = pickle.dump
+#import pickle
+data_load = json.load  # pickle.load
+data_dump = json.dump  # pickle.dump
 
 
 # Utils ------------------------------------------------------------------------
-
-def has_pipe_input():
-    return select.select([sys.stdin, ], [], [], 0.0)[0]
 
 
 # ------------------------------------------------------------------------------
@@ -75,13 +73,15 @@ def move_files(file_dict_remote, destination_folder, cache_filename, func_hasher
     assert destination_folder
     assert func_hasher
 
-    file_dict_local = func_hasher(destination_folder, cache_filename)
+    file_dict_local = hash_files_cache(destination_folder, cache_filename, func_hasher)
 
     for key in file_dict_remote.keys() & file_dict_local.keys():
-        func_move(
-            os.path.join(destination_folder, file_dict_local[key]),
-            os.path.join(destination_folder, file_dict_remote[key]),
-        )
+        if file_dict_local[key] != file_dict_remote[key]:
+            func_move(
+                os.path.join(destination_folder, file_dict_local[key]),
+                os.path.join(destination_folder, file_dict_remote[key]),
+            )
+            #import pdb ; pdb.set_trace()
 
 
 # Command Line -----------------------------------------------------------------
