@@ -163,26 +163,19 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
     for root, dirs, files in os.walk(path):
         if ignore_regex.search(root):
             continue
-        file_list += [
-            FileScan(
-                folder=root,
-                file=f,
-                absolute=os.path.join(root, f),
-                relative=os.path.join(root.replace(path, ''), f).strip('/'),
-                hash=hashfile(os.path.join(root, f), hasher),
-                stats=stater(os.path.join(root, f)),
-            )
-            for f in files if file_regex.match(f)
-            if not ignore_regex.search(f)
-        ]
-        func_progress(file_list)
+        for f in files:
+            if file_regex.match(f) and not ignore_regex.search(f):
+                file_details = FileScan(
+                    folder=root,
+                    file=f,
+                    absolute=os.path.join(root, f),
+                    relative=os.path.join(root.replace(path, ''), f).strip('/'),
+                    hash=hashfile(os.path.join(root, f), hasher),
+                    stats=stater(os.path.join(root, f)),
+                )
+                file_list.append(file_details)
+                func_progress(file_list)
     return file_list
-
-
-def hash_data(data, hasher=hashlib.sha256):
-    hasher = hasher()
-    hasher.update(str(data).encode())
-    return hasher.hexdigest()
 
 
 def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
@@ -208,6 +201,12 @@ def hash_files(files, hasher=zlib.adler32):
     adler32 is a good-enough checksum that's fast to compute.
     """
     return "%X" % abs(hash(frozenset(hasher(open(_file, 'rb').read()) for _file in files)))
+
+
+def hash_data(data, hasher=hashlib.sha256):
+    hasher = hasher()
+    hasher.update(str(data).encode())
+    return hasher.hexdigest()
 
 
 def get_fileext(filename):
