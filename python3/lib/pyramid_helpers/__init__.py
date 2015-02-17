@@ -37,6 +37,8 @@ def mark_external_request(target, *args, **kwargs):
     this enables us to use internal API calls.
     decorators that may still fire for internal calls are things like cache lookup
     This should be the absolute closest decorator to the actual method call as possible
+
+    TODO: This is horrible ... can we do this in a better way?
     """
     request_from_args(args).matchdict['internal_request'] = True
     return target(*args, **kwargs)

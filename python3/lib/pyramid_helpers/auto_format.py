@@ -106,6 +106,7 @@ def auto_format_output(target, *args, **kwargs):
     # Pre Processing -----------------------------------------------------------
 
     # Find format string 'format' based on input params, to then find a render func 'formatter'  - add potential formats in order of precidence
+    # TODO: THis is RUBBISH!! .. if we dont return the format that is expected ... exception!!
     formats = []
     # add kwarg 'format'
     try: formats.append(kwargs['format'])
@@ -163,6 +164,7 @@ def auto_format_output(target, *args, **kwargs):
             except Exception:
                 log.warn('format rendering erorrs', exc_info=True)
         else:
+            # TODO: This is rubish .. the original exception is obscured and needs to be surfaced
             raise Exception('no format was able to render')
 
         # Set http response code
