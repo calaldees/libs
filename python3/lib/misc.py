@@ -399,12 +399,14 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     datetime.datetime(2000, 1, 1, 0, 0)
     >>> convert_str_with_type("[]")
     []
+    >>> convert_str_with_type('', fallback_type=list)
+    []
     """
     if not isinstance(value_string, str):
         return value_string
     try:
         value, return_type = value_string.split(value_split)
-        return convert_str(value.strip(), return_type.strip())
+        return convert_str(value.strip(), return_type.strip() or fallback_type)
     except (ValueError, AttributeError):
         return convert_str(value_string.strip(), fallback_type)
 
@@ -429,6 +431,8 @@ def convert_str(value, return_type):
     ['a', 'b', 'c']
     >>> convert_str('[a,b,c]', 'list')
     ['a', 'b', 'c']
+    >>> convert_str('', list)
+    []
     >>> convert_str('[true, yes, no, false]', 'bool')
     [True, True, False, False]
     >>> convert_str('{"a":1}', None)
@@ -440,6 +444,8 @@ def convert_str(value, return_type):
     """
     if return_type == 'None':
         return None
+    if not value and (return_type == 'list' or return_type == list):
+        return []
     if not value or not isinstance(value, str) or return_type == str or return_type == 'str':
         return value
     if value.startswith('[') and value.endswith(']'):
