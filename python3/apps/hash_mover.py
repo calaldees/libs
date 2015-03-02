@@ -6,6 +6,30 @@ python3 apps/hash_mover.py -s ./lib/ | python3 apps/hash_mover.py -d ./lib/ --dr
 
 python3 apps/hash_mover.py -s ~/temp/sync_test1/ | python3 apps/hash_mover.py -d ~/temp/sync_test2/
 
+-on local
+rm ~/Applications/KaraKara/karakara_files.remote.cache
+python3 apps/hash_mover.py -s ~/Applications/KaraKara/files --cache_filename_source ~/Applications/KaraKara/karakara_files.remote.cache
+scp apps/hash_mover.py violet:~/hash_mover.py
+scp ~/Applications/KaraKara/karakara_files.remote.cache violet:~/karakara_files.remote.cache
+
+-on server
+python3 apps/hash_mover.py -s /data/media_upload/ --cache_filename ~/karakara_files.local.cache
+python3 hash_mover.py --cache_filename_source karakara_files.remote.cache --cache_filename_destination karakara_files.local.cache --destination_folder /data/media_upload/
+
+
+KARAKARA_DEBUG=True python processmedia.py process ~/Applications/KaraKara/files/
+
+
+WARNING:
+  possible dataloss
+  rename 1.txt to temp.txt
+  rename 2.txt to 1.txt
+  rename temp.txt to 2.txt
+
+  syncing this will LOOSE DATA
+  There is not currently detection of files with the same name
+  1.txt could be moved over 2.txt and - 2.txt is now completely the contentents of 1.txt - the contents of 2.txt is now lost
+
 """
 import sys
 import os
@@ -13,7 +37,7 @@ import hashlib
 import json
 import shutil
 from functools import partial
-
+from collections import defaultdict
 
 # Some kind of fix for piping
 import signal
@@ -25,7 +49,7 @@ log = logging.getLogger(__name__)
 
 
 VERSION = "0.0"
-DEFAULT_IGNORE_REGEX = r'\.bak|\.git'
+DEFAULT_IGNORE_REGEX = r'\.bak|\.git|\.DS_Store|\.txt'  # TODO: This should enforce end of string terms only
 DEFAULT_FILE_REGEX = r'.*'
 
 # Encode --------
@@ -44,8 +68,9 @@ data_dump = json.dump  # pickle.dump
 import collections
 import re
 
+# TO BE BACKPORTED TO MISC!
 FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats'])
-def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False, func_progress=lambda f: None):
+def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False):  #, func_progress=lambda f: None
     """
     return (folder, file, folder+file, folder-path+file)
     """
@@ -58,13 +83,13 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
         ignore_regex = re.compile(ignore_regex)
 
     log.debug('Scanning files in {0}'.format(path))
-    file_list = []
+    #file_list = []
     for root, dirs, files in os.walk(path):
         if ignore_regex.search(root):
             continue
         for f in files:
             if file_regex.match(f) and not ignore_regex.search(f):
-                file_details = FileScan(
+                yield FileScan(
                     folder=root,
                     file=f,
                     absolute=os.path.join(root, f),
@@ -72,10 +97,10 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                     hash=hashfile(os.path.join(root, f), hasher),
                     stats=stater(os.path.join(root, f)),
                 )
-                file_list.append(file_details)
-                func_progress(file_list)
+                #file_list.append(file_details)
+                #func_progress(file_list)
 
-    return file_list
+    #return file_list
 
 
 def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
@@ -123,7 +148,6 @@ def hash_files(folder, file_regex=None, ignore_regex=None, hasher=hashlib.sha256
 
 
 def hash_files_cache(folder, cache_filename, func_hasher):
-    assert folder
     file_dict = {}
     if cache_filename:
         try:
@@ -167,6 +191,78 @@ def move_files(file_dict_remote, destination_folder, cache_filename, func_hasher
             func_move(source_file, destination_file)
 
 
+#to_delete = open('/Users/allan.callaghan/Applications/KaraKara/to_delete.txt', 'a')
+def func_remove(filename):
+    if input('remove {0}:'.format(filename)):
+        log.warn('removing {0}'.format(filename))
+        #os.remove(filename)
+        #to_delete.write(filename+'\n')
+        #to_delete.flush()
+def remove_duplicates(folder, file_regex=None, ignore_regex=None, func_remove=func_remove):
+    hash_defaultdict = defaultdict(list)
+    for f in file_scan(folder, file_regex=file_regex, ignore_regex=ignore_regex, hasher=hashlib.sha256):
+        sys.stderr.write('.')
+        sys.stderr.flush()
+        files = hash_defaultdict[f.hash]
+        files.append(f.relative)
+        if len(files) > 1:
+            log.warn('duplicates {0}'.format(files))
+            func_remove(os.path.join(folder, sorted(files, key=lambda x: len(x))[0]))
+
+
+folder_data = '/Users/allan.callaghan/Applications/KaraKara/files/'
+
+def copy_missing_source(folder='/Users/allan.callaghan/temp/'):
+    ff = []
+    for f in file_scan(folder):
+        ff.append(f.absolute)
+    for root, dirs, files in os.walk(folder_data):
+    #for f in file_scan('/Users/allan.callaghan/Applications/KaraKara/files/'):
+        if '/source' in root and not files:
+            match = re.search(r'Import - (.*)/source', root)
+            if match:
+                name = match.group(1)
+                for f in ff:
+                    if name in f:
+                        print(name, f)
+                        try:
+                            shutil.copy2(f, root)
+                        except:
+                            import pdb ; pdb.set_trace()
+            #import pdb ; pdb.set_trace()
+
+#copy_missing_source()
+
+#TEMP
+def find_misplaced_source():
+    for root, dirs, files in os.walk(folder_data):
+        if 'source' in dirs:
+            for f in files:
+                if re.search(r'\.(mp4|srt|ssa|avi|mkv)$', f):
+                    print(root, f)
+                    shutil.move(os.path.join(root, f), '/Users/allan.callaghan/Applications/KaraKara/backup/')
+
+#TEMP
+def convert_symlinks_to_files():
+    for root, dirs, files in os.walk(folder_data):
+        for f in files:
+            absolute_path = os.path.join(root, f)
+            if (os.path.islink(absolute_path)):
+                absolute_path_real = os.path.realpath(absolute_path)
+                print(absolute_path)
+                #print(absolute_path_real)
+                #import pdb ; pdb.set_trace()
+                try:
+                    shutil.move(absolute_path, absolute_path+'.bak')
+                    shutil.copy2(absolute_path_real, absolute_path)
+                    os.remove(absolute_path+'.bak')
+                except Exception as e:
+                    print(e)
+                    import pdb ; pdb.set_trace()
+
+
+
+
 # Command Line -----------------------------------------------------------------
 
 def get_args():
@@ -182,8 +278,12 @@ def get_args():
     parser.add_argument('-s', '--source_folder', action='store', help='')
     parser.add_argument('-d', '--destination_folder', action='store', help='')
 
+    # modes
+    parser.add_argument('-x', '--delete_duplicates', action='store_true', help='')
+
     # Cache
-    parser.add_argument('--cache_filename', action='store', help='', default=None)
+    parser.add_argument('--cache_filename_source', action='store', help='', default=None)
+    parser.add_argument('--cache_filename_destination', action='store', help='', default=None)
 
     # Selection
     parser.add_argument('--file_regex', action='store', help='', default=DEFAULT_FILE_REGEX)
@@ -209,14 +309,18 @@ def main():
     if args['dry_run']:
         log.warn('dry_run is not implemented properly, it still creates folders')
 
-    if args.get('source_folder'):
-        hash_files_dict = hash_files_cache(args['source_folder'], args['cache_filename'], func_hasher)
+    if args.get('delete_duplicates'):
+        remove_duplicates(args.get('source_folder'), file_regex=args['file_regex'], ignore_regex=args['ignore_regex'])
+        exit()
+
+    if args.get('source_folder') or args['cache_filename_source']:
+        hash_files_dict = hash_files_cache(args['source_folder'], args['cache_filename_source'], func_hasher)
 
     if args.get('destination_folder'):
         if not hash_files_dict:
             hash_files_dict = json.load(sys.stdin)
         func_move = (lambda source, destination: log.info('Move {0} to {1}'.format(source, destination))) if args['dry_run'] else shutil.move
-        move_files(hash_files_dict, args['destination_folder'], args['cache_filename'], func_hasher, func_move)
+        move_files(hash_files_dict, args['destination_folder'], args['cache_filename_destination'], func_hasher, func_move)
     else:
         json.dump(hash_files_dict, sys.stdout)
         sys.stdout.flush()
