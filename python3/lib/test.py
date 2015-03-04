@@ -11,6 +11,8 @@ class MultiMockOpen(object):
     def open(self, full_path, *args, **kwargs):
         for filename, reads in self.handlers.items():
             if filename in full_path:
+                if isinstance(reads, Exception) or reads == FileNotFoundError:  # not happy the == File is needed. isinstance should have caught this? maybe try something like 'isThrowable' rather than isinstance?
+                    raise reads
                 _open = Mock()
                 _open.read.return_value = reads
                 _open.__exit__ = lambda *args, **kwargs: None
