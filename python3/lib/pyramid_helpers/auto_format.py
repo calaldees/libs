@@ -100,6 +100,7 @@ def auto_format_output(target, *args, **kwargs):
     """
     # Extract request object from args
     request = request_from_args(args)
+    request.matchdict = request.matchdict if request.matchdict else {}
     if 'internal_request' in request.matchdict:  # Abort if internal call
         return target(*args, **kwargs)
 
@@ -213,8 +214,17 @@ import os.path
 def render_template(request, result, format, template_data_param='d'):
     #template_params = {template_data_param:result}
     #template_params.update(request.matchdict)
+    template_filename = ''
+    try:
+        template_filename = request.matched_route.name
+    except AttributeError:
+        pass
+    try:
+        template_filename = request.context.template
+    except AttributeError:
+        pass
     response = render_to_response(
-        '%s.mako' % (os.path.join(format,request.matched_route.name)), 
+        '%s.mako' % (os.path.join(format, template_filename)),
         result,
         request=request,
     )
