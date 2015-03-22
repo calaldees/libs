@@ -262,6 +262,12 @@ def format_rss(request, result):
     return response
 register_formater('rss', format_rss)
 
+# GRAPH ------------------------------
+def format_graph(request, result):
+    request.response = render_template(request, result, 'graph')
+    return request.response
+register_formater('graph', format_graph)
+
 # HTML ------------------------------
 def format_html(request, result):
     request.response = render_template(request, result, 'html')
