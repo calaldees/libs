@@ -9,7 +9,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class MidiInputPlugin(object):
+class MidiInput(object):
 
     def __init__(self, midi_input_name=None):
         self.midi_input_name = midi_input_name
@@ -28,12 +28,6 @@ class MidiInputPlugin(object):
 
         #pygame.display.set_mode((1, 1))
         self.run()
-
-    def midi_event(self, event):
-        """
-        To be overridden
-        """
-        log.debug(event)
 
     def _process_events(self):
         events = self.event_get()
@@ -59,3 +53,8 @@ class MidiInputPlugin(object):
         del self.midi_input
         pygame.midi.quit()
 
+    def midi_event(self, status, data1, data2, data3):
+        """
+        To be overridden
+        """
+        log.debug((status, data1, data2, data3))

@@ -55,6 +55,18 @@ def funcname(level=1):
     return inspect.stack()[level][3]
 
 
+def postmortem(func):
+    import traceback
+    import pdb
+    import sys
+    try:
+        func()
+    except:
+        type, value, tb = sys.exc_info()
+        traceback.print_exc()
+        pdb.post_mortem(tb)
+
+
 # Reference - http://stackoverflow.com/questions/2182858/how-can-i-pack-serveral-decorators-into-one
 def decorator_combine(*dec_funs):
     def _inner_chain(f):
