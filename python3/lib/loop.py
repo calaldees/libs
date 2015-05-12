@@ -20,7 +20,8 @@ class Loop(object):
         return int((timestamp - self.start_time) // self.period)
 
     def loop(self):
-        while self.period:
+        self.running = True
+        while self.running and self.period:
             self.current_time = time.time()
 
             current_frame = self.get_frame(self.current_time)
@@ -33,6 +34,10 @@ class Loop(object):
             sleep_time = (self.start_time + (self.period * (current_frame + 1)) - time.time()) * self.SLEEP_FACTOR
             if sleep_time > 0:
                 time.sleep(sleep_time)
+        self.close()
+
+    def close(self):
+        pass
 
     def render(self, frame):
         """
@@ -48,7 +53,7 @@ class Loop(object):
             average_off_percent = average_frame_inacuracy / self.period
             variance = max(self.profile_timelog) - min(self.profile_timelog)
             print('average_frame_inacuracy: {0} average_off_percent: {1:.2%} variance: {2}'.format(average_frame_inacuracy, average_off_percent, variance))
-            self.period = 0
+            self.running = False
 
 
 if __name__ == "__main__":
