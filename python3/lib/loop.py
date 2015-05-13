@@ -21,19 +21,22 @@ class Loop(object):
 
     def loop(self):
         self.running = True
-        while self.running and self.period:
-            self.current_time = time.time()
+        try:
+            while self.running and self.period:
+                self.current_time = time.time()
 
-            current_frame = self.get_frame(self.current_time)
-            previous_frame = self.get_frame(self.previous_time)
-            for frame_offset in range(current_frame - previous_frame):
-                self.render(current_frame + frame_offset)
+                current_frame = self.get_frame(self.current_time)
+                previous_frame = self.get_frame(self.previous_time)
+                for frame_offset in range(current_frame - previous_frame):
+                    self.render(current_frame + frame_offset)
 
-            self.previous_time = self.current_time
+                self.previous_time = self.current_time
 
-            sleep_time = (self.start_time + (self.period * (current_frame + 1)) - time.time()) * self.SLEEP_FACTOR
-            if sleep_time > 0:
-                time.sleep(sleep_time)
+                sleep_time = (self.start_time + (self.period * (current_frame + 1)) - time.time()) * self.SLEEP_FACTOR
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+        except KeyboardInterrupt:
+            pass
         self.close()
 
     def close(self):
