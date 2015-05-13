@@ -19,7 +19,7 @@ class Loop(object):
     def get_frame(self, timestamp):
         return int((timestamp - self.start_time) // self.period)
 
-    def loop(self):
+    def run(self):
         self.running = True
         try:
             while self.running and self.period:
