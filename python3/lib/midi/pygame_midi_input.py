@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 
 
 class MidiInput(object):
+    MIDI_READ_SIZE = 64
 
     def __init__(self, midi_input_name=None):
         self.midi_input_name = midi_input_name
@@ -68,7 +69,7 @@ class MidiInput(object):
         """
         Used inside an unrestricted loop to block for input
         """
-        for midi_event in pygame.midi.midis2events(self.midi_input.read(10), self.midi_input.device_id):
+        for midi_event in pygame.midi.midis2events(self.midi_input.read(self.MIDI_READ_SIZE), self.midi_input.device_id):
             self.event_post(midi_event)
 
     def close(self):
