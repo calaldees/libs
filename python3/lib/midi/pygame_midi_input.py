@@ -62,7 +62,7 @@ class MidiInput(object):
                 if self.midi_input.poll():
                     self._poll()
         except KeyboardInterrupt:
-            pass
+            self.running = False
         self.close()
 
     def _poll(self):
