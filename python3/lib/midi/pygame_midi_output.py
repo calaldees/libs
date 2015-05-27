@@ -12,7 +12,7 @@ class PygameMidiOutputWrapperNull(object):
         pass
 
 
-from music import note_to_text, midi_pitch
+from .music import note_to_text, midi_pitch
 
 class PygameMidiOutputWrapper(object):
 

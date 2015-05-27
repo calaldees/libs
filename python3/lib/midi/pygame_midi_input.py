@@ -2,8 +2,8 @@ import pygame
 import pygame.midi
 
 
-from pygame_midi_wrapper import PygameMidiDeviceHelper
-from music import midi_status
+from .pygame_midi_wrapper import PygameMidiDeviceHelper
+from .music import midi_status
 
 import logging
 log = logging.getLogger(__name__)
