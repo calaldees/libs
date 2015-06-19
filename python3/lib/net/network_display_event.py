@@ -43,35 +43,43 @@ class DisplayEventHandler(object):
         self.reconnect_timout = reconnect_timeout
         self.socket_connected_attempted_timestamp = None
         self.recive = recive_func
+        self.active = True
         self._connect()
+
+    # Connection Management ----------------------------------------------------
 
     def _connect(self):
         log.debug('Attempting connect TCP network socket {0}:{1}'.format(self.host, self.port))
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
 
-        self.recv_thread = threading.Thread(target=self._recive)
-        self.recv_thread.daemon = True
-        self.recv_thread.start()
+        if self.recive:
+            self.recv_thread = threading.Thread(target=self._recive)
+            self.recv_thread.daemon = True
+            self.recv_thread.start()
 
     def _reconnect(self):
         # Don't try to connect if the last connection attempt was very recent
-        if self.socket_connected_attempted_timestamp is not None and self.socket_connected_attempted_timestamp > datetime.datetime.now() - self.reconnect_timeout:
+        if self.socket_connected_attempted_timestamp is not None and self.socket_connected_attempted_timestamp > (datetime.datetime.now() - self.reconnect_timout):
             return
         # Ensure existing socket is closed
         self.close()
         # Attempt new connection
         try:
             self._connect()
+            return True
         except socket.error:  # ConnectionRefusedError:
             log.debug('Failed to reconnect')
             self.socket_connected_attempted_timestamp = datetime.datetime.now()
+            return False
 
     def close(self):
         try:
             self.socket.close()
         except Exception:
             pass
+
+    # Send ---------------------------------------------------------------------
 
     def event(self, func_name, **params):
         data = {
@@ -93,7 +101,25 @@ class DisplayEventHandler(object):
             data = self.socket.recv(4098)
             if not data:
                 break
-            for line in data.decode('utf-8').split('\n'):
+            for line in filter(None, data.decode('utf-8').split('\n')):
                 self.recive(json.loads(line))
         self.close()
-        # TODO: Attempt reconnect
+
+        # Attempt reconnect if connection is still active
+        while self.active and not self._reconnect():
+            time.sleep(self.reconnect_timout.total_seconds())
+
+
+# Main Demo --------------------------------------------------------------------
+
+if __name__ == "__main__":
+    import time
+    def recive(data):
+        print(data)
+
+    try:
+        DisplayEventHandler(recive_func=recive)
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt as e:
+        print("")
