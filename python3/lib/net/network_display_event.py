@@ -1,6 +1,7 @@
 import socket
 import json
 import datetime
+import threading
 
 import logging
 log = logging.getLogger(__name__)
@@ -36,17 +37,22 @@ class DisplayEventHandler(object):
             log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
             return DisplayEventHandlerNull()
 
-    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, reconnect_timeout=DEFAULT_RECONNECT_TIMEOUT):
+    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, recive_func=None, reconnect_timeout=DEFAULT_RECONNECT_TIMEOUT):
         self.host = host
         self.port = int(port)
         self.reconnect_timout = reconnect_timeout
         self.socket_connected_attempted_timestamp = None
+        self.recive = recive_func
         self._connect()
 
     def _connect(self):
         log.debug('Attempting connect TCP network socket {0}:{1}'.format(self.host, self.port))
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
+
+        self.recv_thread = threading.Thread(target=self._recive)
+        self.recv_thread.daemon = True
+        self.recv_thread.start()
 
     def _reconnect(self):
         # Don't try to connect if the last connection attempt was very recent
@@ -79,3 +85,15 @@ class DisplayEventHandler(object):
             # The data send has failed - for such a transient event we have to just loose the data
             # but we should try to reconnect for the next potential send
             self._reconnect()
+
+    # Recive -------------------------------------------------------------------
+
+    def _recive(self):
+        while True:  # self.socket.isConnected
+            data = self.socket.recv(4098)
+            if not data:
+                break
+            for line in data.decode('utf-8').split('\n'):
+                self.recive(json.loads(line))
+        self.close()
+        # TODO: Attempt reconnect
