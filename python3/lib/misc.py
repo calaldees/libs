@@ -21,13 +21,44 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def null_function(*args, **kwargs):
+    pass
+
+
 def first(iterable):
     """
+    DEPRICATE!!! THIS IS THE any() function .... you muppet
     Return the first non null value in an iterable
     """
     for i in iterable:
         if i:
             return i
+
+
+def get_item_or_attr(obj, item_or_attr_name):
+    if hasattr(obj, item_or_attr_name):
+        return getattr(obj, item_or_attr_name)
+    if hasattr(obj, 'get'):
+        return obj.get(item_or_attr_name)
+    return None
+
+
+def get_obj(obj, cmd, cmd_separator='.'):
+    """
+    Iterate though a chain of objects trying to find a function specifyed with a dot separated name
+    """
+    if isinstance(cmd, str):
+        cmd = cmd.split(cmd_separator)
+    if isinstance(obj, (list, tuple)):
+        return get_obj({type(o).__name__: o for o in obj}, cmd)
+    if len(cmd) == 1:
+        return get_item_or_attr(obj, cmd.pop(0))
+    if len(cmd) > 1:
+        next_cmd = cmd.pop(0)
+        next_obj = get_item_or_attr(obj, next_cmd)
+        # TODO:  Maybe? If next_obj is noarg function, then run it to get the return value?
+        return get_obj(next_obj, cmd)
+    return None
 
 
 def subdict(d, keys):
