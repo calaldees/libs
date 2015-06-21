@@ -61,6 +61,11 @@ def get_obj(obj, cmd, cmd_separator='.'):
     return None
 
 
+def run_func(variables, data, fallback=null_function):
+    func = get_obj(variables, data.get('func', ''))
+    getattr(func, '__call__', fallback)(data)
+
+
 def subdict(d, keys):
     return {k: v for k, v in d.items() if k in keys}
 
