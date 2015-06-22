@@ -194,7 +194,7 @@ def read_file_list(filename):
 
 
 FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats'])
-def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False, func_progress=lambda f: None):
+def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False):
     """
     return (folder, file, folder+file, folder-path+file)
     """
@@ -207,13 +207,12 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
         ignore_regex = re.compile(ignore_regex)
 
     log.debug('Scanning files in {0}'.format(path))
-    file_list = []
     for root, dirs, files in os.walk(path):
         if ignore_regex.search(root):
             continue
         for f in files:
             if file_regex.match(f) and not ignore_regex.search(f):
-                file_details = FileScan(
+                yield FileScan(
                     folder=root,
                     file=f,
                     absolute=os.path.join(root, f),
@@ -221,9 +220,6 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                     hash=hashfile(os.path.join(root, f), hasher),
                     stats=stater(os.path.join(root, f)),
                 )
-                file_list.append(file_details)
-                func_progress(file_list)
-    return file_list
 
 
 def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
