@@ -193,7 +193,24 @@ def read_file_list(filename):
     return data
 
 
-FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats'])
+def file_ext(filename):
+    """
+    >>> file_ext('test.txt')
+    ('test', 'txt')
+    >>> file_ext('test')
+    ('test', '')
+    >>> file_ext('test.again.yaml')
+    ('test.again', 'yaml')
+    >>> file_ext('.doc')
+    ('', 'doc')
+    """
+    try:
+        return re.match('(.*)\.(.*?)$', filename).groups()
+    except AttributeError:
+        return (filename, '')
+
+
+FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats', 'ext', 'file_no_ext'])
 def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False):
     """
     return (folder, file, folder+file, folder-path+file)
@@ -212,6 +229,7 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
             continue
         for f in files:
             if file_regex.match(f) and not ignore_regex.search(f):
+                file_no_ext, ext = file_ext(f)
                 yield FileScan(
                     folder=root,
                     file=f,
@@ -219,6 +237,8 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                     relative=os.path.join(root.replace(path, ''), f).strip('/'),
                     hash=hashfile(os.path.join(root, f), hasher),
                     stats=stater(os.path.join(root, f)),
+                    ext=ext,
+                    file_no_ext=file_no_ext,
                 )
 
 
