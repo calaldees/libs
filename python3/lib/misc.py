@@ -21,6 +21,18 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def postmortem(func):
+    import traceback
+    import pdb
+    import sys
+    try:
+        func()
+    except:
+        type, value, tb = sys.exc_info()
+        traceback.print_exc()
+        pdb.post_mortem(tb)
+
+
 def null_function(*args, **kwargs):
     pass
 
@@ -68,6 +80,12 @@ def run_func(variables, data, fallback=null_function):
 
 def subdict(d, keys):
     return {k: v for k, v in d.items() if k in keys}
+
+
+def list_neighbor_generator(_list, out_of_bounds_type=dict):
+    length = len(_list)
+    for index, item in enumerate(_list):
+        yield _list[index-1] if index > 0 else out_of_bounds_type(), item, _list[index+1] if index < length else out_of_bounds_type()
 
 
 # TODO - @property to get/set now?
