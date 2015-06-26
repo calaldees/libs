@@ -83,9 +83,13 @@ def subdict(d, keys):
 
 
 def list_neighbor_generator(_list, out_of_bounds_type=dict):
+    """
+    >>> ['{0}:{1}:{2}'.format(prev, current, next) for prev, current, next in list_neighbor_generator([1,2,3], out_of_bounds_type=str)]
+    [':1:2', '1:2:3', '2:3:']
+    """
     length = len(_list)
     for index, item in enumerate(_list):
-        yield _list[index-1] if index > 0 else out_of_bounds_type(), item, _list[index+1] if index < length else out_of_bounds_type()
+        yield _list[index-1] if index > 0 else out_of_bounds_type(), item, _list[index+1] if index < length-1 else out_of_bounds_type()
 
 
 # TODO - @property to get/set now?
@@ -105,7 +109,13 @@ def epoc(datetime_obj):
 
 import inspect
 def funcname(level=1):
-    """Use: print("My name is: %s" % inspect.stack()[0][3])"""
+    """
+    Use: print("My name is: %s" % inspect.stack()[0][3])
+    >>> def test():
+    ...     return funcname()
+    >>> test()
+    'test'
+    """
     return inspect.stack()[level][3]
 
 
@@ -155,6 +165,7 @@ def json_object_handler(obj):
 def json_object_handler_inverse(obj):
     """
     Totally inefficent re-date json parser thing ... blarg ...
+    TODO: Tests
     """
     if isinstance(obj, dict):
         return {k: json_object_handler_inverse(v) for k, v in obj.items()}
