@@ -23,6 +23,28 @@ var utils = {};
 	};
 }(utils));
 
+
+(function(external){
+
+	function getUrlParameter(sParam) {
+		//http://stackoverflow.com/questions/19491336/get-url-parameter-jquery
+		var sPageURL = window.location.search.substring(1);
+		var sURLVariables = sPageURL.split('&');
+		for (var i = 0; i < sURLVariables.length; i++) {
+			var sParameterName = sURLVariables[i].split('=');
+			if (sParameterName[0] == sParam) {
+				return sParameterName[1];
+			}
+		}
+		return '';
+	}
+	
+	external.url = {
+		getUrlParameter: getUrlParameter,
+	};
+}(utils));
+
+
 (function (external) {
 	external.path = {
 		is_image: function(src) {
@@ -36,3 +58,4 @@ var utils = {};
 		}
 	};
 }(utils));
+
