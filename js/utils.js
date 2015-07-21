@@ -2,24 +2,26 @@ var utils = {};
 
 (function(external){
 	
-	function get_func(obj, cmd) {
-		//console.log('get_func', obj, cmd);
+	function get(cmd, obj, fallback_return) {
+		obj = obj || window;
 		if (typeof(cmd) == "string") {cmd = cmd.split(".");}
 		if (cmd.length == 1) {return obj[cmd.shift()];}
 		if (cmd.length > 1) {
 			var next_cmd = cmd.shift();
 			var next_obj = obj[next_cmd];
 			if (typeof(next_obj) == "undefined") {
-				console.error(""+obj+" has no attribute "+next_cmd);
-				return function(){};
+				//console.error(""+obj+" has no attribute "+next_cmd);
+				return fallback_return;
 			}
-			return get_func(next_obj, cmd);}
-		console.error('What?');
-		return function(){};
+			return get(cmd, next_obj, fallback_return);}
+		//console.error('Failed to aquire ');
+		return fallback_return;
 	}
 	
 	external.functools = {
-		get_func: get_func,
+		get: get,
+		get_func: function(cmd, obj) {return get(cmd, obj, function(){})},
+		get_dict: function(cmd, obj) {return get(cmd, obj, {})}
 	};
 }(utils));
 
