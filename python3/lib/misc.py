@@ -55,27 +55,43 @@ def get_item_or_attr(obj, item_or_attr_name):
     return None
 
 
-def get_obj(obj, cmd, cmd_separator='.'):
+def get_obj(cmd, obj, cmd_separator='.'):
     """
     Iterate though a chain of objects trying to find a function specifyed with a dot separated name
+
+    TODO: doctests
     """
     if isinstance(cmd, str):
         cmd = cmd.split(cmd_separator)
     if isinstance(obj, (list, tuple)):
-        return get_obj({type(o).__name__: o for o in obj}, cmd)
+        return get_obj(cmd, {type(o).__name__: o for o in obj})
     if len(cmd) == 1:
         return get_item_or_attr(obj, cmd.pop(0))
     if len(cmd) > 1:
         next_cmd = cmd.pop(0)
         next_obj = get_item_or_attr(obj, next_cmd)
         # TODO:  Maybe? If next_obj is noarg function, then run it to get the return value?
-        return get_obj(next_obj, cmd)
+        return get_obj(cmd, next_obj)
     return None
 
 
-def run_func(variables, data, fallback=null_function):
-    func = get_obj(variables, data.get('func', ''))
-    getattr(func, '__call__', fallback)(data)
+def run_funcs(data, variables, fallback=null_function):
+    """
+    Trigger data are decompacted from json
+    This json could be a list or a single dict
+    If the data is a list then run each item
+    If a single item, run the item
+
+    The data items dict should contain a function name to run in '.' separated format
+
+    TODO: doctests
+    """
+    if isinstance(data, list):
+        for item in data:
+            run_funcs(item, variables, fallback)
+    elif isinstance(data, dict):
+        func = get_obj(data.get('func', ''), variables)
+        getattr(func, '__call__', fallback)(data)
 
 
 def subdict(d, keys):
