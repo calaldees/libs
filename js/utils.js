@@ -17,11 +17,26 @@ var utils = {};
 		//console.error('Failed to aquire ');
 		return fallback_return;
 	}
+	function get_func(cmd, obj) {return get(cmd, obj, function(){})}
+	function get_dict(cmd, obj) {return get(cmd, obj, {})}
+	
+	function run_funcs(data) {
+		//console.log('message', data);
+		if (_.isArray(data)) {
+			_.each(data, function(element, index, list){
+				run_funcs(element);
+			});
+		}
+		if (_.has(data, 'func')) {
+			get_func(data.func)(data);
+		}
+	}
 	
 	external.functools = {
 		get: get,
-		get_func: function(cmd, obj) {return get(cmd, obj, function(){})},
-		get_dict: function(cmd, obj) {return get(cmd, obj, {})}
+		get_func: get_func,
+		get_dict: get_dict,
+		run_funcs: run_funcs,
 	};
 }(utils));
 
