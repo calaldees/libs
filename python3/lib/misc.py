@@ -75,7 +75,7 @@ def get_obj(cmd, obj, cmd_separator='.'):
     return None
 
 
-def run_funcs(data, variables, fallback=null_function):
+def run_funcs(data, obj, fallback=null_function):
     """
     Trigger data are decompacted from json
     This json could be a list or a single dict
@@ -86,11 +86,11 @@ def run_funcs(data, variables, fallback=null_function):
 
     TODO: doctests
     """
-    if isinstance(data, list):
+    if isinstance(data, (list, tuple)):
         for item in data:
-            run_funcs(item, variables, fallback)
+            run_funcs(item, obj, fallback)
     elif isinstance(data, dict):
-        func = get_obj(data.get('func', ''), variables)
+        func = get_obj(data.get('func', ''), obj)
         getattr(func, '__call__', fallback)(data)
 
 
