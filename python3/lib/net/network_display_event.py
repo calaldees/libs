@@ -82,14 +82,9 @@ class DisplayEventHandler(object):
 
     # Send ---------------------------------------------------------------------
 
-    def event(self, func_name, **params):
-        data = {
-            'func': func_name,
-        }
-        data.update(params)
-        data = (json.dumps(data)+'\n').encode('utf-8')
+    def event(self, data):
         try:
-            self.socket.sendall(data)
+            self.socket.sendall((json.dumps(data)+'\n').encode('utf-8'))
         except socket.error:  # BrokenPipeError
             # The data send has failed - for such a transient event we have to just loose the data
             # but we should try to reconnect for the next potential send
