@@ -64,7 +64,7 @@ def get_obj(cmd, obj, cmd_separator='.'):
     if isinstance(cmd, str):
         cmd = cmd.split(cmd_separator)
     if isinstance(obj, (list, tuple)):
-        return get_obj(cmd, {type(o).__name__: o for o in obj})
+        return get_obj(cmd, {getattr(o, '__name__', None) or type(o).__name__: o for o in obj})
     if len(cmd) == 1:
         return get_item_or_attr(obj, cmd.pop(0))
     if len(cmd) > 1:
