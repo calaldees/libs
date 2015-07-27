@@ -72,7 +72,10 @@ var utils = {};
 		},
 		is_video: function(src) {
 			return src && src.match(/\.(mp4|avi|mov|mkv|ogm|3gp)$/);
-		}
+		},
+		is_data: function(src) {
+			return src && src.match(/\.(json|xml|csv)$/);
+		},
 	};
 }(utils));
 
