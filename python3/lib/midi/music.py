@@ -69,6 +69,43 @@ def parse_note(item):
         raise Exception('Unable to parse note {0}'.format(item))
 
 
+# Time signiture ---------------------------------------------------------------
+
+timesigniture = namedtuple('timesigniture', ['beats', 'bar'])
+
+
+def parse_timesigniture(timesigniture_string):
+    """
+    >>> parse_timesigniture('4:4')
+    timesigniture(beats=4, bar=4)
+    """
+    assert isinstance(timesigniture_string, str)
+    return timesigniture(*map(int, timesigniture_string.split(':')))
+
+
+def parse_timecode(timecode_string, timesigniture=parse_timesigniture('4:4')):
+    """
+    >>> parse_timecode('4.0.0')
+    4.0
+    >>> parse_timecode('4.1.0')
+    4.25
+    >>> parse_timecode('4.2.0')
+    4.5
+
+
+    #>>> parse_timecode('4.2.2')
+    #4.5
+    """
+    timecode_string_split = list(map(int, timecode_string.split('.')))
+    if len(timecode_string_split) > 3:
+        raise AttributeError('timecode string input is a bunch of bolox: '.format(timecode_string))
+    if len(timecode_string_split) == 1:
+        timecode_string_split.append(0)
+    if len(timecode_string_split) == 2:
+        timecode_string_split.append(0)
+    return timecode_string_split[0] + timecode_string_split[1]/timesigniture.beats  #+ timecode_string_split[2]
+
+
 # Scale defenitions ------------------------------------------------------------
 
 class Scale(object):
