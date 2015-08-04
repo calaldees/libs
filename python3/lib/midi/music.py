@@ -96,14 +96,8 @@ def parse_timecode(timecode_string, timesigniture=parse_timesigniture('4:4')):
     #>>> parse_timecode('4.2.2')
     #4.5
     """
-    timecode_string_split = list(map(int, timecode_string.split('.')))
-    if len(timecode_string_split) > 3:
-        raise AttributeError('timecode string input is a bunch of bolox: '.format(timecode_string))
-    if len(timecode_string_split) == 1:
-        timecode_string_split.append(0)
-    if len(timecode_string_split) == 2:
-        timecode_string_split.append(0)
-    return timecode_string_split[0] + timecode_string_split[1]/timesigniture.beats  #+ timecode_string_split[2]
+    bar_number, beat, subbeat = list(map(int, timecode_string.split('.')))
+    return bar_number + beat/timesigniture.beats + (subbeat*0)
 
 
 # Scale defenitions ------------------------------------------------------------

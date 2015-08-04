@@ -8,6 +8,8 @@ import zlib
 import hashlib
 import collections
 import shutil
+import colorsys
+import codecs
 
 dateutil_parser = dateutil.parser.parser()
 
@@ -650,3 +652,33 @@ def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func
     )
     backup_filename = os.path.join(destination_folder, '{0}.{1}.bak'.format(filename, new_backup_number))
     return func_copy(source_filename, backup_filename)
+
+
+def parse_rgb_color(color):
+    """
+    Normalise a range of string values into (r,g,b) tuple from 0 to 1
+
+    >>> parse_rgb_color((1,1,1))
+    (1.0, 1.0, 1.0)
+    >>> parse_rgb_color([0,0.5,1])
+    (0.0, 0.5, 1.0)
+    >>> parse_rgb_color('#FFFFFF')
+    (1.0, 1.0, 1.0)
+    >>> parse_rgb_color('#FFFFFFFF')
+    (1.0, 1.0, 1.0, 1.0)
+    >>> parse_rgb_color('hsv:0,1,1')
+    (1.0, 0.0, 0.0)
+    >>> parse_rgb_color('hls:0,1,1')
+    (1.0, 1.0, 1.0)
+    >>> parse_rgb_color('yiq:0,0,0')
+    (0.0, 0.0, 0.0)
+    """
+    if isinstance(color, (tuple, list)):
+        return tuple(map(float, color))
+    if isinstance(color, str):
+        if color.startswith('#'):
+            return tuple(map(lambda v: max(0.0, min(1.0, v/255)), codecs.decode(color.strip('#'), "hex")))
+        else:
+            color_type, value = color.split(':')
+            return getattr(colorsys, '{0}_to_rgb'.format(color_type))(*map(float, value.split(',')))
+    raise AttributeError('{0} is not parseable'.format(color))
