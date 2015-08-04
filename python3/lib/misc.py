@@ -654,10 +654,12 @@ def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func
     return func_copy(source_filename, backup_filename)
 
 
-def parse_rgb_color(color):
+def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     """
     Normalise a range of string values into (r,g,b) tuple from 0 to 1
 
+    >>> parse_rgb_color('what is this?')
+    (0.0, 0.0, 0.0)
     >>> parse_rgb_color((1,1,1))
     (1.0, 1.0, 1.0)
     >>> parse_rgb_color([0,0.5,1])
@@ -678,7 +680,9 @@ def parse_rgb_color(color):
     if isinstance(color, str):
         if color.startswith('#'):
             return tuple(map(lambda v: max(0.0, min(1.0, v/255)), codecs.decode(color.strip('#'), "hex")))
-        else:
+        elif color.find(':') >= 0:
             color_type, value = color.split(':')
             return getattr(colorsys, '{0}_to_rgb'.format(color_type))(*map(float, value.split(',')))
+    if fallback_color:
+        return fallback_color
     raise AttributeError('{0} is not parseable'.format(color))
