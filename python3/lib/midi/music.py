@@ -1,5 +1,6 @@
 """ Music Note Utils """
 
+import math
 import re
 from collections import namedtuple
 
@@ -85,19 +86,21 @@ def parse_timesigniture(timesigniture_string):
 
 def parse_timecode(timecode_string, timesigniture=parse_timesigniture('4:4')):
     """
+    There are lementably no standards in music timecodes.
+    This Parse's timecode that matchs the Ableton time system.
+    Further parser 'modes' could be passed to work like cubase and other systems.
+
     >>> parse_timecode('4.0.0')
     4.0
     >>> parse_timecode('4.1.0')
     4.25
     >>> parse_timecode('4.2.0')
     4.5
-
-
-    #>>> parse_timecode('4.2.2')
-    #4.5
+    >>> parse_timecode('4.2.2')
+    4.625
     """
-    bar_number, beat, subbeat = list(map(int, timecode_string.split('.')))
-    return bar_number + beat/timesigniture.beats + (subbeat*0)
+    timecode_split = list(map(int, timecode_string.split('.')))
+    return sum(timecode_component/math.pow(timesigniture.beats, index) for index, timecode_component in enumerate(timecode_split))
 
 
 # Scale defenitions ------------------------------------------------------------
