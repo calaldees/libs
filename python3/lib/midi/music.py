@@ -90,6 +90,8 @@ def parse_timecode(timecode_string, timesigniture=parse_timesigniture('4:4')):
     This Parse's timecode that matchs the Ableton time system.
     Further parser 'modes' could be passed to work like cubase and other systems.
 
+    >>> parse_timecode('4')
+    4.0
     >>> parse_timecode('4.0.0')
     4.0
     >>> parse_timecode('4.1.0')
