@@ -10,6 +10,9 @@ import collections
 import shutil
 import colorsys
 import codecs
+import time
+import threading
+from itertools import chain
 
 dateutil_parser = dateutil.parser.parser()
 
@@ -287,6 +290,29 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                     ext=ext,
                     file_no_ext=file_no_ext,
                 )
+
+
+def file_scan_diff_thread(paths, onchange_function, rescan_interval=2.0, **kwargs):
+    """
+    Used in a separate thread to indicate if a file has changed
+    """
+    kwargs['stats'] = True
+    def scan_set():
+        return {'|'.join((f.relative, str(f.stats.st_mtime))) for f in chain(*(file_scan(path, **kwargs) for path in (paths)))}
+
+    def scan_loop():
+        reference_scan = scan_set()
+        while True:
+            this_scan = scan_set()
+            changed_files = reference_scan ^ this_scan
+            if changed_files:
+                reference_scan = this_scan
+                onchange_function(changed_files)
+            time.sleep(rescan_interval)
+
+    thread = threading.Thread(target=scan_loop, args=())
+    thread.daemon = True
+    thread.start()
 
 
 def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
