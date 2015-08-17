@@ -84,25 +84,49 @@ def parse_timesigniture(timesigniture_string):
     return timesigniture(*map(int, timesigniture_string.split(':')))
 
 
-def parse_timecode(timecode_string, timesigniture=parse_timesigniture('4:4')):
+def timecode_to_beat(timecode, timesigniture=parse_timesigniture('4:4')):
     """
     There are lementably no standards in music timecodes.
     This Parse's timecode that matchs the Ableton time system.
     Further parser 'modes' could be passed to work like cubase and other systems.
 
-    >>> parse_timecode('4')
+    >>> timecode_to_beat('4')
     4.0
-    >>> parse_timecode('4.0.0')
+    >>> timecode_to_beat('4.0.0')
     4.0
-    >>> parse_timecode('4.1.0')
+    >>> timecode_to_beat('4.1.0')
     4.25
-    >>> parse_timecode('4.2.0')
+    >>> timecode_to_beat('4.2.0')
     4.5
-    >>> parse_timecode('4.2.2')
+    >>> timecode_to_beat('4.2.2')
     4.625
     """
-    timecode_split = list(map(int, timecode_string.split('.')))
-    return sum(timecode_component/math.pow(timesigniture.beats, index) for index, timecode_component in enumerate(timecode_split))
+    if (isinstance(timecode, str)):
+        timecode = list(map(int, timecode.split('.')))
+    return sum(timecode_component/math.pow(timesigniture.bar, index) for index, timecode_component in enumerate(timecode))
+
+
+def beat_to_timecode(beat, timesigniture=parse_timesigniture('4:4')):
+    """
+    >>> beat_to_timecode(4.0)
+    '4.0.0'
+    >>> beat_to_timecode(4.25)
+    '4.1.0'
+    >>> beat_to_timecode(4.5)
+    '4.2.0'
+    >>> beat_to_timecode(4.625)
+    '4.2.2'
+    """
+    beat_number = int(beat//1)
+    beat_remainder = beat % 1
+    return '.'.join(map(str, map(int, [beat_number]+[(beat_remainder % (1/math.pow(timesigniture.bar,i)) // (1/math.pow(timesigniture.bar,i+1))) for i in range(0,2)])))
+
+
+def get_beat(time_current, bpm, time_start=0.0):
+    """
+    Given a bpm and a time in seconds, what beat are we on
+    """
+    return max(0.0, ((time_current - time_start) / 60) * bpm)
 
 
 # Scale defenitions ------------------------------------------------------------
