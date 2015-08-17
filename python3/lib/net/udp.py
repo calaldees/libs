@@ -5,8 +5,9 @@ import threading
 class UDPMixin(object):
     DEFAULT_BUFFER_SIZE = 1024
     DEFAULT_PORT = 5005
+    DEFAULT_HOST = '127.0.0.1'
 
-    def __init__(self, host='127.0.0.1', port=DEFAULT_PORT, buffer_size=DEFAULT_BUFFER_SIZE):
+    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, buffer_size=DEFAULT_BUFFER_SIZE):
         self.host = host
         self.port = port
         self.buffer_size = buffer_size
@@ -33,7 +34,11 @@ class UDPMixin(object):
         print("received {0}: {1}".format(addr, raw_data))
 
     def _send(self, raw_data):
-        self.sock.sendto(raw_data, (self.host, self.PORT))
+        try:
+            self.sock.sendto(raw_data, (self.host, self.port))
+        except OSError as oserror:
+            if oserror.errno == 51:  # Network not avalable
+                pass
 
 
 from struct import Struct
