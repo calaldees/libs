@@ -100,6 +100,8 @@ def timecode_to_beat(timecode, timesigniture=parse_timesigniture('4:4')):
     4.5
     >>> timecode_to_beat('4.2.2')
     4.625
+    >>> timecode_to_beat('4.6.0', parse_timesigniture('4:8'))
+    4.75
     """
     if (isinstance(timecode, str)):
         timecode = list(map(int, timecode.split('.')))
@@ -116,9 +118,11 @@ def beat_to_timecode(beat, timesigniture=parse_timesigniture('4:4')):
     '4.2.0'
     >>> beat_to_timecode(4.625)
     '4.2.2'
+    >>> beat_to_timecode(4.75, parse_timesigniture('4:8'))
+    '4.6.0'
     """
     beat_number = int(beat//1)
-    beat_remainder = beat % 1
+    beat_remainder = beat % 1  # There must be a way to do this without the first number being a special case
     return '.'.join(map(str, map(int, [beat_number]+[(beat_remainder % (1/math.pow(timesigniture.bar,i)) // (1/math.pow(timesigniture.bar,i+1))) for i in range(0,2)])))
 
 
