@@ -296,6 +296,8 @@ def file_scan_diff_thread(paths, onchange_function, rescan_interval=2.0, **kwarg
     """
     Used in a separate thread to indicate if a file has changed
     """
+    if isinstance(paths, str):
+        paths = paths.split(',')
     kwargs['stats'] = True
     def scan_set():
         return {'|'.join((f.relative, str(f.stats.st_mtime))) for f in chain(*(file_scan(path, **kwargs) for path in (paths)))}
