@@ -28,7 +28,14 @@ var utils = {};
 			});
 		}
 		if (_.has(data, 'func')) {
-			get_func(data.func)(data);
+			var f = get_func(data.func);
+			if (typeof(f) == "function") {
+				f(data);
+			}
+			else {
+				console.error(""+data.func+" could not be located");
+			}
+			
 		}
 	}
 	
