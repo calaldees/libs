@@ -714,3 +714,33 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     if fallback_color:
         return fallback_color
     raise AttributeError('{0} is not parseable'.format(color))
+
+
+def one_to_limit(value, limit=255):
+    """
+    >>> one_to_byte(0, limit=255)
+    0
+    >>> one_to_byte(1, limit=255)
+    255
+    >>> one_to_byte(0.5, limit=255)
+    127
+    """
+    return int(value * limit)
+
+
+def byte_limit(value, limit=255, floor=0):
+    """
+    >>> byte_limit(255)
+    255
+    >>> byte_limit(256)
+    255
+    >>> byte_limit(0)
+    0
+    >>> byte_limit(-1)
+    0
+    """
+    return min(limit, max(floor, value))
+
+
+def one_byte_limit(value):
+    return byte_limit(one_to_limit(value, limit=255))
