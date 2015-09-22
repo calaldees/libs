@@ -215,10 +215,8 @@ class json_serializer(object):
     The dumps method should accept a Python object and return bytes.
     A ValueError should be raised for malformed inputs.
     """
-    def loads(json_string):
-        if isinstance(json_string, bytes):
-            json_string = json_string.decode('utf-8')
-        return json_load(json_string)
+    def loads(data):
+        return json_load(data.decode('utf-8') if isinstance(data, bytes) else data)
     def dumps(obj):
         return json_string(obj).encode('utf-8')
 
@@ -226,7 +224,7 @@ class json_serializer(object):
 def read_json(filename):
     with open(filename, 'r') as source:
         #try:
-        if hasattr(source,'read'):
+        if hasattr(source, 'read'):
             data = source.read()
         if isinstance(data, bytes):
             data = data.decode('utf-8')
