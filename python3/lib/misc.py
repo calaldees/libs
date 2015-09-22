@@ -685,7 +685,7 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     Normalise a range of string values into (r,g,b) tuple from 0 to 1
 
     >>> parse_rgb_color('what is this?')
-    (0.0, 0.0, 0.0)
+    (0.0, 0.0, 0.0, 0.0)
     >>> parse_rgb_color((1,1,1))
     (1.0, 1.0, 1.0)
     >>> parse_rgb_color([0,0.5,1])
@@ -716,11 +716,11 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
 
 def one_to_limit(value, limit=255):
     """
-    >>> one_to_byte(0, limit=255)
+    >>> one_to_limit(0, limit=255)
     0
-    >>> one_to_byte(1, limit=255)
+    >>> one_to_limit(1, limit=255)
     255
-    >>> one_to_byte(0.5, limit=255)
+    >>> one_to_limit(0.5, limit=255)
     127
     """
     return int(value * limit)
