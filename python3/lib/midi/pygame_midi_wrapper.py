@@ -1,4 +1,7 @@
-import pygame.midi
+try:
+    import pygame.midi
+except ImportError:
+    pass
 
 from collections import namedtuple
 

@@ -227,6 +227,7 @@ def render_template(request, result, format, template_data_param='d'):
         '%s.mako' % (os.path.join(format, template_filename)),
         result,
         request=request,
+        response=request.response,
     )
     return response
 

@@ -1,6 +1,8 @@
-import pygame
-import pygame.midi
-
+try:
+    import pygame
+    import pygame.midi
+except ImportError:
+    pass
 
 from .pygame_midi_wrapper import PygameMidiDeviceHelper
 from .music import midi_status
