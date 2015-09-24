@@ -1,7 +1,6 @@
 import re
 import random
 import datetime
-import dateutil.parser
 import os
 import json
 import zlib
@@ -14,13 +13,18 @@ import time
 import threading
 from itertools import chain
 
-dateutil_parser = dateutil.parser.parser()
-
 try:
     from pyramid.settings import asbool
 except ImportError:
     # Fallback without pyramid - This fallback needs consideration
     asbool = bool
+
+try:
+    import dateutil.parser
+    dateutil_parser = dateutil.parser.parser()
+except ImportError:
+    dateutil_parser = lambda x: None
+
 
 import logging
 log = logging.getLogger(__name__)
