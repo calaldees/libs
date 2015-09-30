@@ -261,6 +261,8 @@ def file_ext(filename):
     except AttributeError:
         return (filename, '')
 
+def file_extension_regex(exts):
+    return re.compile(r'|'.join(map(lambda e: r'\.{0}$'.format(e), exts)))
 
 FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats', 'ext', 'file_no_ext'])
 def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False):
@@ -280,7 +282,7 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
         if ignore_regex.search(root):
             continue
         for f in files:
-            if file_regex.match(f) and not ignore_regex.search(f):
+            if file_regex.search(f) and not ignore_regex.search(f):
                 file_no_ext, ext = file_ext(f)
                 yield FileScan(
                     folder=root,
