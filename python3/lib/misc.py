@@ -267,6 +267,8 @@ def file_extension_regex(exts):
 FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats', 'ext', 'file_no_ext'])
 def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False):
     """
+    regex's are for filenames only (not the whole path). That feature could be added
+
     return (folder, file, folder+file, folder-path+file)
     """
     stater = (lambda f: os.stat(f)) if stats else (lambda f: None)
