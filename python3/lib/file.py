@@ -51,7 +51,7 @@ class FolderStructure(object):
         if isinstance(path, str):
             path = list(path.split('/'))  # os.path.split(path)
         if path:
-            item = self._files_item.get(path.pop(0))
+            item = self._files_item[path.pop(0)]
             if isinstance(item, FolderStructure):
                 return item.get(path)
             else:
