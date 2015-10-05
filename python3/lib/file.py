@@ -1,6 +1,6 @@
 import os.path
 
-from .misc import file_scan, defaultdict_recursive
+from .misc import fast_scan, defaultdict_recursive
 
 
 class FolderStructure(object):
@@ -14,7 +14,7 @@ class FolderStructure(object):
             for path_segment in f.folder.split('/'):  # os.path.split(f.folder):
                 files_item = files_item[path_segment]
             files_item[f.file] = f
-        for f in file_scan(path, stats=True, **kwargs):
+        for f in fast_scan(path, **kwargs):  # stats=True,
             set_leaf(f)
 
         return FolderStructure(files, None)

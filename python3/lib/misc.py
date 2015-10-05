@@ -298,6 +298,35 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                 )
 
 
+def fast_scan(root, path=None, file_regex=None, ignore_regex=r'\.git', hasher=None):
+    if not path:
+        path = ''
+    if not file_regex:
+        file_regex = '.*'
+    if isinstance(file_regex, str):
+        file_regex = re.compile(file_regex)
+    if isinstance(ignore_regex, str):
+        ignore_regex = re.compile(ignore_regex)
+
+    for dir_entry in os.scandir(os.path.join(root, path)):
+        if dir_entry.is_file() and file_regex.search(dir_entry.name) and not ignore_regex.search(dir_entry.name):
+            file_no_ext, ext = file_ext(dir_entry.name)
+            yield FileScan(
+                folder=path,
+                file=dir_entry.name,
+                absolute=dir_entry.path,
+                relative=os.path.join(dir_entry.path.replace(root, ''), dir_entry.name).strip('/'),
+                stats=dir_entry.stat(),
+                ext=ext,
+                file_no_ext=file_no_ext,
+                hash=hashfile(dir_entry.path, hasher),
+            )
+        if dir_entry.is_dir():
+            for sub_dir_entry in fast_scan(root, os.path.join(path, dir_entry.name), file_regex, ignore_regex, hasher):
+                yield sub_dir_entry
+
+
+
 def file_scan_diff_thread(paths, onchange_function, rescan_interval=2.0, **kwargs):
     """
     Used in a separate thread to indicate if a file has changed
