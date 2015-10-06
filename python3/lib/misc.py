@@ -145,12 +145,12 @@ def funcname(level=1):
     return inspect.stack()[level][3]
 
 
-def postmortem(func):
+def postmortem(func, *args, **kwargs):
     import traceback
     import pdb
     import sys
     try:
-        func()
+        func(*args, **kwargs)
     except:
         type, value, tb = sys.exc_info()
         traceback.print_exc()
