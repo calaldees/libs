@@ -12,6 +12,7 @@ import codecs
 import time
 import threading
 from itertools import chain
+from functools import partial
 
 try:
     from pyramid.settings import asbool
@@ -298,7 +299,7 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                 )
 
 
-def fast_scan(root, path=None, file_regex=None, ignore_regex=r'\.git', hasher=None):
+def fast_scan(root, path=None, file_regex=None, ignore_regex=r'\.git'):
     if not path:
         path = ''
     if not file_regex:
@@ -319,10 +320,10 @@ def fast_scan(root, path=None, file_regex=None, ignore_regex=r'\.git', hasher=No
                 stats=dir_entry.stat(),
                 ext=ext,
                 file_no_ext=file_no_ext,
-                hash=hashfile(dir_entry.path, hasher),
+                hash=LazyString(partial(hashfile, dir_entry.path)),
             )
         if dir_entry.is_dir():
-            for sub_dir_entry in fast_scan(root, os.path.join(path, dir_entry.name), file_regex, ignore_regex, hasher):
+            for sub_dir_entry in fast_scan(root, os.path.join(path, dir_entry.name), file_regex, ignore_regex):
                 yield sub_dir_entry
 
 
@@ -368,6 +369,23 @@ def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
         filehandle.close()
         log.debug('hashfile - {0} - {1}'.format(digest, filename))
     return digest
+
+
+class LazyString(object):
+    def __init__(self, generate_function):
+        self.generate_function = generate_function
+        self.generated_value = None
+
+    def __str__(self):
+        if not self.generated_value:
+            self.generated_value = self.generate_function()
+        return self.generated_value
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def hash_files(files, hasher=zlib.adler32):
