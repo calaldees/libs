@@ -31,6 +31,13 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def freeze(items):
+    if isinstance(items, dict):
+        items = items.items()
+    if not isinstance(items, str) and hasattr(items, '__iter__'):
+        return frozenset(freeze(item) for item in items)
+    return items
+
 def postmortem(func):
     import traceback
     import pdb
