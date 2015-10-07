@@ -31,6 +31,15 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def duplicates(list_with_duplicates):
+    if not isinstance(list_with_duplicates, (list, tuple)):
+        list_with_duplicates = tuple(list_with_duplicates)
+    set_without_duplicates = set(list_with_duplicates)
+    if len(set_without_duplicates) == len(list_with_duplicates):
+        return []
+    return [item for item in list_with_duplicates if not set_without_duplicates.pop(item)]
+
+
 def freeze(items):
     if isinstance(items, dict):
         items = items.items()
@@ -323,7 +332,7 @@ def fast_scan(root, path=None, file_regex=None, ignore_regex=r'\.git'):
                 folder=path,
                 file=dir_entry.name,
                 absolute=dir_entry.path,
-                relative=os.path.join(dir_entry.path.replace(root, ''), dir_entry.name).strip('/'),
+                relative=dir_entry.path.replace(root, '').strip('/'),
                 stats=dir_entry.stat(),
                 ext=ext,
                 file_no_ext=file_no_ext,
