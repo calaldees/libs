@@ -36,7 +36,7 @@ class SubscriptionEchoServerManager(ServerManager):
         self.send(b'server_shutdown')
         super().stop()
 
-    #---------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     def _process_message(self, message, source):
         if 'subscribe' in message:
@@ -44,10 +44,13 @@ class SubscriptionEchoServerManager(ServerManager):
 
         if not isinstance(message, list):
             message = (message, )
-        for m in message:
-            message_bytes = json.dumps(m).encode('utf-8')
-            for client, subscriptions in self.subscriptions.items():
-                if client == source:
-                    continue
-                if not subscriptions or m.get('deviceid') in subscriptions:
-                    client.send(message_bytes, source)
+
+        for client, subscriptions in self.subscriptions.items():
+            if client == source:
+                continue
+            client.send(
+                json.dumps(
+                    (m for m in message if not subscriptions or m.get('deviceid') in subscriptions)
+                ).encode('utf-8') + b'\n',
+                source
+            )

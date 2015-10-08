@@ -98,7 +98,12 @@ class DisplayEventHandler(object):
             if not data:
                 break
             for line in filter(None, data.decode('utf-8').split('\n')):
-                self.recive(json.loads(line))
+                try:
+                    line_data = json.loads(line)
+                except json.decoder.JSONDecodeError:
+                    log.warn('Unable to decode json %s', line)
+                    continue
+                self.recive(line_data)
         self.close()
 
         # Attempt reconnect if connection is still active
