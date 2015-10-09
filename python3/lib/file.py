@@ -59,13 +59,13 @@ class FolderStructure(object):
         else:
             return self
 
-    def scan(self, file_regex=None, ignore_regex=None):
+    def scan(self, select_function):
         """
         recusivly look trhough files and yeild files in turn
         """
         for file_item in self._files_item.values():
             if isinstance(file_item, FolderStructure):
-                for f in file_item.scan(file_regex, ignore_regex):
+                for f in file_item.scan(select_function):
                     yield f
-            elif (file_regex and file_regex.search(file_item.file)) and (not ignore_regex or not ignore_regex.search(file_item.file)):
+            elif select_function(file_item):
                 yield file_item
