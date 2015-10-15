@@ -1,5 +1,3 @@
-import os.path
-
 from .misc import fast_scan, defaultdict_recursive
 
 
@@ -11,10 +9,10 @@ class FolderStructure(object):
 
         def set_leaf(f):
             files_item = files
-            for path_segment in f.folder.split('/'):  # os.path.split(f.folder):
+            for path_segment in f.folder.split('/'):
                 files_item = files_item[path_segment]
             files_item[f.file] = f
-        for f in fast_scan(path, **kwargs):  # stats=True,
+        for f in fast_scan(path, **kwargs):
             set_leaf(f)
 
         return FolderStructure(files, None)
@@ -49,7 +47,7 @@ class FolderStructure(object):
 
     def get(self, path):
         if isinstance(path, str):
-            path = list(path.split('/'))  # os.path.split(path)
+            path = list(path.split('/'))
         if path:
             item = self._files_item[path.pop(0)]
             if isinstance(item, FolderStructure):
