@@ -65,7 +65,6 @@ def null_function(*args, **kwargs):
 
 def first(iterable):
     """
-    DEPRICATE!!! THIS IS THE any() function .... you muppet
     Return the first non null value in an iterable
     """
     for i in iterable:
