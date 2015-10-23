@@ -181,6 +181,23 @@ def decorator_combine(*dec_funs):
     return _inner_chain
 
 
+def cmd_args(*args, **kwargs):
+    """
+    >>> cmd_args('cmd', '-flag')
+    ('cmd', '-flag')
+    >>> cmd_args('cmd', 'arg1', flag=None, value='1', value2=2, value3=False)
+    ('cmd', 'arg1', '-flag', '-value', '1', '-value2', '2', '-value3', 'False')
+    """
+    def format_arg(k, v):
+        arg = []
+        if k:
+            arg.append('-{0}'.format(k))
+        if v != None:
+            arg.append(str(v))
+        return arg
+    return tuple(args) + tuple(x for k in sorted(kwargs.keys()) for x in format_arg(k, kwargs[k]))
+
+
 def json_object_handler(obj):
     """
     Used with json lib to serialize json output
