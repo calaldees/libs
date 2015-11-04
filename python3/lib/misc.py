@@ -849,9 +849,9 @@ def commonOverlapNaive(text1, text2):
     'CoCo and CoCo'
 
     """
-    x = min(len(text1), len(text2))
-    while x > 0:
-        if text1[-x:] == text2[:x]:
+    index = min(len(text1), len(text2))
+    while index > 0:
+        if text1[-index:] == text2[:index]:
             break
-        x -= 1
-    return text2[:x]
+        index -= 1
+    return text2[:index]
