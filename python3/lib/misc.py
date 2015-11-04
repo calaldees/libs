@@ -839,14 +839,17 @@ def one_byte_limit(value):
     return byte_limit(one_to_limit(value, limit=255))
 
 
+TextOverlap = collections.namedtuple('TextOverlap', ('index', 'text'))
+
+
 def commonOverlapNaive(text1, text2):
     """
     https://neil.fraser.name/news/2010/11/04/
 
     >>> commonOverlapNaive('Fire at Will', 'William Riker is number one')
-    'Will'
+    TextOverlap(index=4, text='Will')
     >>> commonOverlapNaive('Have some CoCo and CoCo', 'CoCo and CoCo is here.')
-    'CoCo and CoCo'
+    TextOverlap(index=13, text='CoCo and CoCo')
 
     """
     index = min(len(text1), len(text2))
@@ -854,4 +857,4 @@ def commonOverlapNaive(text1, text2):
         if text1[-index:] == text2[:index]:
             break
         index -= 1
-    return text2[:index]
+    return TextOverlap(index, text2[:index])
