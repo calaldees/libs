@@ -32,6 +32,9 @@ log = logging.getLogger(__name__)
 
 
 def duplicates(list_with_duplicates):
+    """
+    todo: tests
+    """
     if not isinstance(list_with_duplicates, (list, tuple)):
         list_with_duplicates = tuple(list_with_duplicates)
     set_without_duplicates = set(list_with_duplicates)
@@ -41,6 +44,9 @@ def duplicates(list_with_duplicates):
 
 
 def freeze(items):
+    """
+    todo: tests
+    """
     if isinstance(items, dict):
         items = items.items()
     if not isinstance(items, str) and hasattr(items, '__iter__'):
@@ -66,6 +72,8 @@ def null_function(*args, **kwargs):
 def first(iterable):
     """
     Return the first non null value in an iterable
+    
+    TODO: tests
     """
     for i in iterable:
         if i:
@@ -829,3 +837,21 @@ def byte_limit(value, limit=255, floor=0):
 
 def one_byte_limit(value):
     return byte_limit(one_to_limit(value, limit=255))
+
+
+def commonOverlapNaive(text1, text2):
+    """
+    https://neil.fraser.name/news/2010/11/04/
+
+    >>> commonOverlapNaive('Fire at Will', 'William Riker is number one')
+    'Will'
+    >>> commonOverlapNaive('Have some CoCo and CoCo', 'CoCo and CoCo is here.')
+    'CoCo and CoCo'
+
+    """
+    x = min(len(text1), len(text2))
+    while x > 0:
+        if text1[-x:] == text2[:x]:
+            break
+        x -= 1
+    return text2[:x]
