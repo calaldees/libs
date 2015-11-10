@@ -133,6 +133,8 @@ def subdict(d, keys):
 
 def list_neighbor_generator(_list, out_of_bounds_type=dict):
     """
+    Todo - this is rubish - replace with zip()
+
     >>> ['{0}:{1}:{2}'.format(prev, current, next) for prev, current, next in list_neighbor_generator([1,2,3], out_of_bounds_type=str)]
     [':1:2', '1:2:3', '2:3:']
     """
@@ -472,6 +474,8 @@ def update_dict(dict_a, dict_b):
 
 def random_string(length=8):
     """
+    TODO: Depricated! Moved to string_tools
+    
     Generate a random string of a-z A-Z 0-9
     (Without vowels to stop bad words from being generated!)
 
@@ -495,6 +499,8 @@ def random_string(length=8):
 
 def substring_in(substrings, string_list, ignore_case=True):
     """
+    TODO - Depricated! Moved to string_tools
+    
     Find a substrings in a list of string_list
     Think of it as
       is 'bc' in ['abc', 'def']
@@ -837,24 +843,3 @@ def byte_limit(value, limit=255, floor=0):
 
 def one_byte_limit(value):
     return byte_limit(one_to_limit(value, limit=255))
-
-
-TextOverlap = collections.namedtuple('TextOverlap', ('index', 'text'))
-
-
-def commonOverlapNaive(text1, text2):
-    """
-    https://neil.fraser.name/news/2010/11/04/
-
-    >>> commonOverlapNaive('Fire at Will', 'William Riker is number one')
-    TextOverlap(index=4, text='Will')
-    >>> commonOverlapNaive('Have some CoCo and CoCo', 'CoCo and CoCo is here.')
-    TextOverlap(index=13, text='CoCo and CoCo')
-
-    """
-    index = min(len(text1), len(text2))
-    while index > 0:
-        if text1[-index:] == text2[:index]:
-            break
-        index -= 1
-    return TextOverlap(index, text2[:index])
