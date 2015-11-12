@@ -341,18 +341,20 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                 )
 
 
-def fast_scan(root, path=None, file_regex=None, ignore_regex=r'\.git'):
-    if not path:
-        path = ''
+def fast_scan_regex_filter(file_regex=None, ignore_regex=r'\.git'):
     if not file_regex:
         file_regex = '.*'
     if isinstance(file_regex, str):
         file_regex = re.compile(file_regex)
     if isinstance(ignore_regex, str):
         ignore_regex = re.compile(ignore_regex)
+    return lambda f: file_regex.search(f.name) and not ignore_regex.search(f.name)
 
+
+def fast_scan(root, path=None, search_filter=fast_scan_regex_filter()):
+    path = path or ''
     for dir_entry in os.scandir(os.path.join(root, path)):
-        if dir_entry.is_file() and file_regex.search(dir_entry.name) and not ignore_regex.search(dir_entry.name):
+        if dir_entry.is_file() and search_filter(dir_entry):
             file_no_ext, ext = file_ext(dir_entry.name)
             yield FileScan(
                 folder=path,
@@ -365,7 +367,7 @@ def fast_scan(root, path=None, file_regex=None, ignore_regex=r'\.git'):
                 hash=LazyString(partial(hashfile, dir_entry.path)),
             )
         if dir_entry.is_dir():
-            for sub_dir_entry in fast_scan(root, os.path.join(path, dir_entry.name), file_regex, ignore_regex):
+            for sub_dir_entry in fast_scan(root, os.path.join(path, dir_entry.name), search_filter):
                 yield sub_dir_entry
 
 
