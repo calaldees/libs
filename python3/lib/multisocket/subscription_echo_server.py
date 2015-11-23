@@ -9,9 +9,11 @@ log = logging.getLogger(__name__)
 
 class SubscriptionEchoServerManager(ServerManager):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, echo_back_to_source=False, default_subscribe_to_all=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self.subscriptions = defaultdict(list)
+        self.echo_back_to_source = echo_back_to_source
+        self.default_subscribe_to_all = default_subscribe_to_all
+        self.subscriptions = defaultdict(set)
 
     def connect(self, client):
         log.info('connection: %s connected' % client.id)
@@ -39,18 +41,27 @@ class SubscriptionEchoServerManager(ServerManager):
     # --------------------------------------------------------------------------
 
     def _process_message(self, message, source):
-        if 'subscribe' in message:
-            self.subscriptions[source] = message.get('subscribe')
+        # Handle subscription messages - if present
+        if isinstance(message, dict):
+            def parse_subscription_set(keys):
+                return {keys} if isinstance(message, str) else set(keys)
+            if 'subscribe' in message:
+                self.subscriptions[source] += parse_subscription_set(message.get('subscribe'))
+            if 'unsubscribe' in message:
+                self.subscriptions[source] -= parse_subscription_set(message.get('unsubscribe'))
 
         if not isinstance(message, list):
-            message = (message, )
+            message = [message, ]
 
-        for client, subscriptions in self.subscriptions.items():
-            if client == source:
+        # Send message to clients
+        for client, client_subscriptions in self.subscriptions.items():
+            if not self.echo_back_to_source and client == source:
                 continue
             client.send(
-                json.dumps(
-                    (m for m in message if not subscriptions or m.get('deviceid') in subscriptions)
-                ).encode('utf-8') + b'\n',
+                json.dumps([
+                    m for m in message
+                    if (self.default_subscribe_to_all and not client_subscriptions)
+                    or isinstance(m, dict) and m.get('deviceid') in client_subscriptions
+                ]).encode('utf-8') + b'\n',
                 source
             )

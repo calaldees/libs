@@ -72,9 +72,11 @@ def null_function(*args, **kwargs):
 def first(iterable):
     """
     Return the first non null value in an iterable
-    
+
     TODO: tests
     """
+    if not iterable:
+        return None
     for i in iterable:
         if i:
             return i
