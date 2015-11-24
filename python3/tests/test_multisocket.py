@@ -1,13 +1,11 @@
 import socket
 from multiprocessing import Process, Queue
 
-from lib.multisocket.multisocket_server import EchoServerManager
-
 DEFAULT_TCP_PORT = 9872
 DEFAULT_SERVER = 'localhost'
 
 
-class TestClient(object):
+class SocketClient(object):
 
     def __init__(self, host=DEFAULT_SERVER, port=DEFAULT_TCP_PORT):
         def connection(sock, message_received_queue):
@@ -35,12 +33,16 @@ class TestClient(object):
         self.client_listener_process.join()
 
 
-def test_basic_echo():
-    manager = EchoServerManager(tcp_port=DEFAULT_TCP_PORT)
-    manager.start()
+def test_basic_echo(echo_server):
+    client1 = SocketClient()
+    client2 = SocketClient()
 
-    client = TestClient()
-    client.send('hello')
-    client.assert_recv('hello')
+    MSG1 = 'hello'
+    client1.send(MSG1)
+    client1.assert_recv(MSG1)
+    client2.assert_recv(MSG1)
 
-    manager.stop()
+    MSG2 = 'test'
+    client2.send(MSG2)
+    client1.assert_recv(MSG2)
+    client2.assert_recv(MSG2)
