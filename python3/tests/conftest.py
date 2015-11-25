@@ -13,14 +13,33 @@ def pytest_runtest_setup(item):
         noserver = False
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='function')
 def echo_server(request):
+    if request.config.getoption("--noserver"):
+        return
+
     from lib.multisocket.multisocket_server import EchoServerManager
-    manager = EchoServerManager(tcp_port=9872)
-    manager.start()
+    echo_server = EchoServerManager(tcp_port=9872)
+    echo_server.start()
 
     def finalizer():
-        manager.stop()
+        echo_server.stop()
     request.addfinalizer(finalizer)
 
-    return manager
+    return echo_server
+
+
+@pytest.fixture(scope='function')
+def subscription_server(request):
+    if request.config.getoption("--noserver"):
+        return
+
+    from lib.multisocket.subscription_echo_server import SubscriptionEchoServerManager
+    subscription_server = SubscriptionEchoServerManager(tcp_port=9872)
+    subscription_server.start()
+
+    def finalizer():
+        subscription_server.stop()
+    request.addfinalizer(finalizer)
+
+    return subscription_server

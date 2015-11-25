@@ -1,3 +1,4 @@
+import json
 import socket
 from multiprocessing import Process, Queue
 
@@ -25,12 +26,23 @@ class SocketClient(object):
     def send(self, data):
         self.sock.sendall(data.encode('utf-8'))
 
-    def assert_recv(self, message):
-        assert message in self.message_received_queue.get(timeout=1)
+    @property
+    def last_message(self):
+        return self.message_received_queue.get(timeout=1)
 
     def close(self):
         self.client_listener_process.terminate()
         self.client_listener_process.join()
+
+
+class JSONSocketClient(SocketClient):
+
+    def send(self, data):
+        super().send(json.dumps(data))
+
+    @property
+    def last_data(self):
+        return json.loads(self.last_message)
 
 
 def test_basic_echo(echo_server):
@@ -39,10 +51,28 @@ def test_basic_echo(echo_server):
 
     MSG1 = 'hello'
     client1.send(MSG1)
-    client1.assert_recv(MSG1)
-    client2.assert_recv(MSG1)
+    assert client1.last_message == MSG1
+    assert client2.last_message == MSG1
 
     MSG2 = 'test'
     client2.send(MSG2)
-    client1.assert_recv(MSG2)
-    client2.assert_recv(MSG2)
+    assert client1.last_message == MSG2
+    assert client2.last_message == MSG2
+
+    client1.close()
+    client2.close()
+
+
+def test_json(echo_server):
+    client1 = JSONSocketClient()
+    client1.send({'a': 1})
+    assert client1.last_data['a'] == 1
+    client1.close()
+
+
+def test_subscription(subscription_server):
+    client1 = SocketClient()
+    client2 = SocketClient()
+
+    client1.close()
+    client2.close()

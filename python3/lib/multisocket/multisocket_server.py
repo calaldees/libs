@@ -505,6 +505,7 @@ class TCPServerWrapper(ServerWrapper):
 
     def close_server_obj(self):
         self.server_obj.shutdown()
+        self.server_obj.server_close()
         self.server_obj = None
 
 
