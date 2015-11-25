@@ -24,11 +24,11 @@ class SocketClient(object):
         self.client_listener_process.start()
 
     def send(self, data):
-        self.sock.sendall(data.encode('utf-8'))
+        self.sock.sendall(data.encode('utf-8')+b'\n')
 
     @property
     def last_message(self):
-        return self.message_received_queue.get(timeout=1)
+        return self.message_received_queue.get(timeout=1).strip()
 
     def close(self):
         self.client_listener_process.terminate()
@@ -41,8 +41,8 @@ class JSONSocketClient(SocketClient):
         super().send(json.dumps(data))
 
     @property
-    def last_data(self):
-        return json.loads(self.last_message)
+    def last_message(self):
+        return json.loads(super().last_message)
 
 
 def test_basic_echo(echo_server):
@@ -63,16 +63,12 @@ def test_basic_echo(echo_server):
     client2.close()
 
 
-def test_json(echo_server):
-    client1 = JSONSocketClient()
-    client1.send({'a': 1})
-    assert client1.last_data['a'] == 1
-    client1.close()
-
-
 def test_subscription(subscription_server):
-    client1 = SocketClient()
-    client2 = SocketClient()
+    client1 = JSONSocketClient()
+    client2 = JSONSocketClient()
+
+    client1.send([{'a': 1}])
+    assert client2.last_message[0]['a'] == 1
 
     client1.close()
     client2.close()

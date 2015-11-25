@@ -25,7 +25,6 @@ class SubscriptionEchoServerManager(ServerManager):
 
     def recv(self, data, source=None):
         log.debug('message: {0} - {1}'.format(getattr(source, 'id', None), str(data, 'utf8')))
-
         for line in filter(None, data.decode('utf-8').split('\n')):
             try:
                 message = json.loads(line)
