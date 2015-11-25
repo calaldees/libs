@@ -1,3 +1,4 @@
+import pytest
 import json
 import socket
 from multiprocessing import Process, Queue
@@ -68,6 +69,8 @@ def test_subscription(subscription_server):
     client2 = JSONSocketClient()
 
     client1.send([{'a': 1}])
+    #with pytest.raises(Queue.Empty):
+    #    assert client1.last_message[0]['a'] == 1
     assert client2.last_message[0]['a'] == 1
 
     client1.close()
