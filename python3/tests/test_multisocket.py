@@ -103,6 +103,9 @@ def client_json1(request):
 @pytest.fixture(scope='function')
 def client_json2(request):
     return _gen_client_fixture(request, JSONSocketClient)
+@pytest.fixture(scope='function')
+def client_json3(request):
+    return _gen_client_fixture(request, JSONSocketClient)
 
 
 def test_basic_echo(echo_server, client_text1, client_text2):
@@ -126,7 +129,7 @@ def test_subscription_message(subscription_server, client_json1, client_json2):
 
 
 def test_subscription_subscribe_simple(subscription_server, client_json1, client_json2):
-    client_json2.send({'subscribe': 'videos'})
+    client_json2.send({'subscribe': 'video'})
     time.sleep(0.01)
 
     client_json1.send([{'a': 1}])
@@ -135,5 +138,50 @@ def test_subscription_subscribe_simple(subscription_server, client_json1, client
     with pytest.raises(Empty):
         assert not client_json2.last_message
 
-    client_json1.send([{'deviceid': 'videos', 'message': 'hello'}])
+    client_json1.send({'deviceid': 'video', 'message': 'hello'})
     assert client_json2.last_message[0]['message'] == 'hello'
+
+
+def test_subscription_subscribe_multiple(subscription_server, client_json1, client_json2, client_json3):
+    client_json2.send({'subscribe': 'video'})
+    client_json3.send({'subscribe': ['video', 'audio']})
+    time.sleep(0.01)
+
+    client_json1.send({'deviceid': 'video', 'message': 'hello2'})
+    assert client_json2.last_message[0]['message'] == 'hello2'
+    assert client_json3.last_message[0]['message'] == 'hello2'
+
+    client_json1.send([{'deviceid': 'audio', 'message': 'hello3'}])
+    with pytest.raises(Empty):
+        assert not client_json2.last_message
+    assert client_json3.last_message[0]['message'] == 'hello3'
+
+
+def test_subscription_multiple_message(subscription_server, client_json1, client_json2, client_json3):
+    client_json2.send({'subscribe': 'video'})
+    client_json3.send({'subscribe': ['video', 'audio']})
+    time.sleep(0.01)
+
+    client_json1.send([
+        {'deviceid': 'video', 'message': 'hello4'},
+        {'deviceid': 'audio', 'message': 'hello5'},
+    ])
+
+    assert {'hello4'} == {m['message'] for m in client_json2.last_message}
+    assert {'hello4', 'hello5'} == {m['message'] for m in client_json3.last_message}
+
+
+def test_subscription_change_subscription(subscription_server, client_json1, client_json2):
+    client_json2.send({'subscribe': 'video'})
+    time.sleep(0.01)
+
+    client_json1.send([{'deviceid': 'video', 'message': 'hello6'}, ])
+    assert {'hello6'} == {m['message'] for m in client_json2.last_message}
+
+    client_json2.send({'subscribe': None})
+    time.sleep(0.01)
+
+    client_json1.send([{'deviceid': 'video', 'message': 'hello7'}, ])
+
+    with pytest.raises(Empty):
+        assert not client_json2.last_message
