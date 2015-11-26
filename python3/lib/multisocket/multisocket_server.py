@@ -241,10 +241,10 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
 
     def setup(self):
         websocket_request = self.request.recv(recv_size)
-        if not websocket_request: # Sometimes this method is called with no request after a real setup?! WTF? Abort
+        if not websocket_request:  # Sometimes this method is called with no request after a real setup?! WTF? Abort
             return
 
-        websocket_request = str(websocket_request,'utf8')
+        websocket_request = str(websocket_request, 'utf8')
 
         # HyBi 10 handshake
         if 'Sec-WebSocket-Key' in websocket_request:
@@ -266,7 +266,7 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
             self.frame_encode_func = websocket_frame_encode_hybi00
             self.frame_decode_func = websocket_frame_decode_hybi00
 
-        self.request.send(handshake_return.encode('utf8'))    
+        self.request.send(handshake_return.encode('utf8'))
         #print(handshake_return)
 
         self.client_wrapper = self.construct_client_wrapper_function()  # automatically pass's self as it's a function, kind of annoying, because it isnt a method function

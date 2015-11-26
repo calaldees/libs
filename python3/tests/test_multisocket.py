@@ -6,6 +6,7 @@ from multiprocessing import Process, Queue
 from queue import Empty
 
 DEFAULT_TCP_PORT = 9872
+DEFAULT_WEBSOCKET_PORT = 9873
 DEFAULT_SERVER = 'localhost'
 
 
@@ -17,7 +18,7 @@ def echo_server(request):
         return
 
     from lib.multisocket.multisocket_server import EchoServerManager
-    echo_server = EchoServerManager(tcp_port=9872)
+    echo_server = EchoServerManager(tcp_port=DEFAULT_TCP_PORT, websocket_port=DEFAULT_WEBSOCKET_PORT)
     echo_server.start()
 
     def finalizer():
@@ -33,7 +34,7 @@ def subscription_server(request):
         return
 
     from lib.multisocket.subscription_echo_server import SubscriptionEchoServerManager
-    subscription_server = SubscriptionEchoServerManager(tcp_port=9872)
+    subscription_server = SubscriptionEchoServerManager(tcp_port=DEFAULT_TCP_PORT, websocket_port=DEFAULT_WEBSOCKET_PORT)
     subscription_server.start()
 
     def finalizer():
@@ -42,6 +43,25 @@ def subscription_server(request):
 
     return subscription_server
 
+
+@pytest.fixture(scope='session')
+def http_server(request):
+    import http.server
+    import socketserver
+    PORT = 8000
+    Handler = http.server.SimpleHTTPRequestHandler
+    httpd = socketserver.TCPServer(("", PORT), Handler)
+
+    server_thread = Process(target=httpd.serve_forever)
+    server_thread.daemon = True
+    server_thread.start()
+
+    def finalizer():
+        httpd.server_close()
+        #server_thread.join()
+    request.addfinalizer(finalizer)
+
+    return httpd
 
 # Client Fixtures --------------------------------------------------------------
 
@@ -114,6 +134,23 @@ def client_json3(request):
     return _gen_client_fixture(request, JSONSocketClient)
 
 
+@pytest.fixture(scope='session')
+def browser(request):
+    from selenium import webdriver
+    driver = webdriver.PhantomJS()
+    driver.set_window_size(1120, 550)
+    def finalizer():
+        driver.quit()
+    request.addfinalizer(finalizer)
+    return driver
+
+
+@pytest.fixture(scope='session')
+def browser_websocket(request, browser, http_server):
+    browser.get('http://localhost:8000/websocket.html')
+    return browser
+
+
 # Tests ------------------------------------------------------------------------
 
 def test_basic_echo(echo_server, client_text1, client_text2):
@@ -127,6 +164,14 @@ def test_basic_echo(echo_server, client_text1, client_text2):
     client_text2.send(MSG2)
     assert client_text1.last_message == MSG2
     assert client_text2.last_message == MSG2
+
+
+def websocket_echo(echo_server, client_text1, browser_websocket):
+    MSG1 = 'hello websocket'
+    client_text1.send(MSG1)
+
+    assert browser_websocket.execute_script('return 5') == 5
+    assert browser_websocket.find_elements_by_xpath("//*[contains(text(), 'test')]")
 
 
 def test_subscription_message(subscription_server, client_json1, client_json2):
