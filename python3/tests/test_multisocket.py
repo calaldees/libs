@@ -50,6 +50,7 @@ class SocketClient(object):
 
     def __init__(self, host=DEFAULT_SERVER, port=DEFAULT_TCP_PORT):
         self.running = True
+
         def connection(sock, message_received_queue):
             while self.running:
                 data_recv = sock.recv(4098)
@@ -91,7 +92,7 @@ class JSONSocketClient(SocketClient):
 def _gen_client_fixture(request, client_type=SocketClient):
     client = client_type()
     def finalizer():
-        client.close();
+        client.close()
     request.addfinalizer(finalizer)
     return client
 
