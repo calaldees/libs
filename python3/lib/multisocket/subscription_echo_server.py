@@ -43,11 +43,10 @@ class SubscriptionEchoServerManager(ServerManager):
         # Handle subscription messages - if present
         if isinstance(message, dict):
             def parse_subscription_set(keys):
-                return {keys} if isinstance(message, str) else set(keys)
+                return {keys} if isinstance(keys, (str, bytes)) else set(keys)
             if 'subscribe' in message:
-                self.subscriptions[source] += parse_subscription_set(message.get('subscribe'))
-            if 'unsubscribe' in message:
-                self.subscriptions[source] -= parse_subscription_set(message.get('unsubscribe'))
+                self.subscriptions[source] = parse_subscription_set(message.get('subscribe'))
+                return
 
         if not isinstance(message, list):
             message = [message, ]
@@ -56,11 +55,14 @@ class SubscriptionEchoServerManager(ServerManager):
         for client, client_subscriptions in self.subscriptions.items():
             if not self.echo_back_to_source and client == source:
                 continue
+            messages_for_this_client = [
+                m for m in message
+                if (self.default_subscribe_to_all and not client_subscriptions)
+                or isinstance(m, dict) and m.get('deviceid') in client_subscriptions
+            ]
+            if not messages_for_this_client:
+                continue
             client.send(
-                json.dumps([
-                    m for m in message
-                    if (self.default_subscribe_to_all and not client_subscriptions)
-                    or isinstance(m, dict) and m.get('deviceid') in client_subscriptions
-                ]).encode('utf-8') + b'\n',
+                json.dumps(messages_for_this_client).encode('utf-8') + b'\n',
                 source
             )
