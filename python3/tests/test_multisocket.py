@@ -8,6 +8,9 @@ from queue import Empty
 DEFAULT_TCP_PORT = 9872
 DEFAULT_SERVER = 'localhost'
 
+
+# Server Fixtures --------------------------------------------------------------
+
 @pytest.fixture(scope='function')
 def echo_server(request):
     if request.config.getoption("--noserver"):
@@ -39,6 +42,8 @@ def subscription_server(request):
 
     return subscription_server
 
+
+# Client Fixtures --------------------------------------------------------------
 
 class SocketClient(object):
     QUEUE_GET_TIMEOUT = 0.1
@@ -108,6 +113,8 @@ def client_json3(request):
     return _gen_client_fixture(request, JSONSocketClient)
 
 
+# Tests ------------------------------------------------------------------------
+
 def test_basic_echo(echo_server, client_text1, client_text2):
 
     MSG1 = 'hello'
@@ -174,14 +181,16 @@ def test_subscription_multiple_message(subscription_server, client_json1, client
 def test_subscription_change_subscription(subscription_server, client_json1, client_json2):
     client_json2.send({'subscribe': 'video'})
     time.sleep(0.01)
-
     client_json1.send([{'deviceid': 'video', 'message': 'hello6'}, ])
     assert {'hello6'} == {m['message'] for m in client_json2.last_message}
 
-    client_json2.send({'subscribe': None})
+    client_json2.send({'subscribe': ['audio', 'screen']})
     time.sleep(0.01)
-
     client_json1.send([{'deviceid': 'video', 'message': 'hello7'}, ])
-
     with pytest.raises(Empty):
         assert not client_json2.last_message
+
+    client_json2.send({'subscribe': None})
+    time.sleep(0.01)
+    client_json1.send([{'deviceid': 'video', 'message': 'hello8'}, ])
+    assert {'hello8'} == {m['message'] for m in client_json2.last_message}

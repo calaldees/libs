@@ -45,7 +45,9 @@ class SubscriptionEchoServerManager(ServerManager):
             def parse_subscription_set(keys):
                 if not keys:
                     return set()
-                return {keys} if isinstance(keys, (str, bytes)) else set(keys)
+                if isinstance(keys, (str, bytes)):
+                    return {keys}
+                return set(keys)
             if 'subscribe' in message:
                 self.subscriptions[source] = parse_subscription_set(message.get('subscribe'))
                 return
