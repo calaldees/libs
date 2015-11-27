@@ -29,11 +29,14 @@ js:
 js/underscore-min.js: js
 	cd js && curl https://raw.github.com/jashkenas/underscore/master/underscore-min.js --compressed -O
 
+js/jquery-min.js: js
+	cd js && curl http://code.jquery.com/jquery-2.1.4.min.js --compressed -o jquery-min.js
+
 js/websocket.js: js
-	ln -s ../../js/websocket.js js/websocket.js
+	ln -s ../../../js/websocket.js js/websocket.js
 
 js/utils.js: js
-	ln -s ../../js/utils.js js/utils.js
+	ln -s ../../../js/utils.js js/utils.js
 
 
 # Tests ------------------------------------------------------------------------

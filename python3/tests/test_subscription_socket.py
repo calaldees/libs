@@ -50,15 +50,16 @@ def browser_websocket(request, browser, http_server):
     return browser
 
 
+# Tests ------------------------------------------------------------------------
 
-def test_subscription_message(subscription_server, client_json1, client_json2):
+def test_message(subscription_server, client_json1, client_json2):
     client_json1.send([{'a': 1}])
     with pytest.raises(Empty):
         assert client_json1.last_message
     assert client_json2.last_message[0]['a'] == 1
 
 
-def test_subscription_subscribe_simple(subscription_server, client_json1, client_json2):
+def test_subscribe_simple(subscription_server, client_json1, client_json2):
     client_json2.send({'subscribe': 'video'})
     time.sleep(0.01)
 
@@ -72,7 +73,7 @@ def test_subscription_subscribe_simple(subscription_server, client_json1, client
     assert client_json2.last_message[0]['message'] == 'hello'
 
 
-def test_subscription_subscribe_multiple(subscription_server, client_json1, client_json2, client_json3):
+def test_subscribe_multiple(subscription_server, client_json1, client_json2, client_json3):
     client_json2.send({'subscribe': 'video'})
     client_json3.send({'subscribe': ['video', 'audio']})
     time.sleep(0.01)
@@ -87,7 +88,7 @@ def test_subscription_subscribe_multiple(subscription_server, client_json1, clie
     assert client_json3.last_message[0]['message'] == 'hello3'
 
 
-def test_subscription_multiple_message(subscription_server, client_json1, client_json2, client_json3):
+def test_multiple_message(subscription_server, client_json1, client_json2, client_json3):
     client_json2.send({'subscribe': 'video'})
     client_json3.send({'subscribe': ['video', 'audio']})
     time.sleep(0.01)
@@ -101,7 +102,7 @@ def test_subscription_multiple_message(subscription_server, client_json1, client
     assert {'hello4', 'hello5'} == {m['message'] for m in client_json3.last_message}
 
 
-def test_subscription_change_subscription(subscription_server, client_json1, client_json2):
+def test_change_subscription(subscription_server, client_json1, client_json2):
     client_json2.send({'subscribe': 'video'})
     time.sleep(0.01)
     client_json1.send([{'deviceid': 'video', 'message': 'hello6'}, ])
@@ -117,3 +118,8 @@ def test_subscription_change_subscription(subscription_server, client_json1, cli
     time.sleep(0.01)
     client_json1.send([{'deviceid': 'video', 'message': 'hello8'}, ])
     assert {'hello8'} == {m['message'] for m in client_json2.last_message}
+
+
+def test_websocket(subscription_server, client_json1, browser_websocket):
+    client_json1.send([{'a': 1}])
+    assert browser_websocket.execute_script('return recived_messages;')[0][0]['a'] == 1

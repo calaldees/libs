@@ -81,8 +81,6 @@ def client_text2(request):
     return gen_client_fixture(request, SocketClient)
 
 
-
-
 @pytest.fixture(scope='function')
 def browser_websocket_basic(request, browser, http_server):
     browser.get('http://localhost:8000/websocket_basic.html')
