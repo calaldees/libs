@@ -120,6 +120,20 @@ def test_change_subscription(subscription_server, client_json1, client_json2):
     assert {'hello8'} == {m['message'] for m in client_json2.last_message}
 
 
+def disabled_burst(subscription_server, client_json1, client_json2, client_json3):
+    NUM_MESSAGES = 100
+    for i in range(NUM_MESSAGES):
+        client_json1.send([{'deviceid': 'video', 'message': 'hello9'}, ])
+
+    for client in (client_json2, client_json3):
+        messages_recieved_count = 0
+        try:
+            while client.last_message:
+                messages_recieved_count += 1
+        except Empty:
+            assert messages_recieved_count == NUM_MESSAGES
+
+
 def test_websocket(subscription_server, client_json1, browser_websocket):
     client_json1.send([{'a': 1}])
     assert browser_websocket.execute_script('return recived_messages.pop();')[0]['a'] == 1
