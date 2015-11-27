@@ -122,4 +122,7 @@ def test_change_subscription(subscription_server, client_json1, client_json2):
 
 def test_websocket(subscription_server, client_json1, browser_websocket):
     client_json1.send([{'a': 1}])
-    assert browser_websocket.execute_script('return recived_messages;')[0][0]['a'] == 1
+    assert browser_websocket.execute_script('return recived_messages.pop();')[0]['a'] == 1
+
+    browser_websocket.execute_script('socket.send([{b:2}]);')
+    assert client_json1.last_message[0]['b'] == 2
