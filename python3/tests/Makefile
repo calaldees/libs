@@ -8,7 +8,7 @@ help:
 # Install ----------------------------------------------------------------------
 
 .PHONY: install
-install: node_modules/phantom env/selenium env/bin/py.test
+install: node_modules/phantom env/selenium env/bin/py.test js/underscore-min.js js/websocket.js
 
 node_modules/phantom:
 	npm install phantom
@@ -22,7 +22,19 @@ env/selenium: env
 	
 env/bin/py.test:
 	env/bin/pip3 install pytest
-	
+
+js:
+	mkdir js
+
+js/underscore-min.js: js
+	cd js && curl https://raw.github.com/jashkenas/underscore/master/underscore-min.js --compressed -O
+
+js/websocket.js: js
+	ln -s ../../js/websocket.js js/websocket.js
+
+js/utils.js: js
+	ln -s ../../js/utils.js js/utils.js
+
 
 # Tests ------------------------------------------------------------------------
 
@@ -30,7 +42,7 @@ test_social_login:
 	/Users/allan.callaghan/code/personal/KaraKara/website/env/bin/py.test -q --pdb ./tests/test_social_login.py
 
 test_multisocket:
-	env/bin/py.test --pdb test_multisocket.py
+	env/bin/py.test --pdb test_multisocket.py -k websocket
 
 
 # Clean ------------------------------------------------------------------------
@@ -39,4 +51,5 @@ test_multisocket:
 clean:
 	rm -rf env
 	rm -rf node_modules
+	rm -rf js
 	rm ghostdriver.log

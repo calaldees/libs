@@ -145,7 +145,12 @@ def browser(request):
     return driver
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
+def browser_websocket_basic(request, browser, http_server):
+    browser.get('http://localhost:8000/websocket_basic.html')
+    return browser
+
+@pytest.fixture(scope='function')
 def browser_websocket(request, browser, http_server):
     browser.get('http://localhost:8000/websocket.html')
     return browser
@@ -166,12 +171,15 @@ def test_basic_echo(echo_server, client_text1, client_text2):
     assert client_text2.last_message == MSG2
 
 
-def websocket_echo(echo_server, client_text1, browser_websocket):
+def test_websocket_echo(echo_server, client_text1, browser_websocket_basic):
+    assert browser_websocket_basic.execute_script('return recived_messages') == []
+
     MSG1 = 'hello websocket'
     client_text1.send(MSG1)
 
-    assert browser_websocket.execute_script('return 5') == 5
-    assert browser_websocket.find_elements_by_xpath("//*[contains(text(), 'test')]")
+    assert 'hello websocket' in browser_websocket_basic.execute_script('return recived_messages;')
+    #assert browser_websocket.execute_script('return 5') == 5
+    #assert browser_websocket.find_elements_by_xpath("//*[contains(text(), 'test')]")
 
 
 def test_subscription_message(subscription_server, client_json1, client_json2):

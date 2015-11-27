@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>test</title>
+	</head>
+	<body>
+		<h1>test</h1>
+		<script>
+			var recived_messages = [];
+			var socket = new WebSocket("ws://localhost:9873/");
+			socket.onmessage = function(msg) {
+				recived_messages.push(msg.data.trim());
+			};
+		</script>
+	</body>
+</html>
