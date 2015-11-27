@@ -8,6 +8,7 @@ import time
 import socketserver
 import socket
 import struct
+from multiprocessing import Process
 
 import logging
 logger = {
@@ -398,6 +399,7 @@ class ServerWrapper():
         self.server_obj = self.get_server_obj()
         if self.server_obj:
             self.server_thread = threading.Thread(target=self.server_obj.serve_forever)
+            #self.server_thread = Process(target=self.server_obj.serve_forever)
             self.server_thread.daemon = True   # Exit the server thread when the main thread terminates
             self.server_thread.start()         # Start a thread with the server -- that thread will then start one more thread for each request
         #print("Server loop running in thread:", server_thread.name)
@@ -413,6 +415,8 @@ class ServerWrapper():
         for client in self.clients:
             client.close()
         self.close_server_obj()
+        #self.server_thread.terminate()
+        #self.server_thread.join()
 
     # Abstract methods ---------------
 
@@ -537,6 +541,7 @@ class WebsocketServerWrapper(ServerWrapper):
 
     def close_server_obj(self):
         self.server_obj.shutdown()
+        self.server_obj.server_close()
         self.server_obj = None
 
 
