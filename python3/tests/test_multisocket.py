@@ -51,14 +51,16 @@ def http_server(request):
     PORT = 8000
     Handler = http.server.SimpleHTTPRequestHandler
     httpd = socketserver.TCPServer(("", PORT), Handler)
+    httpd.allow_reuse_address=True
 
     server_thread = Process(target=httpd.serve_forever)
     server_thread.daemon = True
     server_thread.start()
 
     def finalizer():
-        httpd.server_close()
-        #server_thread.join()
+        # http://stackoverflow.com/questions/22171441/shutting-down-python-tcpserver-by-custom-handler
+        Process(target=httpd.shutdown).start()
+        server_thread.join()
     request.addfinalizer(finalizer)
 
     return httpd
@@ -149,6 +151,7 @@ def browser(request):
 def browser_websocket_basic(request, browser, http_server):
     browser.get('http://localhost:8000/websocket_basic.html')
     return browser
+
 
 @pytest.fixture(scope='function')
 def browser_websocket(request, browser, http_server):
