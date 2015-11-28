@@ -1,5 +1,6 @@
 import pytest
 import socket
+import time
 
 from multiprocessing import Process, Queue
 from queue import Empty
@@ -24,6 +25,7 @@ def echo_server(request):
         echo_server.stop()
     request.addfinalizer(finalizer)
 
+    time.sleep(0.01)
     return echo_server
 
 

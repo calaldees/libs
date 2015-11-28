@@ -20,6 +20,7 @@ def subscription_server(request):
         subscription_server.stop()
     request.addfinalizer(finalizer)
 
+    time.sleep(0.01)
     return subscription_server
 
 
