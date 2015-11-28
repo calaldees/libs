@@ -8,7 +8,7 @@ help:
 # Install ----------------------------------------------------------------------
 
 .PHONY: install
-install: node_modules/phantom env/selenium env/bin/py.test js/underscore-min.js js/websocket.js
+install: node_modules/phantom env/selenium env/bin/py.test js/underscore-min.js js/jquery-min.js js/websocket.js js/utils.js
 
 node_modules/phantom:
 	npm install phantom
@@ -27,7 +27,7 @@ js:
 	mkdir js
 
 js/underscore-min.js: js
-	cd js && curl https://raw.github.com/jashkenas/underscore/master/underscore-min.js --compressed -O
+	cd js && curl https://raw.githubusercontent.com/jashkenas/underscore/master/underscore-min.js --compressed -O
 
 js/jquery-min.js: js
 	cd js && curl http://code.jquery.com/jquery-2.1.4.min.js --compressed -o jquery-min.js
