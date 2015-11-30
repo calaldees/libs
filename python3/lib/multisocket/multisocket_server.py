@@ -20,7 +20,10 @@ logger = {
 
 # Constants---------------------------------------------------------------------
 __version__ = 0.1
-recv_size = 4096
+RECV_SIZE = 4096
+
+DEFAULT_TCP_PORT = 9872
+DEFAULT_WEBSOCKET_PORT = 9873
 
 #options_defaults = {
 #    'udp_port': 9871,
@@ -241,7 +244,7 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
     """
 
     def setup(self):
-        websocket_request = self.request.recv(recv_size)
+        websocket_request = self.request.recv(RECV_SIZE)
         if not websocket_request:  # Sometimes this method is called with no request after a real setup?! WTF? Abort
             return
 
@@ -274,7 +277,7 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         while True:
-            data_recv = self.request.recv(recv_size)
+            data_recv = self.request.recv(RECV_SIZE)
             if not data_recv:
                 break
             data, opcode = self.frame_decode_func(data_recv)
@@ -299,7 +302,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         while True:
-            data = self.request.recv(recv_size)
+            data = self.request.recv(RECV_SIZE)
             if not data:
                 break
             self.client_wrapper.recv(data)
@@ -597,8 +600,8 @@ def get_args():
     parser.add_argument('--version', action='version', version="%.2f" % __version__)
     #parser.add_argument('-s','--serve', nargs='+', choices=['udp', 'tcp', 'websocket'], metavar='SERVER_TYPE', default=['udp','tcp','websocket'])
     parser.add_argument('-u', '--udp_port'      , type=int, help='UDP port'      , default=9871)
-    parser.add_argument('-t', '--tcp_port'      , type=int, help='TCP port'      , default=9872)
-    parser.add_argument('-w', '--websocket_port', type=int, help='WebSocket port', default=9873)
+    parser.add_argument('-t', '--tcp_port'      , type=int, help='TCP port'      , default=DEFAULT_TCP_PORT)
+    parser.add_argument('-w', '--websocket_port', type=int, help='WebSocket port', default=DEFAULT_WEBSOCKET_PORT)
     parser.add_argument('-s', '--hide_status'     , action='store_true', default=False, help='Display status')
     parser.add_argument('-c', '--hide_connections', action='store_true', default=False, help='Display connections')
     parser.add_argument('-m', '--show_messages'   , action='store_true', default=False, help='Display messages recived')

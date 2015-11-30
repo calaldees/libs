@@ -1,4 +1,5 @@
-from .multisocket_server import ServerManager
+from .multisocket_server import ServerManager, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
+
 
 import json
 from collections import defaultdict
@@ -6,13 +7,15 @@ from collections import defaultdict
 import logging
 log = logging.getLogger(__name__)
 
+__version__ = 0.01
+
 
 class SubscriptionEchoServerManager(ServerManager):
 
-    def __init__(self, *args, echo_back_to_source=False, default_subscribe_to_all=True, **kwargs):
+    def __init__(self, *args, echo_back_to_source=False, auto_subscribe_to_all=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.echo_back_to_source = echo_back_to_source
-        self.default_subscribe_to_all = default_subscribe_to_all
+        self.auto_subscribe_to_all = auto_subscribe_to_all
         self.subscriptions = defaultdict(set)
 
     def connect(self, client):
@@ -61,7 +64,7 @@ class SubscriptionEchoServerManager(ServerManager):
                 continue
             messages_for_this_client = [
                 m for m in message
-                if (self.default_subscribe_to_all and not client_subscriptions)
+                if (self.auto_subscribe_to_all and not client_subscriptions)
                 or isinstance(m, dict) and m.get('deviceid') in client_subscriptions
             ]
             if not messages_for_this_client:
@@ -70,3 +73,32 @@ class SubscriptionEchoServerManager(ServerManager):
                 json.dumps(messages_for_this_client).encode('utf-8') + b'\n',
                 source
             )
+
+
+# Command line -----------------------------------------------------------------
+
+def get_args():
+    import argparse
+    parser = argparse.ArgumentParser(
+        prog        = "SubscriptionMultiServe",
+        description = "Lightweight JSON Subscription server for UDP, TCP and WebSockets",
+        epilog      = "@calaldees"
+    )
+    parser.add_argument('--version', action='version', version="%.2f" % __version__)
+    parser.add_argument('-t', '--tcp_port', type=int, help='TCP port', default=DEFAULT_TCP_PORT)
+    parser.add_argument('-w', '--websocket_port', type=int, help='WebSocket port', default=DEFAULT_WEBSOCKET_PORT)
+    parser.add_argument('--echo_back_to_source', action='store_true', help='All messages are reflected back to the client source', default=False)
+    parser.add_argument('--auto_subscribe_to_all', action='store_true', help='If no explicit subscriptions are given then subscribe to all messages', default=True)
+
+
+if __name__ == "__main__":
+    manager = SubscriptionEchoServerManager(**vars(get_args()))
+    import time
+    try:
+        manager.start()
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt as e:
+        print("")
+    manager.stop()
+    print("")
