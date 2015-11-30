@@ -1,4 +1,8 @@
-from .multisocket_server import ServerManager, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
+# Dear Python3 ... this is retarded ...
+try:
+    from .multisocket_server import ServerManager, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
+except SystemError:
+    from multisocket_server import ServerManager, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
 
 
 import json
