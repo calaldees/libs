@@ -94,9 +94,12 @@ def get_args():
     parser.add_argument('--echo_back_to_source', action='store_true', help='All messages are reflected back to the client source', default=False)
     parser.add_argument('--auto_subscribe_to_all', action='store_true', help='If no explicit subscriptions are given then subscribe to all messages', default=True)
 
+    args = parser.parse_args()
+    return vars(args)
 
 if __name__ == "__main__":
-    manager = SubscriptionEchoServerManager(**vars(get_args()))
+    options = get_args()
+    manager = SubscriptionEchoServerManager(**options)
     import time
     try:
         manager.start()
