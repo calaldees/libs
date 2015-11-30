@@ -6,6 +6,8 @@ from queue import Empty
 
 from .test_echo_socket import gen_client_fixture, SocketClient, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
 
+DEFAULT_WAIT_TIME = 0.1
+
 
 @pytest.fixture(scope='module')
 def subscription_server(request):
@@ -20,7 +22,7 @@ def subscription_server(request):
         subscription_server.stop()
     request.addfinalizer(finalizer)
 
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
     return subscription_server
 
 
@@ -62,7 +64,7 @@ def test_message(subscription_server, client_json1, client_json2):
 
 def test_subscribe_simple(subscription_server, client_json1, client_json2):
     client_json2.send({'subscribe': 'video'})
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
 
     client_json1.send([{'a': 1}])
     with pytest.raises(Empty):
@@ -77,7 +79,7 @@ def test_subscribe_simple(subscription_server, client_json1, client_json2):
 def test_subscribe_multiple(subscription_server, client_json1, client_json2, client_json3):
     client_json2.send({'subscribe': 'video'})
     client_json3.send({'subscribe': ['video', 'audio']})
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
 
     client_json1.send({'deviceid': 'video', 'message': 'hello2'})
     assert client_json2.last_message[0]['message'] == 'hello2'
@@ -92,7 +94,7 @@ def test_subscribe_multiple(subscription_server, client_json1, client_json2, cli
 def test_multiple_message(subscription_server, client_json1, client_json2, client_json3):
     client_json2.send({'subscribe': 'video'})
     client_json3.send({'subscribe': ['video', 'audio']})
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
 
     client_json1.send([
         {'deviceid': 'video', 'message': 'hello4'},
@@ -105,18 +107,18 @@ def test_multiple_message(subscription_server, client_json1, client_json2, clien
 
 def test_change_subscription(subscription_server, client_json1, client_json2):
     client_json2.send({'subscribe': 'video'})
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
     client_json1.send([{'deviceid': 'video', 'message': 'hello6'}, ])
     assert {'hello6'} == {m['message'] for m in client_json2.last_message}
 
     client_json2.send({'subscribe': ['audio', 'screen']})
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
     client_json1.send([{'deviceid': 'video', 'message': 'hello7'}, ])
     with pytest.raises(Empty):
         assert not client_json2.last_message
 
     client_json2.send({'subscribe': None})
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
     client_json1.send([{'deviceid': 'video', 'message': 'hello8'}, ])
     assert {'hello8'} == {m['message'] for m in client_json2.last_message}
 

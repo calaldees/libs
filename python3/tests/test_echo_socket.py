@@ -9,6 +9,8 @@ DEFAULT_TCP_PORT = 9872
 DEFAULT_WEBSOCKET_PORT = 9873
 DEFAULT_SERVER = 'localhost'
 
+DEFAULT_WAIT_TIME = 0.1
+
 
 # Server Fixtures --------------------------------------------------------------
 
@@ -25,7 +27,7 @@ def echo_server(request):
         echo_server.stop()
     request.addfinalizer(finalizer)
 
-    time.sleep(0.01)
+    time.sleep(DEFAULT_WAIT_TIME)
     return echo_server
 
 
