@@ -8,10 +8,10 @@ help:
 # Install ----------------------------------------------------------------------
 
 .PHONY: install
-install: node_modules/phantom env/selenium env/bin/py.test js/underscore-min.js js/jquery-min.js js/websocket.js js/utils.js
+install: node_modules/phantomjs env/selenium env/bin/py.test js/underscore-min.js js/jquery-min.js js/websocket.js js/utils.js
 
-node_modules/phantom:
-	npm install phantom
+node_modules/phantomjs:
+	npm install phantomjs
 
 env:
 	virtualenv --no-site-packages -p python3 env

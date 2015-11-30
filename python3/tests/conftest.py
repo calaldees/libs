@@ -40,7 +40,7 @@ def http_server(request):
 @pytest.fixture(scope='session')
 def browser(request):
     from selenium import webdriver
-    driver = webdriver.PhantomJS()
+    driver = webdriver.PhantomJS()  # executable_path=''
     driver.set_window_size(1120, 550)
     def finalizer():
         driver.quit()
