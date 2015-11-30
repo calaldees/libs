@@ -11,6 +11,10 @@ help:
 install: node_modules/phantomjs env/selenium env/bin/py.test js/underscore-min.js js/jquery-min.js js/websocket.js js/utils.js
 
 node_modules/phantomjs:
+	# This only installs PhantomJS 1.9.8
+	# We require >=2.0.0 for the modern version of RFC 6455 rather than hixie-76
+	# http://stackoverflow.com/questions/9680820/how-to-know-which-websocket-version-the-client-uses
+	# https://github.com/Medium/phantomjs/issues/288
 	npm install phantomjs
 
 env:

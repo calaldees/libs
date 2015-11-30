@@ -216,6 +216,18 @@ def websocket_frame_encode_hybi00(data):
     return '\x00' + data + '\xff'
 
 
+
+# http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
+
+WEBSOCKET_HANDSHAKE_HIXIE76 = """GET / HTTP/1.1\r
+Upgrade: WebSocket\r
+Connection: Upgrade\r
+Host: %(location)\r
+Origin: %(origin)\r
+Sec-WebSocket-Key1:%(key1)\r
+Sec-WebSocket-Key2:%(key1)\r\n\r\n"""
+
+
 # Connection Handlers ----------------------------------------------------------
 
 #if kwargs['udp_port']:
@@ -247,6 +259,9 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
         websocket_request = self.request.recv(RECV_SIZE)
         if not websocket_request:  # Sometimes this method is called with no request after a real setup?! WTF? Abort
             return
+
+        if b'Sec-WebSocket-Key1' in websocket_request:
+            raise Exception('This server does not support the HIXIE76 protocol. This rfc is obsolete. This protocol is used by PhantomJS<2 and Safari')
 
         websocket_request = str(websocket_request, 'utf8')
 

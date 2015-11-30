@@ -36,13 +36,14 @@ def echo_server(request):
 
 class SocketClient(object):
     QUEUE_GET_TIMEOUT = 0.1
+    READ_SIZE = 4098
 
     def __init__(self, host=DEFAULT_SERVER, port=DEFAULT_TCP_PORT):
         self.running = True
 
         def connection(sock, message_received_queue):
             while self.running:
-                data_recv = sock.recv(4098)
+                data_recv = sock.recv(self.READ_SIZE)
                 if not data_recv:
                     break
                 message_received_queue.put(data_recv.decode('utf-8'))

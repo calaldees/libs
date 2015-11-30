@@ -40,7 +40,7 @@ def http_server(request):
 @pytest.fixture(scope='session')
 def browser(request):
     from selenium import webdriver
-    driver = webdriver.PhantomJS()  # executable_path=''
+    driver = webdriver.PhantomJS()  # executable_path='node_modules/phantomjs/bin/phantomjs'  npm only installs 1.9.8 witch uses an old websocket protocol
     driver.set_window_size(1120, 550)
     def finalizer():
         driver.quit()

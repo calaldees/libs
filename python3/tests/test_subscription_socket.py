@@ -33,7 +33,11 @@ class JSONSocketClient(SocketClient):
 
     @property
     def last_message(self):
-        return json.loads(super().last_message)
+        message = super().last_message
+        try:
+            return json.loads(message)
+        except json.decoder.JSONDecodeError as e:
+            print('unable to decode %s', message)
 
 
 @pytest.fixture(scope='function')
@@ -123,10 +127,12 @@ def test_change_subscription(subscription_server, client_json1, client_json2):
     assert {'hello8'} == {m['message'] for m in client_json2.last_message}
 
 
-def disabled_burst(subscription_server, client_json1, client_json2, client_json3):
+def disable_burst(subscription_server, client_json1, client_json2, client_json3):
     NUM_MESSAGES = 100
     for i in range(NUM_MESSAGES):
         client_json1.send([{'deviceid': 'video', 'message': 'hello9'}, ])
+
+    time.sleep(DEFAULT_WAIT_TIME)
 
     for client in (client_json2, client_json3):
         messages_recieved_count = 0
