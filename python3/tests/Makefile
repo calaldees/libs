@@ -15,7 +15,7 @@ node_modules/phantomjs:
 	# We require >=2.0.0 for the modern version of RFC 6455 rather than hixie-76
 	# http://stackoverflow.com/questions/9680820/how-to-know-which-websocket-version-the-client-uses
 	# https://github.com/Medium/phantomjs/issues/288
-	npm install phantomjs
+	npm install phantomjs@2.0.0
 
 env:
 	virtualenv --no-site-packages -p python3 env

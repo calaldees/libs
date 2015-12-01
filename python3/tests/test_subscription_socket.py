@@ -1,8 +1,7 @@
 import pytest
 import json
 import time
-
-from queue import Empty
+import queue
 
 from .test_echo_socket import gen_client_fixture, SocketClient, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
 
@@ -61,7 +60,7 @@ def browser_websocket(request, browser, http_server):
 
 def test_message(subscription_server, client_json1, client_json2):
     client_json1.send([{'a': 1}])
-    with pytest.raises(Empty):
+    with pytest.raises(queue.Empty):
         assert client_json1.last_message
     assert client_json2.last_message[0]['a'] == 1
 
@@ -71,9 +70,9 @@ def test_subscribe_simple(subscription_server, client_json1, client_json2):
     time.sleep(DEFAULT_WAIT_TIME)
 
     client_json1.send([{'a': 1}])
-    with pytest.raises(Empty):
+    with pytest.raises(queue.Empty):
         assert not client_json1.last_message
-    with pytest.raises(Empty):
+    with pytest.raises(queue.Empty):
         assert not client_json2.last_message
 
     client_json1.send({'deviceid': 'video', 'message': 'hello'})
@@ -90,7 +89,7 @@ def test_subscribe_multiple(subscription_server, client_json1, client_json2, cli
     assert client_json3.last_message[0]['message'] == 'hello2'
 
     client_json1.send([{'deviceid': 'audio', 'message': 'hello3'}])
-    with pytest.raises(Empty):
+    with pytest.raises(queue.Empty):
         assert not client_json2.last_message
     assert client_json3.last_message[0]['message'] == 'hello3'
 
@@ -118,29 +117,13 @@ def test_change_subscription(subscription_server, client_json1, client_json2):
     client_json2.send({'subscribe': ['audio', 'screen']})
     time.sleep(DEFAULT_WAIT_TIME)
     client_json1.send([{'deviceid': 'video', 'message': 'hello7'}, ])
-    with pytest.raises(Empty):
+    with pytest.raises(queue.Empty):
         assert not client_json2.last_message
 
     client_json2.send({'subscribe': None})
     time.sleep(DEFAULT_WAIT_TIME)
     client_json1.send([{'deviceid': 'video', 'message': 'hello8'}, ])
     assert {'hello8'} == {m['message'] for m in client_json2.last_message}
-
-
-def disable_burst(subscription_server, client_json1, client_json2, client_json3):
-    NUM_MESSAGES = 100
-    for i in range(NUM_MESSAGES):
-        client_json1.send([{'deviceid': 'video', 'message': 'hello9'}, ])
-
-    time.sleep(DEFAULT_WAIT_TIME)
-
-    for client in (client_json2, client_json3):
-        messages_recieved_count = 0
-        try:
-            while client.last_message:
-                messages_recieved_count += 1
-        except Empty:
-            assert messages_recieved_count == NUM_MESSAGES
 
 
 def test_websocket(subscription_server, client_json1, browser_websocket):

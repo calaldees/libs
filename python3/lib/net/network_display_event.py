@@ -61,7 +61,8 @@ class DisplayEventHandler(object):
 
     def _reconnect(self):
         # Don't try to connect if the last connection attempt was very recent
-        if self.socket_connected_attempted_timestamp is not None and self.socket_connected_attempted_timestamp > (datetime.datetime.now() - self.reconnect_timout):
+        if self.socket_connected_attempted_timestamp is not None and \
+                self.socket_connected_attempted_timestamp > (datetime.datetime.now() - self.reconnect_timout):
             return
         # Ensure existing socket is closed
         self.close()
@@ -77,6 +78,7 @@ class DisplayEventHandler(object):
     def close(self):
         try:
             self.socket.close()
+            self.socket.shutdown(socket.SHUT_RDWR)
         except Exception:
             pass
 
@@ -114,7 +116,6 @@ class DisplayEventHandler(object):
 # Main Demo --------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import time
     def recive(data):
         print(data)
 

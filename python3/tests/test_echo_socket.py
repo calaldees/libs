@@ -3,7 +3,6 @@ import socket
 import time
 
 from multiprocessing import Process, Queue
-from queue import Empty
 
 DEFAULT_TCP_PORT = 9872
 DEFAULT_WEBSOCKET_PORT = 9873
@@ -29,7 +28,6 @@ def echo_server(request):
 
     time.sleep(DEFAULT_WAIT_TIME)
     return echo_server
-
 
 
 # Client Fixtures --------------------------------------------------------------
@@ -67,7 +65,6 @@ class SocketClient(object):
         self.sock.shutdown(socket.SHUT_RDWR)
         #self.client_listener_process.terminate()
         self.client_listener_process.join()
-
 
 
 def gen_client_fixture(request, client_type=SocketClient):
