@@ -1,14 +1,31 @@
 import pytest
 
-from .test_subscription_socket import subscription_server, client_json1, client_json2
+from .test_subscription_socket import subscription_server, client_json1
 import queue
 
+from lib.net.network_display_event import DisplayEventHandler
 
-def test_message(subscription_server, client_json1, client_json2):
+
+@pytest.fixture(scope='function')
+def client_tcp_reconnect(request):
+    client = DisplayEventHandler(recive_func=lambda *a, **kw: None, reconnect_timeout=0.5)
+
+    def finalizer():
+        client.close()
+    request.addfinalizer(finalizer)
+
+    return client
+
+
+def test_reconnect_client(subscription_server, client_json1, client_tcp_reconnect):
+    messages = []
+    def recive(data):
+        messages.append(data)
+    client_tcp_reconnect.recive = recive
+
     client_json1.send([{'a': 1}])
-    with pytest.raises(queue.Empty):
-        assert client_json1.last_message
-    assert client_json2.last_message[0]['a'] == 1
+
+    assert messages.pop(0)[0]['a'] == 1
 
 
 def disable_burst(subscription_server, client_json1, client_json2, client_json3):

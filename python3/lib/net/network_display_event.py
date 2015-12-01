@@ -41,7 +41,7 @@ class DisplayEventHandler(object):
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, recive_func=None, reconnect_timeout=DEFAULT_RECONNECT_TIMEOUT):
         self.host = host
         self.port = int(port)
-        self.reconnect_timout = reconnect_timeout
+        self.reconnect_timout = reconnect_timeout if isinstance(reconnect_timeout, datetime.timedelta) else datetime.timedelta(seconds=reconnect_timeout)
         self.socket_connected_attempted_timestamp = None
         self.recive = recive_func
         self.active = True
