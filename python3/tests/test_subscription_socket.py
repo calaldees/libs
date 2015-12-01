@@ -3,7 +3,7 @@ import json
 import time
 import queue
 
-from .test_echo_socket import gen_client_fixture, SocketClient, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
+from .test_echo_socket import gen_client_fixture, SocketClient, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT, client_text1
 
 DEFAULT_WAIT_TIME = 0.1
 
@@ -63,6 +63,16 @@ def test_message(subscription_server, client_json1, client_json2):
     with pytest.raises(queue.Empty):
         assert client_json1.last_message
     assert client_json2.last_message[0]['a'] == 1
+
+
+def test_multi_message(subscription_server, client_text1, client_json2):
+    """
+    Some messaged can be sent quickly enough to fill a buffer with multiple messages
+    Simulate this by sending a custom json string with new lines
+    """
+    client_text1.send('''[{"a": 1}]\n[{"b": 2}]\n''')
+    assert client_json2.last_message[0]['a'] == 1
+    assert client_json2.last_message[0]['b'] == 2
 
 
 def test_subscribe_simple(subscription_server, client_json1, client_json2):
