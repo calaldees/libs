@@ -57,7 +57,7 @@ class SocketClient(object):
         self.sock.sendall(data.encode('utf-8')+b'\n')
 
     @property
-    def last_message(self):
+    def pop_message(self):
         return self.message_received_queue.get(timeout=self.QUEUE_GET_TIMEOUT).strip()
 
     def close(self):
@@ -95,13 +95,13 @@ def test_basic_echo(echo_server, client_text1, client_text2):
 
     MSG1 = 'hello'
     client_text1.send(MSG1)
-    assert client_text1.last_message == MSG1
-    assert client_text2.last_message == MSG1
+    assert client_text1.pop_message == MSG1
+    assert client_text2.pop_message == MSG1
 
     MSG2 = 'test'
     client_text2.send(MSG2)
-    assert client_text1.last_message == MSG2
-    assert client_text2.last_message == MSG2
+    assert client_text1.pop_message == MSG2
+    assert client_text2.pop_message == MSG2
 
 
 def test_websocket_echo(echo_server, client_text1, browser_websocket_basic):

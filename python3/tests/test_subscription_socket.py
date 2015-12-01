@@ -30,13 +30,30 @@ class JSONSocketClient(SocketClient):
     def send(self, data):
         super().send(json.dumps(data))
 
+    def send_message(self, *data):
+        self.send({'action': 'message', 'data': data})
+
+    def send_subcribe(self, *data):
+        self.send({'action': 'subscribe', 'data': data})
+
     @property
-    def last_message(self):
-        message = super().last_message
+    def pop_message(self):
+        message = super().pop_message
         try:
             return json.loads(message)
         except json.decoder.JSONDecodeError as e:
             print('unable to decode %s', message)
+
+    @property
+    def pop_payload_item(self):
+        self.pop_message['message'][0]
+
+    def pop_message_key(self, key):
+        return {m[key] for m in self.pop_message['message']}
+
+    def assert_empty(self):
+        with pytest.raises(queue.Empty):
+            assert not self.pop_message
 
 
 @pytest.fixture(scope='function')
@@ -55,14 +72,16 @@ def browser_websocket(request, browser, http_server):
     browser.get('http://localhost:8000/websocket.html')
     return browser
 
+# Utils ------------------------------------------------------------------------
+
 
 # Tests ------------------------------------------------------------------------
 
 def test_message(subscription_server, client_json1, client_json2):
-    client_json1.send([{'a': 1}])
-    with pytest.raises(queue.Empty):
-        assert client_json1.last_message
-    assert client_json2.last_message[0]['a'] == 1
+    client_json1.send_message({'a': 1})
+
+    client_json1.assert_empty()
+    assert client_json2.pop_payload_item['a'] == 1
 
 
 def test_multi_message(subscription_server, client_text1, client_json2):
@@ -70,75 +89,71 @@ def test_multi_message(subscription_server, client_text1, client_json2):
     Some messaged can be sent quickly enough to fill a buffer with multiple messages
     Simulate this by sending a custom json string with new lines
     """
-    client_text1.send('''[{"a": 1}]\n[{"b": 2}]\n''')
-    assert client_json2.last_message[0]['a'] == 1
-    assert client_json2.last_message[0]['b'] == 2
+    client_text1.send('''{"action": "message", "data": [{"a": 1}]}\n{"action": "message", "data": [{"b": 2}]}\n''')
+    assert client_json2.pop_payload_item['a'] == 1
+    assert client_json2.pop_payload_item['b'] == 2
 
 
 def test_subscribe_simple(subscription_server, client_json1, client_json2):
-    client_json2.send({'subscribe': 'video'})
+    client_json2.send_subcribe('video')
     time.sleep(DEFAULT_WAIT_TIME)
 
-    client_json1.send([{'a': 1}])
-    with pytest.raises(queue.Empty):
-        assert not client_json1.last_message
-    with pytest.raises(queue.Empty):
-        assert not client_json2.last_message
+    client_json1.send_message({'a': 1})
+    client_json1.assert_empty()
+    client_json2.assert_empty()
 
-    client_json1.send({'deviceid': 'video', 'message': 'hello'})
-    assert client_json2.last_message[0]['message'] == 'hello'
+    client_json1.send_message({'deviceid': 'video', 'item': 'hello'})
+    assert client_json2.pop_payload_item['item'] == 'hello'
 
 
 def test_subscribe_multiple(subscription_server, client_json1, client_json2, client_json3):
-    client_json2.send({'subscribe': 'video'})
-    client_json3.send({'subscribe': ['video', 'audio']})
+    client_json2.send_subscribe('video')
+    client_json3.send_subscribe('video', 'audio')
     time.sleep(DEFAULT_WAIT_TIME)
 
-    client_json1.send({'deviceid': 'video', 'message': 'hello2'})
-    assert client_json2.last_message[0]['message'] == 'hello2'
-    assert client_json3.last_message[0]['message'] == 'hello2'
+    client_json1.send_message({'deviceid': 'video', 'item': 'hello2'})
+    assert client_json2.pop_payload_item['item'] == 'hello2'
+    assert client_json3.pop_payload_item['item'] == 'hello2'
 
-    client_json1.send([{'deviceid': 'audio', 'message': 'hello3'}])
-    with pytest.raises(queue.Empty):
-        assert not client_json2.last_message
-    assert client_json3.last_message[0]['message'] == 'hello3'
+    client_json1.send_message({'deviceid': 'audio', 'item': 'hello3'})
+    client_json2.assert_empty()
+    assert client_json3.pop_payload_item['item'] == 'hello3'
 
 
 def test_multiple_message(subscription_server, client_json1, client_json2, client_json3):
-    client_json2.send({'subscribe': 'video'})
-    client_json3.send({'subscribe': ['video', 'audio']})
+    client_json2.send_subscribe('video')
+    client_json3.send_subscribe('video', 'audio')
     time.sleep(DEFAULT_WAIT_TIME)
 
-    client_json1.send([
-        {'deviceid': 'video', 'message': 'hello4'},
-        {'deviceid': 'audio', 'message': 'hello5'},
-    ])
+    client_json1.send_message(
+        {'deviceid': 'video', 'item': 'hello4'},
+        {'deviceid': 'audio', 'item': 'hello5'},
+    )
 
-    assert {'hello4'} == {m['message'] for m in client_json2.last_message}
-    assert {'hello4', 'hello5'} == {m['message'] for m in client_json3.last_message}
+    assert {'hello4'} == client_json2.pop_message_key('item')
+    assert {'hello4', 'hello5'} == client_json3.pop_message_key('item')
 
 
 def test_change_subscription(subscription_server, client_json1, client_json2):
-    client_json2.send({'subscribe': 'video'})
+    client_json2.send_subscribe('video')
     time.sleep(DEFAULT_WAIT_TIME)
-    client_json1.send([{'deviceid': 'video', 'message': 'hello6'}, ])
-    assert {'hello6'} == {m['message'] for m in client_json2.last_message}
+    client_json1.send_message({'deviceid': 'video', 'item': 'hello6'}, {})
+    assert {'hello6'} == client_json2.pop_message_key('item')
 
-    client_json2.send({'subscribe': ['audio', 'screen']})
+    client_json2.send_subscribe('audio', 'screen')
     time.sleep(DEFAULT_WAIT_TIME)
-    client_json1.send([{'deviceid': 'video', 'message': 'hello7'}, ])
-    with pytest.raises(queue.Empty):
-        assert not client_json2.last_message
+    client_json1.send_message({'deviceid': 'video', 'item': 'hello7'}, {})
+    client_json2.assert_empty()
 
-    client_json2.send({'subscribe': None})
+    client_json2.send_subscribe()
     time.sleep(DEFAULT_WAIT_TIME)
-    client_json1.send([{'deviceid': 'video', 'message': 'hello8'}, ])
-    assert {'hello8'} == {m['message'] for m in client_json2.last_message}
+    client_json1.send_message({'deviceid': 'video', 'item': 'hello8'})
+    assert {'hello8'} == client_json2.pop_message_key('item')
 
 
 def test_websocket(subscription_server, client_json1, browser_websocket):
-    client_json1.send([{'a': 1}])
-    assert browser_websocket.execute_script('return recived_messages.pop();')[0]['a'] == 1
+    client_json1.send_message({'a': 1})
+    assert browser_websocket.execute_script('return recived_messages.pop();')['message'][0]['a'] == 1
 
-    browser_websocket.execute_script('socket.send([{b:2}]);')
-    assert client_json1.last_message[0]['b'] == 2
+    browser_websocket.execute_script('''socket.send({action:'message', data:[{b:2}]});''')
+    assert client_json1.pop_payload_item['b'] == 2
