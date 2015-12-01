@@ -6,9 +6,17 @@ import queue
 from lib.net.network_display_event import DisplayEventHandler
 
 
+class ReconnectClient(DisplayEventHandler):
+    def __init__(self):
+        super().__init__(recive_func=self.recive, reconnect_timeout=0.5)
+        self.messages = []
+    def recive(self, data):
+        self.messages.append(data)
+
+
 @pytest.fixture(scope='function')
 def client_tcp_reconnect(request):
-    client = DisplayEventHandler(recive_func=lambda *a, **kw: None, reconnect_timeout=0.5)
+    client = ReconnectClient()
 
     def finalizer():
         client.close()
@@ -18,14 +26,14 @@ def client_tcp_reconnect(request):
 
 
 def test_reconnect_client(subscription_server, client_json1, client_tcp_reconnect):
-    messages = []
-    def recive(data):
-        messages.append(data)
-    client_tcp_reconnect.recive = recive
+    #messages = []
+    #def recive(data):
+    #    messages.append(data)
+    #client_tcp_reconnect.recive = recive
 
     client_json1.send([{'a': 1}])
 
-    assert messages.pop(0)[0]['a'] == 1
+    assert client_tcp_reconnect.messages.pop(0)[0]['a'] == 1
 
 
 def disable_burst(subscription_server, client_json1, client_json2, client_json3):
