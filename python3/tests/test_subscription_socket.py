@@ -33,7 +33,7 @@ class JSONSocketClient(SocketClient):
     def send_message(self, *data):
         self.send({'action': 'message', 'data': data})
 
-    def send_subcribe(self, *data):
+    def send_subscribe(self, *data):
         self.send({'action': 'subscribe', 'data': data})
 
     @property
@@ -97,7 +97,7 @@ def test_multi_message(subscription_server, client_text1, client_json2):
 
 
 def test_subscribe_simple(subscription_server, client_json1, client_json2):
-    client_json2.send_subcribe('video')
+    client_json2.send_subscribe('video')
     time.sleep(DEFAULT_WAIT_TIME)
 
     client_json1.send_message({'a': 1})
@@ -155,7 +155,7 @@ def test_change_subscription(subscription_server, client_json1, client_json2):
 
 def test_websocket(subscription_server, client_json1, browser_websocket):
     client_json1.send_message({'a': 1})
-    assert browser_websocket.execute_script('return recived_messages.pop();')['message'][0]['a'] == 1
+    assert browser_websocket.execute_script('return recived_messages.pop();')['data'][0]['a'] == 1
 
     browser_websocket.execute_script('''socket.send({action:'message', data:[{b:2}]});''')
     assert client_json1.pop_payload_item['b'] == 2

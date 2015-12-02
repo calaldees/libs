@@ -65,7 +65,7 @@ class SubscriptionEchoServerManager(ServerManager):
             if isinstance(keys, (str, bytes)):
                 return {keys}
             return set(keys)
-        self.subscriptions[source] = parse_subscription_set(message.get('data'))
+        self.subscriptions[source] = parse_subscription_set(data)
         return
 
 
@@ -77,7 +77,7 @@ class SubscriptionEchoServerManager(ServerManager):
             if not self.echo_back_to_source and client == source:
                 continue
             messages_for_this_client = [
-                m for m in message
+                m for m in data
                 if (self.auto_subscribe_to_all and not client_subscriptions)
                 or isinstance(m, dict) and m.get('deviceid') in client_subscriptions
             ]
