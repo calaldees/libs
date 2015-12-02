@@ -21,6 +21,10 @@ class SubscriptionEchoServerManager(ServerManager):
         self.echo_back_to_source = echo_back_to_source
         self.auto_subscribe_to_all = auto_subscribe_to_all
         self.subscriptions = defaultdict(set)
+        self.actions = {
+            'subscribe': self._action_subscribe,
+            'message': self._action_message,
+        }
 
     def connect(self, client):
         log.info('connection: %s connected' % client.id)
@@ -38,7 +42,12 @@ class SubscriptionEchoServerManager(ServerManager):
             except TypeError:
                 log.warn('Unable to json decode message: {0}'.format(line))
                 continue
-            self._process_message(message, source)
+
+            action = message.get('action')
+            if action not in self.actions:
+                log.warn('No action handler for {0}'.format(action))
+                continue
+            self.actions[action](message.get('data'), source)
 
     def stop(self):
         self.send(b'server_shutdown')
@@ -46,23 +55,24 @@ class SubscriptionEchoServerManager(ServerManager):
 
     # --------------------------------------------------------------------------
 
-    def _process_message(self, message, source):
-        # Handle subscription messages - if present
-        if isinstance(message, dict):
-            def parse_subscription_set(keys):
-                if not keys:
-                    return set()
-                if isinstance(keys, (str, bytes)):
-                    return {keys}
-                return set(keys)
-            if 'subscribe' in message:
-                self.subscriptions[source] = parse_subscription_set(message.get('subscribe'))
-                return
+    def _action_subscribe(self, data, source):
+        """
+        Update subscriptions for client
+        """
+        def parse_subscription_set(keys):
+            if not keys:
+                return set()
+            if isinstance(keys, (str, bytes)):
+                return {keys}
+            return set(keys)
+        self.subscriptions[source] = parse_subscription_set(message.get('data'))
+        return
 
-        if not isinstance(message, list):
-            message = [message, ]
 
-        # Send message to clients
+    def _action_message(self, data, source):
+        """
+        Send message to subscribed clients
+        """
         for client, client_subscriptions in self.subscriptions.items():
             if not self.echo_back_to_source and client == source:
                 continue
@@ -74,7 +84,10 @@ class SubscriptionEchoServerManager(ServerManager):
             if not messages_for_this_client:
                 continue
             client.send(
-                json.dumps(messages_for_this_client).encode('utf-8') + b'\n',
+                json.dumps({
+                    'action': 'message',
+                    'data': messages_for_this_client
+                }).encode('utf-8') + b'\n',
                 source
             )
 

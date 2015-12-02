@@ -46,10 +46,12 @@ class JSONSocketClient(SocketClient):
 
     @property
     def pop_payload_item(self):
-        self.pop_message['message'][0]
+        message = self.pop_message
+        assert message.get('action') == 'message'
+        return message.get('data')[0]
 
     def pop_message_key(self, key):
-        return {m[key] for m in self.pop_message['message']}
+        return {m[key] for m in self.pop_message['data']}
 
     def assert_empty(self):
         with pytest.raises(queue.Empty):
