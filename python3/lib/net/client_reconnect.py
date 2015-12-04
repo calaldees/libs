@@ -58,6 +58,7 @@ class SocketReconnect(object):
 
     def close(self):
         self.active = False
+        self.socket.close()
 
     def _encode(self, data):
         return data
@@ -81,12 +82,15 @@ class SocketReconnect(object):
                 #"ConnectionRefusedError" in err.reason
                 self.socket = None
 
-            while self.socket and self.active:  # self.socket.isConnected
-                data = self.socket.recv(self.READ_SIZE)
-                if not data:
-                    break
-                for d in self._decode(data):
-                    self.recive(d)
+            try:
+                while self.socket and self.active:  # self.socket.isConnected
+                    data = self.socket.recv(self.READ_SIZE)
+                    if not data:
+                        break
+                    for d in self._decode(data):
+                        self.recive(d)
+            except OSError:
+                pass
 
             try:
                 self.socket.close()
@@ -102,7 +106,7 @@ class SocketReconnect(object):
         """
         To be overridden
         """
-        print(data)
+        pass
 
 
 class JsonSocketReconnect(SocketReconnect):
@@ -118,15 +122,17 @@ class JsonSocketReconnect(SocketReconnect):
                 continue
 
 
+class ExampleSocketReconnect(SocketReconnect):
+    def recive(self, data):
+        print(data)
+
+
 # Main Demo --------------------------------------------------------------------
 
 if __name__ == "__main__":
-    def recive(data):
-        print(data)
 
     try:
-        client = SocketReconnect()
-        client.recive = recive
+        client = ExampleSocketReconnect()
         while True:
             time.sleep(1)
     except KeyboardInterrupt as e:
