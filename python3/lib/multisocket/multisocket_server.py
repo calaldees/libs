@@ -528,6 +528,9 @@ class TCPServerWrapper(ServerWrapper):
     def close_server_obj(self):
         self.server_obj.shutdown()
         self.server_obj.server_close()
+        self.server_thread.join()
+        #self.server_obj.socket.shutdown(socket.SHUT_RDWR)  # It wont shut down properly!
+        #assert False
         self.server_obj = None
 
 

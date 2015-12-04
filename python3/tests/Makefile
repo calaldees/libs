@@ -49,7 +49,8 @@ test_social_login:
 	/Users/allan.callaghan/code/personal/KaraKara/website/env/bin/py.test -q --pdb ./tests/test_social_login.py
 
 test_socket:
-	env/bin/py.test test_subscription_socket.py
+	env/bin/py.test test_*
+	pkill -9 phantomjs  # fuck you phantomjs! why wont you close
 
 
 # Clean ------------------------------------------------------------------------
