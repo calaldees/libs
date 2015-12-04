@@ -48,23 +48,13 @@ class SocketReconnect(object):
         self.active = True
         self.socket = None
 
-        #self.reconnect_supervisor_thread = Process(target=self._reconnect_supervisor)
-        #self.reconnect_supervisor_thread.daemon = True
-        #self.reconnect_supervisor_thread.start()
-
-        self.connection_thread = threading.Thread(target=self._recive)  #Process(
+        self.connection_thread = threading.Thread(target=self._recive)  #Process(  Attempted Python3 Process, but this wont share the obj reference to self.socket. There must be a better way of doing this than the old python2 threading module
         self.connection_thread.daemon = True
         self.connection_thread.start()
 
     def close(self):
         self.active = False
         self.socket.close()
-
-    def _encode(self, data):
-        return data
-
-    def _decode(self, data):
-        yield data
 
     def send(self, data):
         try:
@@ -74,15 +64,16 @@ class SocketReconnect(object):
 
     def _recive(self):
         while self.active:
-            log.info('Attempting socket connection')
+            log.info('Attempting socket connection {0}:{1}'.format(self.host, self.port))
             try:
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, self.port))
-            except Exception as err:
+            except Exception:  # Todo: catch specific error?
                 #"ConnectionRefusedError" in err.reason
                 self.socket = None
 
             try:
+                log.info('Connected')
                 while self.socket and self.active:  # self.socket.isConnected
                     data = self.socket.recv(self.READ_SIZE)
                     if not data:
@@ -95,12 +86,21 @@ class SocketReconnect(object):
             try:
                 self.socket.close()
                 self.socket.shutdown(socket.SHUT_RDWR)  # Is this needed?
-            except Exception:
+                log.info('Disconnected')
+            except Exception:  # Todo: catch specific error
                 pass
             self.socket = None
 
             if self.active:
                 time.sleep(self.reconnect_timout.total_seconds())
+
+    # Overrideable methods ---------
+
+    def _encode(self, data):
+        return data
+
+    def _decode(self, data):
+        yield data
 
     def recive(self, data):
         """

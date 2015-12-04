@@ -112,6 +112,7 @@ def get_args():
 
 if __name__ == "__main__":
     options = get_args()
+    logging.basicConfig(level=logging.DEBUG)
     manager = SubscriptionEchoServerManager(**options)
     import time
     try:

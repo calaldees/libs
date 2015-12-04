@@ -21,7 +21,7 @@ def subscription_server(request):
         subscription_server.stop()
     request.addfinalizer(finalizer)
 
-    time.sleep(DEFAULT_WAIT_TIME)
+    time.sleep(DEFAULT_WAIT_TIME)  # It may take time to fire up the inital thread
     return subscription_server
 
 

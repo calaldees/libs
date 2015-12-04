@@ -26,7 +26,7 @@ def echo_server(request):
         echo_server.stop()
     request.addfinalizer(finalizer)
 
-    time.sleep(DEFAULT_WAIT_TIME)
+    time.sleep(DEFAULT_WAIT_TIME)   # It may take time to fire up the inital thread
     return echo_server
 
 
@@ -72,6 +72,7 @@ def gen_client_fixture(request, client_type=SocketClient):
     def finalizer():
         client.close()
     request.addfinalizer(finalizer)
+    time.sleep(DEFAULT_WAIT_TIME)   # It may take time to fire up the inital thread
     return client
 
 
