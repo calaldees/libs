@@ -64,16 +64,16 @@ class SocketReconnect(object):
 
     def _recive(self):
         while self.active:
-            log.info('Attempting socket connection {0}:{1}'.format(self.host, self.port))
             try:
+                log.debug('Attempting socket connection {0}:{1}'.format(self.host, self.port))
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, self.port))
+                self._connected()
             except Exception:  # Todo: catch specific error?
                 #"ConnectionRefusedError" in err.reason
                 self.socket = None
 
             try:
-                log.info('Connected')
                 while self.socket and self.active:  # self.socket.isConnected
                     data = self.socket.recv(self.READ_SIZE)
                     if not data:
@@ -85,8 +85,8 @@ class SocketReconnect(object):
 
             try:
                 self.socket.close()
+                self._disconnected()
                 self.socket.shutdown(socket.SHUT_RDWR)  # Is this needed?
-                log.info('Disconnected')
             except Exception:  # Todo: catch specific error
                 pass
             self.socket = None
@@ -102,14 +102,25 @@ class SocketReconnect(object):
     def _decode(self, data):
         yield data
 
+    def _connected(self):
+        log.debug('Connected')
+
+    def _disconnected(self):
+        log.debug('Diconnected')
+
     def recive(self, data):
-        """
-        To be overridden
-        """
         pass
 
 
 class JsonSocketReconnect(SocketReconnect):
+    @staticmethod
+    def factory(*args, **kwargs):
+        try:
+            return JsonSocketReconnect(*args, **kwargs)
+        except socket.error:
+            log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
+            return SocketReconnectNull()
+
     def _encode(self, data):
         return (json.dumps(data)+'\n').encode('utf-8')
 
@@ -120,6 +131,47 @@ class JsonSocketReconnect(SocketReconnect):
             except json.decoder.JSONDecodeError:
                 log.warn('Unable to decode json %s', line)
                 continue
+
+
+class SubscriptionClient(JsonSocketReconnect):
+    """
+    An implementation of the subscription server protocol
+    To subscribe, subclass's are advised to manipulate the .subscribtions set directly
+    """
+    @staticmethod
+    def factory(*args, **kwargs):
+        try:
+            return SubscriptionClient(*args, **kwargs)
+        except socket.error:
+            log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
+            return SocketReconnectNull()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subscriptions = set()
+
+    def send_message(self, *messages):
+        self.send({
+            'action': 'message',
+            'data': messages,
+        })
+
+    def send_subscriptions(self):
+        self.send({
+            'action': 'subscribe',
+            'data': tuple(self.subscriptions),
+        })
+
+    def _connected(self):
+        self.send_subscriptions()
+
+    def recive(self, data):
+        if data and data.get('action') == 'message' and len(data.get('data', [])):
+            self.recive_messages(data.get('data'))
+
+    # To be overridden
+    def recive_messages(self, *messages):
+        pass
 
 
 class ExampleSocketReconnect(SocketReconnect):

@@ -13,7 +13,7 @@ def subscription_server(request):
     if request.config.getoption("--noserver"):
         return
 
-    from lib.multisocket.subscription_echo_server import SubscriptionEchoServerManager
+    from lib.multisocket.subscription_server import SubscriptionEchoServerManager
     subscription_server = SubscriptionEchoServerManager(tcp_port=DEFAULT_TCP_PORT, websocket_port=DEFAULT_WEBSOCKET_PORT)
     subscription_server.start()
 
