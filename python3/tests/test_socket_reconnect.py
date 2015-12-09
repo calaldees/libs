@@ -48,17 +48,16 @@ def test_basic_two_way_comms(subscription_server, client_json1, client_reconnect
     assert client_json1.pop_payload_item['b'] == 2
 
 
-def disable_burst(subscription_server, client_json1, client_json2, client_json3):
+def test_burst(subscription_server, client_json1, client_reconnect):
     NUM_MESSAGES = 100
     for i in range(NUM_MESSAGES):
-        client_json1.send([{'deviceid': 'video', 'message': 'hello9'}, ])
+        client_json1.send_message([{'deviceid': 'video', 'message': 'hello9'}, ])
 
     time.sleep(DEFAULT_WAIT_TIME)
 
-    for client in (client_json2, client_json3):
-        messages_recieved_count = 0
-        try:
-            while client.last_message:
-                messages_recieved_count += 1
-        except queue.Empty:
-            assert messages_recieved_count == NUM_MESSAGES
+    messages_recieved_count = 0
+    try:
+        while client_reconnect.pop_message:
+            messages_recieved_count += 1
+    except queue.Empty:
+        assert messages_recieved_count == NUM_MESSAGES
