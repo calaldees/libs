@@ -5,10 +5,10 @@ from .test_subscription_socket import subscription_server, client_json1, DEFAULT
 from multiprocessing import Queue
 import queue
 
-from lib.net.client_reconnect import JsonSocketReconnect
+from lib.net.client_reconnect import SubscriptionClient
 
 
-class TestJsonSocketReconnect(JsonSocketReconnect):
+class TestJsonSocketReconnect(SubscriptionClient):
     QUEUE_GET_TIMEOUT = 0.1
     RECONNECT_TIMEOUT = 0.1
 
@@ -16,32 +16,20 @@ class TestJsonSocketReconnect(JsonSocketReconnect):
         self.message_received_queue = Queue()
         super().__init__(reconnect_timeout=TestJsonSocketReconnect.RECONNECT_TIMEOUT)
 
-    def recive(self, data):
-        self.message_received_queue.put(data)
+    def recive_message(self, message):
+        self.message_received_queue.put(message)
 
     @property
     def pop_message(self):
         return self.message_received_queue.get(timeout=self.QUEUE_GET_TIMEOUT)
 
-    @property
-    def pop_payload_item(self):
-        message = self.pop_message
-        assert message.get('action') == 'message'
-        return message.get('data')[0]
-
     def assert_empty(self):
         with pytest.raises(queue.Empty):
             assert not self.pop_message
 
-    def send_message(self, *data):
-        self.send({'action': 'message', 'data': data})
-
-    def send_subscribe(self, *data):
-        self.send({'action': 'subscribe', 'data': data})
-
 
 @pytest.fixture(scope='function')
-def client_tcp_reconnect(request):
+def client_reconnect(request):
     client = TestJsonSocketReconnect()
 
     def finalizer():
@@ -52,11 +40,11 @@ def client_tcp_reconnect(request):
     return client
 
 
-def test_reconnect_client_basic_two_way_comms(subscription_server, client_json1, client_tcp_reconnect):
+def test_basic_two_way_comms(subscription_server, client_json1, client_reconnect):
     client_json1.send_message({'a': 1})
-    assert client_tcp_reconnect.pop_payload_item['a'] == 1
+    assert client_reconnect.pop_message['a'] == 1
 
-    client_tcp_reconnect.send_message({'b': 2})
+    client_reconnect.send_message({'b': 2})
     assert client_json1.pop_payload_item['b'] == 2
 
 
