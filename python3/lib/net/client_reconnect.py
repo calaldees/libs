@@ -40,7 +40,7 @@ class SocketReconnect(object):
             log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
             return SocketReconnectNull()
 
-    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, reconnect_timeout=DEFAULT_RECONNECT_TIMEOUT):
+    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, reconnect_timeout=DEFAULT_RECONNECT_TIMEOUT, autostart=True):
         self.host = host
         self.port = int(port)
         self.reconnect_timout = reconnect_timeout if isinstance(reconnect_timeout, datetime.timedelta) else datetime.timedelta(seconds=reconnect_timeout)
@@ -50,6 +50,10 @@ class SocketReconnect(object):
 
         self.connection_thread = threading.Thread(target=self._recive)  #Process(  Attempted Python3 Process, but this wont share the obj reference to self.socket. There must be a better way of doing this than the old python2 threading module
         self.connection_thread.daemon = True
+        if autostart:
+            self.start()
+
+    def start(self):
         self.connection_thread.start()
 
     def close(self):
@@ -146,9 +150,9 @@ class SubscriptionClient(JsonSocketReconnect):
             log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
             return SocketReconnectNull()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, subscriptions=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.subscriptions = set()
+        self.subscriptions = set(subscriptions) if subscriptions else set()
 
     def send_message(self, *messages):
         self.send({
@@ -167,10 +171,11 @@ class SubscriptionClient(JsonSocketReconnect):
 
     def recive(self, data):
         if data and data.get('action') == 'message' and len(data.get('data', [])):
-            self.recive_messages(data.get('data'))
+            for message in data.get('data'):
+                self.recive_message(message)
 
     # To be overridden
-    def recive_messages(self, *messages):
+    def recive_message(self, message):
         pass
 
 
