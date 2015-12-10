@@ -150,9 +150,14 @@ class SubscriptionClient(JsonSocketReconnect):
             log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
             return SocketReconnectNull()
 
-    def __init__(self, *args, subscriptions=None, **kwargs):
+    def __init__(self, *args, subscriptions=(), **kwargs):
         super().__init__(*args, **kwargs)
+        self.update_subscriptions(*subscriptions, send=False)
+
+    def update_subscriptions(self, *subscriptions, send=True):
         self.subscriptions = set(subscriptions) if subscriptions else set()
+        if send:
+            self.send_subscriptions()
 
     def send_message(self, *messages):
         self.send({
