@@ -157,6 +157,16 @@ def test_change_subscription(subscription_server, client_json1, client_json2):
     assert {'hello8'} == client_json2.pop_message_key('item')
 
 
+def test_burst(subscription_server, client_json1, client_json2):
+    NUM_MESSAGES = 100
+    for i in range(NUM_MESSAGES):
+        client_json1.send_message({'deviceid': 'video', 'message': 'hello9'})
+
+    time.sleep(DEFAULT_WAIT_TIME)
+
+    assert len(client_json2.pop_messages) == NUM_MESSAGES
+
+
 def test_websocket(subscription_server, client_json1, browser_websocket):
     client_json1.send_message({'a': 1})
     assert browser_websocket.execute_script('return recived_messages.pop();')['data'][0]['a'] == 1
