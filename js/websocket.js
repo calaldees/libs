@@ -90,3 +90,106 @@ function WebSocketReconnect(options) {
 	
 	return websocket_wrapper;
 }
+
+
+function SocketReconnect(options, parent) {
+	options = _.extend({
+		title: 'SocketReconnect',
+		hostname: location.hostname,
+		port: 9873,
+		disconnected_retry_interval: 5,
+	}, options)
+	parent = _.extend({
+		encode: function(msg){return msg;},
+		decode: function(msg){return msg;},
+		onconnected: function(){},
+		ondisconnected: function(){},
+		onmessage: function(){},
+	}, parent);
+	
+	parent.ondisconnected();
+
+	// When the socket is not connected this will be the dummy underlying send method
+	function send_disconnected(msg) {
+		log.warn(options.title+".send called when disconnected", msg);
+		return false;
+	}
+
+	// Wrapper will be returned and have a consistant 'send' method
+	// as the underlying socket object is recreated/change on disconnect,
+	// the 'send' method will always be avalable.
+	var exported = {
+		send: send_disconnected,
+		retry_interval: null,
+	};
+	
+	
+	function _init(options) {
+		var socket = new WebSocket("ws://"+options.hostname+":"+options.port+"/");
+	
+		socket.onopen = function() {
+			console.debug(options.title+": onopen");
+			if (exported.retry_interval) {
+				clearInterval(exported.retry_interval);
+				exported.retry_interval = null;
+			}
+			parent.onconnected();
+		};
+		socket.onclose  = function() {
+			console.debug(options.title+": onclose");
+			socket = null;
+			exported.send = send_disconnected;
+			if (!exported.retry_interval) {
+				exported.retry_interval = setInterval(_init, options.disconnected_retry_interval * 1000);
+			}
+			parent.ondisconnected();
+		};
+		socket.onmessage = function(msg) {
+			_.each(msg.data.split('\n'), function(element, index, list){
+				parent.onmessage(parent.decode(element));
+			});
+		};
+		
+		function socket_send(msg) {
+			return socket.send(parent.encode(msg)+'\n');
+		}
+		
+		exported.send = socket_send;
+	}
+	_init(options);
+	
+	return exported;
+}
+
+//disconnected_class: 'websocket_disconnected',
+//	$('body').addClass(options.disconnected_class);
+//	$('body').removeClass(options.disconnected_class);
+
+
+function JsonSocketReconnect(options, parent) {
+	parent = _.extend({
+		encode: function(msg){return msg;},
+		decode: function(msg){return msg;},
+		onconnected: function(){},
+		ondisconnected: function(){},
+		oncmessage: function(){},
+	}, parent);
+	
+	var me = _.extend({
+		encode: function(msg){return parent.encode(JSON.stringify(msg));},
+		decode: function(msg){return parent.decode(JSON.parse(msg));},
+		onconnected: function(){parent.onconnected();},
+		ondisconnected: function(){parent.ondisconnected();},
+		oncmessage: function(){parent.onmessage();},
+	}, parent);
+	
+	var exported = SocketReconnect({
+		title: 'JsonSocketReconnect',
+	}, me);
+	
+	return exported;
+}
+
+function SubscriptionSocketReconnect(options) {
+    //code
+}
