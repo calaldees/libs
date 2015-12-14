@@ -167,29 +167,87 @@ function SocketReconnect(options, parent) {
 
 
 function JsonSocketReconnect(options, parent) {
-	parent = _.extend({}, parent, {
-		encode: function(msg){return msg;},
-		decode: function(msg){return msg;},  // Problem, this is never used
-		onmessage: function(msg){console.log('msg', msg);},
-		onconnected: function(){console.log('connected!!!! yay');},
-		ondisconnected: function(){console.log('disconnected!!!! yay');},
-	});
+	options = _.extend({
+		title: 'JsonSocketReconnect',
+	}, options);
+	
+	parent = _.extend({
+		onmessage: function(msg){},
+		onconnected: function(){},
+		ondisconnected: function(){},
+	}, parent);
 	
 	var me = _.extend({}, parent, {
-		encode: function(msg){return parent.encode(JSON.stringify(msg));},
+		encode: function(msg){return JSON.stringify(msg);},
 		decode: function(msg){return JSON.parse(msg);},
 		onmessage: function(msg){parent.onmessage(me.decode(msg));},
 		onconnected: function(){parent.onconnected();},
 		ondisconnected: function(){parent.ondisconnected();},
 	});
 	
-	var exported = SocketReconnect(_.extend({
-		title: 'JsonSocketReconnect',
-	}, options), me);
+	var exported = SocketReconnect(options, me);
 	
 	return exported;
 }
 
-function SubscriptionSocketReconnect(options) {
-    //code
+
+function SubscriptionSocketReconnect(options, parent) {
+	options = _.extend({
+		title: 'SubscriptionSocketReconnect',
+		subscriptions: [],
+	}, options);
+	
+	parent = _.extend({}, parent, {
+		onmessage: function(msg){console.debug(options.title+': message: '+msg);},
+		onconnected: function(){console.debug(options.title+': connected');},
+		ondisconnected: function(){console.debug(options.title+': disconnected');},
+	});
+	
+	var me = _.extend({}, parent, {
+		onmessage: function(msg){
+			if (msg && msg.action == 'message' && msg.data.length>0) {
+				_.each(msg.data, function(element, index, list){
+					parent.onmessage(element);
+				});
+			}
+		},
+		onconnected: function(){
+			if (!_.isEmpty(options.subscriptions)) {
+				send_subscriptions();
+			}
+			parent.onconnected();
+		},
+		ondisconnected: function(){
+			parent.ondisconnected();
+		},
+	});
+	
+	var exported = JsonSocketReconnect(options, me);
+	
+	send_subscriptions = function() {
+		exported.send({
+			action: 'subscribe',
+			data: options.subscriptions,
+		});
+	};
+	
+	// Exports
+	exported = _.extend(exported, {
+		update_subscriptions: function(){
+			// TODO? This is broken!
+			//subscriptions.clear()
+			options.subscriptions = _.toArray(arguments); //Update existing array rather than replace?  _.union(options.subscriptions,
+			send_subscriptions();
+		},
+		send_message: function(){
+			exported.send({
+				action: 'message',
+				data: _.toArray(arguments),
+			});
+		},
+	});
+	
+	// TODO: remove 'send' from export
+	
+	return exported;
 }
