@@ -102,9 +102,9 @@ function SocketReconnect(options, parent) {
 	parent = _.extend({
 		encode: function(msg){return msg;},
 		decode: function(msg){return msg;},
+		onmessage: function(msg){},
 		onconnected: function(){},
 		ondisconnected: function(){},
-		onmessage: function(){},
 	}, parent);
 	
 	parent.ondisconnected();
@@ -124,7 +124,7 @@ function SocketReconnect(options, parent) {
 	};
 	
 	
-	function _init(options) {
+	function _init() {
 		var socket = new WebSocket("ws://"+options.hostname+":"+options.port+"/");
 	
 		socket.onopen = function() {
@@ -145,8 +145,8 @@ function SocketReconnect(options, parent) {
 			parent.ondisconnected();
 		};
 		socket.onmessage = function(msg) {
-			_.each(msg.data.split('\n'), function(element, index, list){
-				parent.onmessage(parent.decode(element));
+			_.each(_.filter(msg.data.split('\n'), function(element){return element;}), function(element, index, list){
+				parent.onmessage(element);
 			});
 		};
 		
@@ -156,7 +156,7 @@ function SocketReconnect(options, parent) {
 		
 		exported.send = socket_send;
 	}
-	_init(options);
+	_init();
 	
 	return exported;
 }
@@ -167,25 +167,25 @@ function SocketReconnect(options, parent) {
 
 
 function JsonSocketReconnect(options, parent) {
-	parent = _.extend({
+	parent = _.extend({}, parent, {
 		encode: function(msg){return msg;},
-		decode: function(msg){return msg;},
-		onconnected: function(){},
-		ondisconnected: function(){},
-		oncmessage: function(){},
-	}, parent);
+		decode: function(msg){return msg;},  // Problem, this is never used
+		onmessage: function(msg){console.log('msg', msg);},
+		onconnected: function(){console.log('connected!!!! yay');},
+		ondisconnected: function(){console.log('disconnected!!!! yay');},
+	});
 	
-	var me = _.extend({
+	var me = _.extend({}, parent, {
 		encode: function(msg){return parent.encode(JSON.stringify(msg));},
-		decode: function(msg){return parent.decode(JSON.parse(msg));},
+		decode: function(msg){return JSON.parse(msg);},
+		onmessage: function(msg){parent.onmessage(me.decode(msg));},
 		onconnected: function(){parent.onconnected();},
 		ondisconnected: function(){parent.ondisconnected();},
-		oncmessage: function(){parent.onmessage();},
-	}, parent);
+	});
 	
-	var exported = SocketReconnect({
+	var exported = SocketReconnect(_.extend({
 		title: 'JsonSocketReconnect',
-	}, me);
+	}, options), me);
 	
 	return exported;
 }

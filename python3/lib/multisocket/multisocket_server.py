@@ -531,6 +531,7 @@ class TCPServerWrapper(ServerWrapper):
         self.server_thread.join()
         #self.server_obj.socket.shutdown(socket.SHUT_RDWR)  # It wont shut down properly!
         #assert False
+        #Try ? http://stackoverflow.com/questions/5875177/how-to-close-a-socket-left-open-by-a-killed-program/5875178#5875178
         self.server_obj = None
 
 
