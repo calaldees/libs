@@ -6,7 +6,9 @@ function _websocket_first_message_auth(socket, session_cookie_name) {
 	socket.send(document.cookie.match(/session_cookie_name=([^;\s]+)/)[1]);  // Um? this needs to be a variable
 }
 
-
+/*
+ * DEPRICATED
+ *
 function WebSocketReconnect(options) {
 	console.debug("WebSocketReconnect", options);
 	
@@ -90,6 +92,7 @@ function WebSocketReconnect(options) {
 	
 	return websocket_wrapper;
 }
+*/
 
 
 function SocketReconnect(options, parent) {
