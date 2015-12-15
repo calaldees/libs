@@ -129,9 +129,9 @@ function SocketReconnect(options, parent) {
 	
 	function _init() {
 		var socket = new WebSocket("ws://"+options.hostname+":"+options.port+"/");
-	
+
 		socket.onopen = function() {
-			console.debug(options.title+": onopen");
+			//console.debug(options.title+": onopen");
 			if (exported.retry_interval) {
 				clearInterval(exported.retry_interval);
 				exported.retry_interval = null;
@@ -139,7 +139,7 @@ function SocketReconnect(options, parent) {
 			parent.onconnected();
 		};
 		socket.onclose  = function() {
-			console.debug(options.title+": onclose");
+			//console.debug(options.title+": onclose");
 			socket = null;
 			exported.send = send_disconnected;
 			if (!exported.retry_interval) {
@@ -164,9 +164,6 @@ function SocketReconnect(options, parent) {
 	return exported;
 }
 
-//disconnected_class: 'websocket_disconnected',
-//	$('body').addClass(options.disconnected_class);
-//	$('body').removeClass(options.disconnected_class);
 
 
 function JsonSocketReconnect(options, parent) {
@@ -199,12 +196,12 @@ function SubscriptionSocketReconnect(options, parent) {
 		title: 'SubscriptionSocketReconnect',
 		subscriptions: [],
 	}, options);
-	
-	parent = _.extend({}, parent, {
+
+	parent = _.extend({
 		onmessage: function(msg){console.debug(options.title+': message: '+msg);},
 		onconnected: function(){console.debug(options.title+': connected');},
 		ondisconnected: function(){console.debug(options.title+': disconnected');},
-	});
+	}, parent);
 	
 	var me = _.extend({}, parent, {
 		onmessage: function(msg){
