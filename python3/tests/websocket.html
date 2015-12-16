@@ -18,13 +18,19 @@
 		<h1>test</h1>
 		<script>
 			var recived_messages = [];
-			var socket = WebSocketReconnect({
-				onopen: function() {},
+			var socket = SubscriptionSocketReconnect({
+				} ,{
 				onmessage: function(data){
 					recived_messages.push(data);
 					utils.functools.run_funcs(data)
 				},
 			});
+			window.test = {
+				test_func: function(data) {
+					data.test_func = true;
+					recived_messages.push(data);
+				}
+			};
 		</script>
 	</body>
 </html>
