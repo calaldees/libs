@@ -171,5 +171,5 @@ def test_websocket(subscription_server, client_json1, browser_websocket):
     client_json1.send_message({'a': 1})
     assert browser_websocket.execute_script('return recived_messages.pop();')['a'] == 1
 
-    browser_websocket.execute_script('''socket.send({action:'message', data:[{b:2}]});''')
+    browser_websocket.execute_script('''socket.send_message({b:2});''')
     assert client_json1.pop_message['b'] == 2

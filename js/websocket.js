@@ -247,7 +247,7 @@ function SubscriptionSocketReconnect(options, parent) {
 		},
 	});
 	
-	// TODO: remove 'send' from export
+	//delete exported.send;  // This is broken .. even when copying the entire exported object. Need more information about delete.
 	
 	return exported;
 }
