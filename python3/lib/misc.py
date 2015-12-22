@@ -290,6 +290,7 @@ def read_file_list(filename):
     return data
 
 
+FileExt = collections.namedtuple('FileExt', ('filename', 'ext'))
 def file_ext(filename):
     """
     >>> file_ext('test.txt')
@@ -302,7 +303,7 @@ def file_ext(filename):
     ('', 'doc')
     """
     try:
-        return re.match('(.*)\.(.*?)$', filename).groups()
+        return FileExt(*re.match('(.*)\.(.*?)$', filename).groups())
     except AttributeError:
         return (filename, '')
 
