@@ -239,6 +239,12 @@ function SubscriptionSocketReconnect(options, parent) {
 			options.subscriptions = _.toArray(arguments); //Update existing array rather than replace?  _.union(options.subscriptions,
 			send_subscriptions();
 		},
+		send_message_array: function(messages){
+			exported.send({
+				action: 'message',
+				data: messages,
+			});
+		},
 		send_message: function(){
 			exported.send({
 				action: 'message',
