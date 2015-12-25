@@ -32,18 +32,19 @@ class SocketReconnectNull(object):
 class SocketReconnect(object):
     READ_SIZE = 4098
 
-    @staticmethod
-    def factory(*args, **kwargs):
-        try:
-            return SocketReconnect(*args, **kwargs)
-        except socket.error:
-            log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
-            return SocketReconnectNull()
+    #@staticmethod
+    #def factory(*args, **kwargs):
+    #    try:
+    #        return SocketReconnect(*args, **kwargs)
+    #    except socket.error:
+    #        log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
+    #        return SocketReconnectNull()
 
-    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, reconnect_timeout=DEFAULT_RECONNECT_TIMEOUT, autostart=True):
+    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, reconnect_timeout=DEFAULT_RECONNECT_TIMEOUT, autostart=True, buffer_failed_sends=False):
         self.host = host
         self.port = int(port)
         self.reconnect_timout = reconnect_timeout if isinstance(reconnect_timeout, datetime.timedelta) else datetime.timedelta(seconds=reconnect_timeout)
+        self.buffer_failed_sends = buffer_failed_sends
         #self.socket_connected_attempted_timestamp = None
         self.active = True
         self.socket = None
@@ -64,7 +65,9 @@ class SocketReconnect(object):
         try:
             self.socket.sendall(self._encode(data))
         except (socket.error, AttributeError):  # BrokenPipeError
-            log.warn('Failed send. Socket not connected: {0}'.format(data))
+            log.debug('Failed send. Socket not connected: {0}'.format(data))
+            if self.buffer_failed_sends:
+                log.error('Unimplemented buffer failed send')
 
     def _recive(self):
         while self.active:
@@ -76,6 +79,9 @@ class SocketReconnect(object):
             except Exception:  # Todo: catch specific error?
                 #"ConnectionRefusedError" in err.reason
                 self.socket = None
+
+            if self.buffer_failed_sends:  # and failed_sends
+                log.error('Unimplemented buffer_failed_sends')
 
             try:
                 while self.socket and self.active:  # self.socket.isConnected
@@ -117,13 +123,13 @@ class SocketReconnect(object):
 
 
 class JsonSocketReconnect(SocketReconnect):
-    @staticmethod
-    def factory(*args, **kwargs):
-        try:
-            return JsonSocketReconnect(*args, **kwargs)
-        except socket.error:
-            log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
-            return SocketReconnectNull()
+    #@staticmethod
+    #def factory(*args, **kwargs):
+    #    try:
+    #        return JsonSocketReconnect(*args, **kwargs)
+    #    except socket.error:
+    #        log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
+    #        return SocketReconnectNull()
 
     def _encode(self, data):
         return (json.dumps(data)+'\n').encode('utf-8')
@@ -142,13 +148,16 @@ class SubscriptionClient(JsonSocketReconnect):
     An implementation of the subscription server protocol
     To subscribe, subclass's are advised to manipulate the .subscribtions set directly
     """
-    @staticmethod
-    def factory(*args, **kwargs):
-        try:
-            return SubscriptionClient(*args, **kwargs)
-        except socket.error:
-            log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
-            return SocketReconnectNull()
+    #@staticmethod
+    #def factory(*args, **kwargs):
+    #    try:
+    #        return SubscriptionClient(*args, **kwargs)
+    #    except Exception:
+    #        import pdb ; pdb.set_trace()
+    #        pass
+    #    except socket.error:
+    #        log.warn('Unable to setup TCP network socket {0} {1}'.format(args, kwargs))
+    #        return SocketReconnectNull()
 
     def __init__(self, *args, subscriptions=(), **kwargs):
         super().__init__(*args, **kwargs)

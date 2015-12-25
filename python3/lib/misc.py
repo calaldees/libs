@@ -59,7 +59,7 @@ def postmortem(func):
     import sys
     try:
         func()
-    except:
+    except Exception:
         type, value, tb = sys.exc_info()
         traceback.print_exc()
         pdb.post_mortem(tb)
