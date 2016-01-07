@@ -59,7 +59,10 @@ class SocketReconnect(object):
 
     def close(self):
         self.active = False
-        self.socket.close()
+        try:
+            self.socket.close()
+        except Exception:
+            pass
 
     def send(self, data):
         try:
