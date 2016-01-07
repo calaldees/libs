@@ -806,6 +806,9 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     (1.0, 1.0, 1.0)
     >>> parse_rgb_color('yiq:0,0,0')
     (0.0, 0.0, 0.0)
+    >>> parse_rgb_color('hsv:0,1,1,0.5')
+    (1.0, 0.0, 0.0, 0.5)
+
     """
     if isinstance(color, (tuple, list)):
         return tuple(map(float, color))
@@ -814,7 +817,8 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
             return tuple(map(lambda v: max(0.0, min(1.0, v/255)), codecs.decode(color.strip('#'), "hex")))
         elif color.find(':') >= 0:
             color_type, value = color.split(':')
-            return getattr(colorsys, '{0}_to_rgb'.format(color_type))(*map(float, value.split(',')))
+            values = tuple(map(float, value.split(',')))
+            return getattr(colorsys, '{0}_to_rgb'.format(color_type))(*values[0:3]) + values[3:]
     if fallback_color:
         return fallback_color
     raise AttributeError('{0} is not parseable'.format(color))
