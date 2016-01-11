@@ -833,7 +833,7 @@ def one_to_limit(value, limit=255):
     >>> one_to_limit(0.5, limit=255)
     127
     """
-    return int(value * limit)
+    return min(int(value * limit), limit)
 
 
 def byte_limit(value, limit=255, floor=0):
