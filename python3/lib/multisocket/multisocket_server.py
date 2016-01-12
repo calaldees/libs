@@ -102,6 +102,12 @@ Sec-WebSocket-Accept: %(websocket_accept)s\r\n\r\n"""
 
 
 def websocket_frame_decode_hybi10(data):
+    while data:
+        payload_data, opcode, data = _websocket_frame_decode_hybi10(data)
+        yield payload_data, opcode
+
+
+def _websocket_frame_decode_hybi10(data):
     """
     http://tools.ietf.org/html/rfc6455#section-5.2
     """
@@ -151,13 +157,13 @@ def websocket_frame_decode_hybi10(data):
         raise Exception('untested binary characters')
         pass
 
-    payload_data = data[data_start_point:]
+    payload_data = data[data_start_point:data_start_point+payload_length]
     assert len(payload_data) == payload_length, 'expected payload data size of {} but recived {}'.format(payload_length, len(payload_data))
     if masked:
         payload_data = bytes([data_convert_function(item ^ masking_key[index % 4]) for index, item in enumerate(payload_data)]) #b''.join(
     # AllanC - !? what about binary data? here we are just using a string. Wont that error on some values? advice?s
 
-    return payload_data, opcode
+    return payload_data, opcode, data[data_start_point+payload_length:]
 
 
 def websocket_frame_encode_hybi10(data, opcode=OPCODE_TEXT, fin=True, masked=False):
@@ -209,7 +215,7 @@ WebSocket-Protocol: sample\r\n\r\n"""
 
 
 def websocket_frame_decode_hybi00(data):
-    return data, OPCODE_TEXT
+    yield data, OPCODE_TEXT
 
 
 def websocket_frame_encode_hybi00(data):
@@ -295,16 +301,16 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
             data_recv = self.request.recv(RECV_SIZE)
             if not data_recv:
                 break
-            data, opcode = self.frame_decode_func(data_recv)
-            if opcode == OPCODE_TEXT:
-                self.client_wrapper.recv(data)
-            elif opcode == OPCODE_CLOSE:
-                self.request.send(self.frame_encode_func(data, opcode=OPCODE_CLOSE))
-                break
-            elif opcode == OPCODE_PING:
-                self.request.send(self.frame_encode_func(data, opcode=OPCODE_PONG ))
-            else:
-                raise Exception('Unknown Websocket OPCODE')
+            for data, opcode in self.frame_decode_func(data_recv):
+                if opcode == OPCODE_TEXT:
+                    self.client_wrapper.recv(data)
+                elif opcode == OPCODE_CLOSE:
+                    self.request.send(self.frame_encode_func(data, opcode=OPCODE_CLOSE))
+                    break
+                elif opcode == OPCODE_PING:
+                    self.request.send(self.frame_encode_func(data, opcode=OPCODE_PONG))
+                else:
+                    raise Exception('Unknown Websocket OPCODE')
 
     def finish(self):
         self.client_wrapper.disconnect()
