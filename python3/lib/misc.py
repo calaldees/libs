@@ -18,7 +18,10 @@ try:
     from pyramid.settings import asbool
 except ImportError:
     # Fallback without pyramid - This fallback needs consideration
-    asbool = bool
+    def asbool(arg):
+        if isinstance(arg, str):
+            return arg.lower().strip() in ('yes', 'true', 'ok', 'y')
+        return bool(arg)
 
 try:
     import dateutil.parser
@@ -294,13 +297,13 @@ FileExt = collections.namedtuple('FileExt', ('filename', 'ext'))
 def file_ext(filename):
     """
     >>> file_ext('test.txt')
-    ('test', 'txt')
+    FileExt(filename='test', ext='txt')
     >>> file_ext('test')
     ('test', '')
     >>> file_ext('test.again.yaml')
-    ('test.again', 'yaml')
+    FileExt(filename='test.again', ext='yaml')
     >>> file_ext('.doc')
-    ('', 'doc')
+    FileExt(filename='', ext='doc')
     """
     try:
         return FileExt(*re.match('(.*)\.(.*?)$', filename).groups())
@@ -808,6 +811,10 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     (0.0, 0.0, 0.0)
     >>> parse_rgb_color('hsv:0,1,1,0.5')
     (1.0, 0.0, 0.0, 0.5)
+    >>> parse_rgb_color('rgb:1,1,1')
+    (1.0, 1.0, 1.0)
+    >>> parse_rgb_color('rgb:1,1,1,1')
+    (1.0, 1.0, 1.0, 1.0)
 
     """
     if isinstance(color, (tuple, list)):
@@ -818,6 +825,8 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
         elif color.find(':') >= 0:
             color_type, value = color.split(':')
             values = tuple(map(float, value.split(',')))
+            if color_type == 'rgb':
+                return values
             return getattr(colorsys, '{0}_to_rgb'.format(color_type))(*values[0:3]) + values[3:]
     if fallback_color:
         return fallback_color
