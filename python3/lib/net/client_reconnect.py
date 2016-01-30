@@ -15,6 +15,19 @@ DEFAULT_PORT = 9872
 DEFAULT_RECONNECT_TIMEOUT = datetime.timedelta(seconds=5)
 
 
+def timedelta_total_seconds(timedelta):
+    """
+    Hack polyfill for python3.1 missing total_seconds
+    """
+    if hasattr(timedelta, 'total_seconds'):
+        return timedelta.total_seconds()
+    else:
+        # http://stackoverflow.com/questions/28089558/alternative-to-total-seconds-in-python-2-6
+        return (
+            timedelta.microseconds + 0.0 +
+            (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
 # Null Handler -----------------------------------------------------------------
 
 class SocketReconnectNull(object):
@@ -105,7 +118,7 @@ class SocketReconnect(object):
             self.socket = None
 
             if self.active:
-                time.sleep(self.reconnect_timout.total_seconds())
+                time.sleep(timedelta_total_seconds(self.reconnect_timout))
 
     # Overrideable methods ---------
 
