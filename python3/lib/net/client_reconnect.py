@@ -92,6 +92,7 @@ class SocketReconnect(object):
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, self.port))
                 self._connected()
+                log.info('Connected {0}:{1}'.format(self.host, self.port))
             except Exception:  # Todo: catch specific error?
                 #"ConnectionRefusedError" in err.reason
                 self.socket = None
@@ -108,6 +109,9 @@ class SocketReconnect(object):
                         self.recive(d)
             except OSError:
                 pass
+
+            if self.socket:
+                log.info('Disconnected {0}:{1}. Retrying in background.'.format(self.host, self.port))
 
             try:
                 self.socket.close()

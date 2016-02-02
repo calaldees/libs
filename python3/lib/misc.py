@@ -382,6 +382,9 @@ def file_scan_diff_thread(paths, onchange_function, rescan_interval=2.0, **kwarg
     """
     Used in a separate thread to indicate if a file has changed
     """
+    if not rescan_interval:
+        log.info('No scan interval, file_scan_diff_thread not started')
+        return
     if isinstance(paths, str):
         paths = paths.split(',')
     kwargs['stats'] = True
