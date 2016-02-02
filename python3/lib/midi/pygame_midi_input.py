@@ -16,6 +16,7 @@ class MidiInput(object):
 
     def __init__(self, midi_input_name=None):
         self.midi_input_name = midi_input_name
+        self.running = False
 
     def init_pygame(self):
         pygame.init()
@@ -29,7 +30,6 @@ class MidiInput(object):
         self.init_midi_input()
         #pygame.display.set_mode((1, 1))
         #self.run()
-        self.running = False
 
     def init_midi_input(self):
         pygame.midi.init()
