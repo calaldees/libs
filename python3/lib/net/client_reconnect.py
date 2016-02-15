@@ -83,22 +83,23 @@ class SocketReconnect(object):
         except (socket.error, AttributeError):  # BrokenPipeError
             log.debug('Failed send. Socket not connected: {0}'.format(data))
             if self.buffer_failed_sends:
-                log.error('Unimplemented buffer failed send')
+                log.error('Unimplemented add to buffer failed send')
 
     def _recive(self):
         while self.active:
+            log.debug('Attempting socket connection {0}:{1}'.format(self.host, self.port))
             try:
-                log.debug('Attempting socket connection {0}:{1}'.format(self.host, self.port))
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, self.port))
-                self._connected()
-                log.info('Connected {0}:{1}'.format(self.host, self.port))
             except Exception:  # Todo: catch specific error?
-                #"ConnectionRefusedError" in err.reason
+                # "ConnectionRefusedError" in err.reason
                 self.socket = None
 
-            if self.buffer_failed_sends:  # and failed_sends
-                log.error('Unimplemented buffer_failed_sends')
+            if self.socket:
+                log.info('Connected {0}:{1}'.format(self.host, self.port))
+                self._connected()
+                if self.buffer_failed_sends:  # and failed_sends
+                    log.error('Unimplemented send all the buffed buffer_failed_sends')
 
             try:
                 while self.socket and self.active:  # self.socket.isConnected
@@ -109,13 +110,18 @@ class SocketReconnect(object):
                         self.recive(d)
             except OSError:
                 pass
+            except KeyboardInterrupt:
+                self.active = False
+            except Exception as ex:  # OSError:
+                log.exception(ex)
 
             if self.socket:
-                log.info('Disconnected {0}:{1}. Retrying in background.'.format(self.host, self.port))
+                if self.active:
+                    log.info('Disconnected {0}:{1}. Retrying in background.'.format(self.host, self.port))
+                self._disconnected()
 
             try:
                 self.socket.close()
-                self._disconnected()
                 self.socket.shutdown(socket.SHUT_RDWR)  # Is this needed?
             except Exception:  # Todo: catch specific error
                 pass
