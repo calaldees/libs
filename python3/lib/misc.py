@@ -792,6 +792,24 @@ def backup(source_filename, destination_folder=None, func_copy=shutil.copy, func
     return func_copy(source_filename, backup_filename)
 
 
+def limit(value, min_value=0.0, max_value=1.0):
+    """
+    >>> limit(0, 0, 1)
+    0
+    >>> limit(0.5, 0, 1)
+    0.5
+    >>> limit(100, 0, 1)
+    1
+    >>> limit(-100.11, 0.0, 1.1)
+    0.0
+    >>> limit(-57, -50, 50)
+    -50
+    >>> limit(57, -50, 50)
+    50
+    """
+    return max(min_value, min(max_value, value))
+
+
 def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     """
     Normalise a range of string values into (r,g,b) tuple from 0 to 1
@@ -818,13 +836,16 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     (1.0, 1.0, 1.0)
     >>> parse_rgb_color('rgb:1,1,1,1')
     (1.0, 1.0, 1.0, 1.0)
-
+    >>> parse_rgb_color(0.5)
+    (0.5, 0.5, 0.5, 0.5)
     """
+    if isinstance(color, float):
+        color = (color, ) * 4
     if isinstance(color, (tuple, list)):
         return tuple(map(float, color))
     if isinstance(color, str):
         if color.startswith('#'):
-            return tuple(map(lambda v: max(0.0, min(1.0, v/255)), codecs.decode(color.strip('#'), "hex")))
+            return tuple(map(lambda v: limit(v/255, 0.0, 1.0), codecs.decode(color.strip('#'), "hex")))
         elif color.find(':') >= 0:
             color_type, value = color.split(':')
             values = tuple(map(float, value.split(',')))
@@ -848,7 +869,7 @@ def one_to_limit(value, limit=255):
     return min(int(value * limit), limit)
 
 
-def byte_limit(value, limit=255, floor=0):
+def byte_limit(value):
     """
     >>> byte_limit(255)
     255
@@ -859,7 +880,7 @@ def byte_limit(value, limit=255, floor=0):
     >>> byte_limit(-1)
     0
     """
-    return min(limit, max(floor, value))
+    return limit(value, min_value=0, max_value=255)
 
 
 def one_byte_limit(value):
