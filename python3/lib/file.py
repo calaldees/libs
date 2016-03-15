@@ -18,12 +18,12 @@ class FolderStructure(object):
         return FolderStructure(files, None)
 
     def __init__(self, files_item, parent=None, name=None):
-        self._files_item = files_item
+        self._files_item = dict(files_item)
         self._parent = parent
         self._name = name
         for key, value in self._files_item.items():
             if isinstance(value, dict):
-                files_item[key] = FolderStructure(value, parent=self, name=key)
+                self._files_item[key] = FolderStructure(value, parent=self, name=key)
 
     @property
     def folders(self):
@@ -49,7 +49,10 @@ class FolderStructure(object):
         if isinstance(path, str):
             path = list(path.split('/'))
         if path:
-            item = self._files_item[path.pop(0)]
+            try:
+                item = self._files_item[path.pop(0)]
+            except KeyError:
+                return None
             if isinstance(item, FolderStructure):
                 return item.get(path)
             else:
