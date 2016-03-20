@@ -313,7 +313,9 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
                     raise Exception('Unknown Websocket OPCODE')
 
     def finish(self):
-        self.client_wrapper.disconnect()
+        if self.client_wrapper:
+            self.client_wrapper.disconnect()
+            self.client_wrapper = None
 
 
 class TCPRequestHandler(socketserver.BaseRequestHandler):
