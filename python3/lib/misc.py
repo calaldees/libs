@@ -887,14 +887,19 @@ def one_byte_limit(value):
     return byte_limit(one_to_limit(value, limit=255))
 
 
-def color_close(target, actual, threshold=20):
+def color_distance(target, actual, threshold=20):
     """
-    >>> color_close((0,0,0), (0,0,0))
-    True
-    >>> color_close((0,0,255), (1,18,255))
-    True
-    >>> color_close((255,0,0), (0,0,255))
-    False
+    >>> color_distance((0,0,0), (0,0,0))
+    0
+    >>> color_distance((0,0,255), (1,18,255))
+    19
+    >>> color_distance((255,0,0), (0,0,255))
+    >>> color_distance((0,0,0), (10,10,10))
+    """
+    distance = sum(abs(a - b) for a, b in zip(target, actual))
+    return distance if distance < threshold else None
 
-    """
-    return sum(abs(a - b) for a, b in zip(target, actual)) < threshold
+
+def color_close(target, actual, threshold=20):
+    distance = color_distance(target, actual, threshold)
+    return True if distance is not None else False
