@@ -180,7 +180,7 @@ def postmortem(func, *args, **kwargs):
     import pdb
     import sys
     try:
-        func(*args, **kwargs)
+        return func(*args, **kwargs)
     except:
         type, value, tb = sys.exc_info()
         traceback.print_exc()
