@@ -85,6 +85,20 @@ def first(iterable):
             return i
 
 
+def flatten(l):
+    """
+    http://stackoverflow.com/questions/2158395/flatten-an-irregular-list-of-lists-in-python
+
+    >>> list(flatten([[[1, 2, 3], [4, 5]], 6]))
+    [1, 2, 3, 4, 5, 6]
+    """
+    for el in l:
+        if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            for sub in flatten(el):
+                yield sub
+        else:
+            yield el
+
 def get_item_or_attr(obj, item_or_attr_name):
     if hasattr(obj, item_or_attr_name):
         return getattr(obj, item_or_attr_name)
