@@ -375,7 +375,7 @@ def fast_scan_regex_filter(file_regex=None, ignore_regex=r'\.git'):
 def fast_scan(root, path=None, search_filter=fast_scan_regex_filter()):
     path = path or ''
     for dir_entry in os.scandir(os.path.join(root, path)):
-        if dir_entry.is_file() and search_filter(dir_entry):
+        if (dir_entry.is_file() or dir_entry.is_symlink()) and search_filter(dir_entry):  # .is_symlink is dangerious, as symlinks can also be folders
             file_no_ext, ext = file_ext(dir_entry.name)
             yield FileScan(
                 folder=path,
