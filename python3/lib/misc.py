@@ -327,7 +327,7 @@ def file_ext(filename):
 def file_extension_regex(exts):
     return re.compile(r'|'.join(map(lambda e: r'\.{0}$'.format(e), exts)))
 
-FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'relative', 'hash', 'stats', 'ext', 'file_no_ext'])
+FileScan = collections.namedtuple('FileScan', ['folder', 'file', 'absolute', 'abspath', 'relative', 'hash', 'stats', 'ext', 'file_no_ext'])
 def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=False):
     """
     regex's are for filenames only (not the whole path). That feature could be added
@@ -352,7 +352,8 @@ def file_scan(path, file_regex=None, ignore_regex=r'\.git', hasher=None, stats=F
                 yield FileScan(
                     folder=root,
                     file=f,
-                    absolute=os.path.join(root, f),
+                    absolute=os.path.join(root, f),  # This is wrong. This is NOT absolute! We need to unpick this. Call this variable 'path' or something and have absolute actually be the absolute.
+                    abspath=os.path.abspath(os.path.join(root, f)),
                     relative=os.path.join(root.replace(path, ''), f).strip('/'),
                     hash=hashfile(os.path.join(root, f), hasher),
                     stats=stater(os.path.join(root, f)),
@@ -379,7 +380,8 @@ def fast_scan(root, path=None, search_filter=fast_scan_regex_filter()):
             yield FileScan(
                 folder=path,
                 file=dir_entry.name,
-                absolute=dir_entry.path,
+                absolute=dir_entry.path,  # This is wrong. This is NOT absolute! We need to unpick this. Call this variable 'path' or something and have absolute actually be the absolute.
+                abspath=os.path.abspath(dir_entry.path),
                 relative=dir_entry.path.replace(root, '').strip('/'),
                 stats=dir_entry.stat(),
                 ext=ext,

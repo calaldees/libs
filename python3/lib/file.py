@@ -78,3 +78,7 @@ class FolderStructure(object):
                     yield f
             elif select_function(file_item):
                 yield file_item
+
+    @property
+    def all_files(self):
+        return self.scan(lambda f: True)
