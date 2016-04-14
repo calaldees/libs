@@ -826,12 +826,12 @@ def limit(value, min_value=0.0, max_value=1.0):
     return max(min_value, min(max_value, value))
 
 
-def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
+def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0)):
     """
     Normalise a range of string values into (r,g,b) tuple from 0 to 1
 
     >>> parse_rgb_color('what is this?')
-    (0.0, 0.0, 0.0, 0.0)
+    (0.0, 0.0, 0.0)
     >>> parse_rgb_color((1,1,1))
     (1.0, 1.0, 1.0)
     >>> parse_rgb_color([0,0.5,1])
@@ -853,10 +853,10 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0, 0.0)):
     >>> parse_rgb_color('rgb:1,1,1,1')
     (1.0, 1.0, 1.0, 1.0)
     >>> parse_rgb_color(0.5)
-    (0.5, 0.5, 0.5, 0.5)
+    (0.5, 0.5, 0.5)
     """
     if isinstance(color, float):
-        color = (color, ) * 4
+        color = (color, ) * 3
     if isinstance(color, (tuple, list)):
         return tuple(map(float, color))
     if isinstance(color, str):
