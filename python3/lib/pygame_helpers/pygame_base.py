@@ -1,7 +1,10 @@
 # Pygame Helpers ---------------------------------------------------------------
 #  Try to keep underlying implementation/libs of grapics handling away from logic
 
-import pygame
+try:
+    import pygame
+except ImportError:
+    pass
 
 COLOR_BACKGROUND = (0, 0, 0, 255)
 

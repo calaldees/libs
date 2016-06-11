@@ -296,7 +296,7 @@ def read_json(filename):
             data = data.decode('utf-8')
         return json.loads(data)
         #except Exception as e:
-        #    log.warn('Failed to process %s' % source)
+        #    log.warning('Failed to process %s' % source)
 
 
 def read_file_list(filename):
