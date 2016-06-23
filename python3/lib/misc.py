@@ -854,8 +854,10 @@ def parse_rgb_color(color, fallback_color=(0.0, 0.0, 0.0)):
     (1.0, 1.0, 1.0, 1.0)
     >>> parse_rgb_color(0.5)
     (0.5, 0.5, 0.5)
+    >>> parse_rgb_color(1)
+    (1.0, 1.0, 1.0)
     """
-    if isinstance(color, float):
+    if isinstance(color, (float, int)):
         color = (color, ) * 3
     if isinstance(color, (tuple, list)):
         return tuple(map(float, color))
