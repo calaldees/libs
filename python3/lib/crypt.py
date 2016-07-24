@@ -3,10 +3,7 @@ import base64
 import os
 import json
 
-try:
-    from Crypto.Cipher import AES
-except ImportError as ex:
-    pass  # A hidious botch to allow automated tests to run in enviroments that dont have Crypto
+from Crypto.Cipher import AES
 
 
 class Cryptor(object):

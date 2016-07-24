@@ -18,5 +18,6 @@ class MultiMockOpen(object):
                 _open.__exit__ = lambda *args, **kwargs: None
                 _open.__enter__ = lambda *args, **kwargs: _open
                 return _open
-        assert full_path in self.handlers, 'Unknown file to mock {0}'.format(full_path)
-
+        #assert full_path in self.handlers, 'Unknown file to mock {0}'.format(full_path)
+        if full_path not in self.handlers:
+            raise FileNotFoundError('Unknown file to mock {0}'.format(full_path))
