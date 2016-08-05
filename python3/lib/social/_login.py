@@ -120,7 +120,7 @@ class FacebookLogin(ILoginProvider):
             return ProviderToken(self.name, response.get('access_token'))
 
     def aquire_additional_user_details(provider_token):
-        fb = facebook.facebook(access_token=provider_token.token)
+        fb = facebook.Facebook(access_token=provider_token.token)
         user_data = fb.api('me')
         user_data['avatar_img'] = facebook.endpoints['avatar'].format(user_data.get('id'))
         return user_data

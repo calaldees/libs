@@ -1,8 +1,11 @@
 ## -*- coding: utf-8 -*-
 
+import os.path
 import json
 from urllib.parse import urlencode
 from urllib.request import urlopen, HTTPError
+
+DEFAULT_FACEBOOK_API_VERSION = '2.3'
 
 endpoints = dict(
     service='http://graph.facebook.com/',
@@ -14,7 +17,7 @@ endpoints = dict(
 
 # Base api call request handling -----------------------------------------------
 
-def call_api(service_path, *args, **kwargs):
+def call_api(service_path, *args, version=DEFAULT_FACEBOOK_API_VERSION, **kwargs):
     """
     Call Facebook API function
 
@@ -22,8 +25,7 @@ def call_api(service_path, *args, **kwargs):
     the POST or GET can be controled my passing '_method' in kwargs - default is GET
     """
     # Service
-    service_url = endpoints['service']
-    service_url += service_path
+    service_url = os.path.join(endpoints['service'], version or '', service_path.strip('/')
 
     # Secure
     if kwargs.pop('secure', True) or 'access_token' in kwargs or 'client_secret' in kwargs:  # Facebook will reject any request made with an access token if https is not enabled
@@ -72,13 +74,13 @@ def call_api(service_path, *args, **kwargs):
 
 # Facebook object --------------------------------------------------------------
 
-class facebook():
+class Facebook():
     """
     Simple object to cleanly keep track of facebook access token for app or user
     Can also queue and execute Batch requests and FQL
 
     Examples:
-        fb = facebook(access_token='usertoken')
+        fb = Facebook(access_token='usertoken')
         fb.api_queue('me')
         fb.api_queue('me/feed', limit=3)
         user, stream = tuple(fb.api_batch())
@@ -87,9 +89,9 @@ class facebook():
 
         or
 
-        fb = facebook(access_token='apptoken', appid='xxx')
+        fb = Facebook(access_token='apptoken', appid='xxx')
         or
-        fb = facebook(appid='xxx', secret='xxx')
+        fb = Facebook(appid='xxx', secret='xxx')
         test_users = fb.api('{appid}/accounts/test-users')
     """
     def __init__(self, access_token=None, appid=None, secret=None, secure=True):
