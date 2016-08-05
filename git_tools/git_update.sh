@@ -6,6 +6,6 @@ do
         echo ""
         echo ""
         echo "Updating $REPO ----------------"
-        cd $REPO && git co master && git pull && git fetch --tags && cd ..
+        cd $REPO && git co master && git reset --hard origin/master && git fetch --tags && cd ..
     fi
 done
