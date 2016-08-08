@@ -7,6 +7,9 @@ ProviderToken = namedtuple('ProviderToken', ['provider', 'token', 'response'])
 
 from . import facebook
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class ILoginProvider(object):
     """
@@ -108,6 +111,7 @@ class FacebookLogin(ILoginProvider):
             if request.params.get('state') != request.session.get('csrf_token'):
                 raise LoginProviderException('csrf mismatch')  # 400
             # Check submited code with facebook
+            log.debug(' - '.join((str(self), 'verify_cridentials', 'request (short_lived_access_token)', request.params.get('code'))))
             response = facebook.call_api(
                 'oauth/access_token',
                 client_id=self.appid,
@@ -115,14 +119,34 @@ class FacebookLogin(ILoginProvider):
                 redirect_uri=request.path_url,
                 code=request.params.get('code'),
             )
+            log.debug(' - '.join((str(self), 'verify_cridentials', 'response', str(response))))
             if response.get('error'):
                 raise LoginProviderException(response.get('error'))
-            return ProviderToken(self.name, response.get('access_token'), response)
+
+            # https://developers.facebook.com/docs/facebook-login/access-tokens#extending
+            # http://stackoverflow.com/questions/17197970/facebook-permanent-page-access-token
+            #log.debug(' - '.join((str(self), 'verify_cridentials', 'request (long_lived_access_token)', response.get('access_token'))))
+            #response = facebook.call_api(
+            #    'oauth/access_token',
+            #    client_id=self.appid,
+            #    client_secret=self.secret,
+            #    grant_type='fb_exchange_token',
+            #    fb_exchange_token=response.get('access_token'),
+            #)
+
+            # A massive hack - facebook access tokens are so shorted lived.
+            # They will not provide the same token twice, so it's impossible to identify a returning users.
+            # Solution: to hold onto the 'user_id' as a take token (as this id is all thats required for an avatar
+            user_id = facebook.Facebook(access_token=response.get('access_token')).api('me').get('id')
+
+            return ProviderToken(self.name, user_id, response)
 
     def aquire_additional_user_details(self, provider_token):
-        fb = facebook.Facebook(access_token=provider_token.token)
-        user_data = fb.api('me')
-        user_data['avatar_img'] = facebook.endpoints['avatar'].format(user_data.get('id'))
+        # Hack - user_id is all thats reuqired for an avatar (see above)
+        # fb = facebook.Facebook(access_token=provider_token.token)
+        # user_data = fb.api('me')
+        user_data = {}
+        user_data['avatar_url'] = facebook.endpoints['avatar'].format(provider_token.token)  # user_data.get('id')
         return user_data
 
 
