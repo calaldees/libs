@@ -135,18 +135,18 @@ class FacebookLogin(ILoginProvider):
             #)
 
             # A massive hack - facebook access tokens are so shorted lived.
-            # They will not provide the same token twice, so it's impossible to identify a returning users.
-            # Solution: to hold onto the 'user_id' as a take token (as this id is all thats required for an avatar
-            user_id = facebook.Facebook(access_token=response.get('access_token')).api('me').get('id')
+            # Facebook provides differnt access_tokens each login, so it's impossible to identify a returning users from this token.
+            # Solution: Preload the 'response' with a basic user profile
+            response.update(facebook.Facebook(access_token=response.get('access_token')).api('me'))
 
-            return ProviderToken(self.name, user_id, response)
+            return ProviderToken(self.name, response.get('id'), response)
 
     def aquire_additional_user_details(self, provider_token):
-        # Hack - user_id is all thats reuqired for an avatar (see above)
+        # Hack - additiona details already present in provider_token.response
         # fb = facebook.Facebook(access_token=provider_token.token)
         # user_data = fb.api('me')
-        user_data = {}
-        user_data['avatar_url'] = facebook.endpoints['avatar'].format(provider_token.token)  # user_data.get('id')
+        user_data = provider_token.response
+        user_data['avatar_url'] = facebook.endpoints['avatar'].format(provider_token.response.get('id'))
         return user_data
 
 
