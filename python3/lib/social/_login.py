@@ -110,16 +110,16 @@ class FacebookLogin(ILoginProvider):
             # Check submited code with facebook
             response = facebook.call_api(
                 'oauth/access_token',
-                client_id     = self.appid,
-                client_secret = self.secret,
-                redirect_uri  = request.path_url,
-                code          = request.params.get('code'),
+                client_id=self.appid,
+                client_secret=self.secret,
+                redirect_uri=request.path_url,
+                code=request.params.get('code'),
             )
             if response.get('error'):
                 raise LoginProviderException(response.get('error'))
             return ProviderToken(self.name, response.get('access_token'))
 
-    def aquire_additional_user_details(provider_token):
+    def aquire_additional_user_details(self, provider_token):
         fb = facebook.Facebook(access_token=provider_token.token)
         user_data = fb.api('me')
         user_data['avatar_img'] = facebook.endpoints['avatar'].format(user_data.get('id'))
@@ -128,6 +128,8 @@ class FacebookLogin(ILoginProvider):
 
 class PersonaLogin(ILoginProvider):
     """
+    Depricated
+    For reference only
     https://developer.mozilla.org/en-US/Persona/Quick_Setup
     """
     name = 'persona'

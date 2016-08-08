@@ -25,10 +25,11 @@ def call_api(service_path, *args, version=DEFAULT_FACEBOOK_API_VERSION, **kwargs
     the POST or GET can be controled my passing '_method' in kwargs - default is GET
     """
     # Service
-    service_url = os.path.join(endpoints['service'], version or '', service_path.strip('/')
+    service_url = os.path.join(endpoints['service'], version or '', service_path.strip('/'))
 
-    # Secure
-    if kwargs.pop('secure', True) or 'access_token' in kwargs or 'client_secret' in kwargs:  # Facebook will reject any request made with an access token if https is not enabled
+    # HTTPS - Auto upgrade
+    #  - Facebook will reject any request made with an access token if https is not enabled
+    if kwargs.pop('secure', True) or 'access_token' in kwargs or 'client_secret' in kwargs:
         service_url = service_url.replace('http:', 'https:')
 
     # Method - prepare arguments for GET or POST
@@ -68,7 +69,7 @@ def call_api(service_path, *args, version=DEFAULT_FACEBOOK_API_VERSION, **kwargs
     except:
         pass
 
-    # Unable to decode response
+    # Unable to decode response - return the original response
     return response
 
 
