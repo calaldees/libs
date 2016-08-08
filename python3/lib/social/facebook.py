@@ -5,7 +5,7 @@ import json
 from urllib.parse import urlencode
 from urllib.request import urlopen, HTTPError
 
-DEFAULT_FACEBOOK_API_VERSION = '2.3'
+DEFAULT_FACEBOOK_API_VERSION = 'v2.7'
 
 endpoints = dict(
     service='http://graph.facebook.com/',

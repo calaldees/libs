@@ -117,7 +117,7 @@ class FacebookLogin(ILoginProvider):
             )
             if response.get('error'):
                 raise LoginProviderException(response.get('error'))
-            return ProviderToken(self.name, response.get('access_token'))
+            return ProviderToken(self.name, response.get('access_token'), response)
 
     def aquire_additional_user_details(self, provider_token):
         fb = facebook.Facebook(access_token=provider_token.token)
