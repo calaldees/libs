@@ -39,8 +39,9 @@ class SubscriptionEchoServerManager(ServerManager):
         for line in filter(None, data.decode('utf-8').split('\n')):
             try:
                 message = json.loads(line)
-            except TypeError:
-                log.warn('Unable to json decode message: {0}'.format(line))
+                assert isinstance(message, dict), 'Top level json object must be a dict'
+            except Exception:
+                log.exception('Unable to json decode message: {0}'.format(line))
                 continue
 
             action = message.get('action')
