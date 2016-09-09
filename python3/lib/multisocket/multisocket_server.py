@@ -14,7 +14,7 @@ import logging
 logger = {
     'status'    : logging.getLogger(__name__+'.status').info,
     'connection': logging.getLogger(__name__+'.connection').info,
-    'message'   : print,
+    'message': logging.getLogger(__name__+'.message').info,
 }
 
 
