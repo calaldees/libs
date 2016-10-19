@@ -13,7 +13,8 @@ var utils = {};
 				//console.error(""+obj+" has no attribute "+next_cmd);
 				return fallback_return;
 			}
-			return get(cmd, next_obj, fallback_return);}
+			return get(cmd, next_obj, fallback_return);
+		}
 		//console.error('Failed to aquire ');
 		return fallback_return;
 	}

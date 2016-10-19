@@ -27,7 +27,8 @@ try:
     import dateutil.parser
     dateutil_parser = dateutil.parser.parser()
 except ImportError:
-    dateutil_parser = lambda x: None
+    from unittest.mock import Mock
+    dateutil_parser = Mock()
 
 
 import logging
@@ -527,7 +528,7 @@ def random_string(length=8):
 def substring_in(substrings, string_list, ignore_case=True):
     """
     TODO - Depricated! Moved to string_tools
-    
+
     Find a substrings in a list of string_list
     Think of it as
       is 'bc' in ['abc', 'def']
@@ -660,12 +661,13 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     5
     >>> convert_str_with_type("00:00:01 -> timedelta")
     datetime.timedelta(0, 1)
-    >>> convert_str_with_type("2000-01-01 -> datetime")
-    datetime.datetime(2000, 1, 1, 0, 0)
     >>> convert_str_with_type("[]")
     []
     >>> convert_str_with_type('', fallback_type=list)
     []
+
+    #>>> convert_str_with_type("2000-01-01 -> datetime")
+    #datetime.datetime(2000, 1, 1, 0, 0)
     """
     if not isinstance(value_string, str):
         return value_string
@@ -702,10 +704,11 @@ def convert_str(value, return_type):
     [True, True, False, False]
     >>> convert_str('{"a":1}', None)
     {'a': 1}
-    >>> convert_str('2000-01-01', 'datetime')
-    datetime.datetime(2000, 1, 1, 0, 0)
     >>> convert_str('0:00:01', 'timedelta')
     datetime.timedelta(0, 1)
+
+    #>>> convert_str('2000-01-01', 'datetime')
+    #datetime.datetime(2000, 1, 1, 0, 0)
     """
     if return_type == 'None':
         return None
