@@ -57,12 +57,13 @@ def freeze(items):
         return frozenset(freeze(item) for item in items)
     return items
 
-def postmortem(func):
+
+def postmortem(func, *args, **kwargs):
     import traceback
     import pdb
     import sys
     try:
-        func()
+        func(*args, **kwargs)
     except Exception:
         type, value, tb = sys.exc_info()
         traceback.print_exc()
