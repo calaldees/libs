@@ -1,5 +1,8 @@
 from collections import namedtuple
 from functools import wraps
+from numbers import Number
+from functools import reduce
+from copy import copy
 
 import logging
 log = logging.getLogger(__name__)
@@ -7,14 +10,26 @@ log = logging.getLogger(__name__)
 
 class Timeline(object):
     """
-    Inspired by 'GSAP (GreenSock Animation Platform)' http://greensock.com/
+    Inspired by
+      * GSAP (GreenSock Animation Platform) - http://greensock.com/
+      * Kia - www.
     A generalised animation framework for tweeing python attributes.
     """
     AnimationItem = namedtuple('AnimationItem', ('timestamp', 'element', 'duration', 'values'))
 
     def __init__(self, delay=0, repeat=0, repeatDelay=0, onUpdate=None, onRepeat=None, onComplete=None):
         self._animation_items = []
-        self._lable_timestamps = {}
+        self._label_timestamps = {}
+        self._head_timestamp = 0
+
+    # Properties ---------------------------------------------------------------
+
+    @property
+    def duration(self):
+        return reduce(
+            lambda accumulator, item: max(accumulator, item.timestamp + item.duration),
+            self._animation_items, 0
+        )
 
     # Build --------------------------------------------------------------------
 
@@ -22,7 +37,14 @@ class Timeline(object):
     def to(self, elements, duration, values, label=None):
         if not hasattr(elements, '__iter__'):
             elements = (elements, )
-        timestamp = 0  # TODO
+
+        # Lookup/Calculate label timestmpa
+        timestamp = self._head_timestamp
+        if isinstance(label, Number):
+            timestamp += label
+        else:
+            timestamp = self._label_timestamps.setdefault(label, timestamp)
+
         for element in elements:
             self._animation_items.append(AnimationItem(timestamp, element, duration, values))
         return self
@@ -73,3 +95,49 @@ class Timeline(object):
                 return _return
             return wrapped_function
         return _decorate(original_function) if original_function else _decorate
+
+
+    # Operators ----------------------------------------------------------------
+
+    def __copy__(self):
+        t = Timeline()
+        for field in ('_animation_items', '_label_timestamps', '_head_timestamp'):
+            setattr(t, field, copy(getattr(self, field)))
+        return t
+
+    def __iadd__(self, other):
+        pass
+
+    def __add__(self, other):
+        pass
+
+    def __and__(self, other):
+        pass
+
+    def __iand__(self, other):
+        pass
+
+    def __concat__(self, other):
+        pass
+
+    def __reversed__(self):
+        pass
+
+    def __invert__(self):
+        pass
+
+    def _mul_(self, repeats):
+        assert isinstance(repeats, int)
+        return [
+            self.AnimationItem(timestamp=i.timestamp * r, element=i.element, duration=i.duration, values=i.values)
+            for i in self._animation_items
+            for r in repeats
+        ]
+
+    def __mul__(self, repeats):
+        t = copy(self)
+        t._animation_items = self._mul_(repeats)
+        return t
+
+    def __imul__(self, repeats):
+        self._animation_items = self._mul_(self, repeats)
