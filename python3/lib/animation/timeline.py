@@ -1,7 +1,6 @@
 from collections import namedtuple
-from functools import wraps
+from functools import wraps, reduce
 from numbers import Number
-from functools import reduce
 from copy import copy
 
 import logging
@@ -10,28 +9,32 @@ log = logging.getLogger(__name__)
 
 class Timeline(object):
     """
-    Inspired by
+    A generalised animation framework for tweeing python attributes.
+    Inspired by:
       * GSAP (GreenSock Animation Platform) - http://greensock.com/
       * Kivy - https://kivy.org/docs/api-kivy.animation.html
-    A generalised animation framework for tweeing python attributes.
     """
-    AnimationItem = namedtuple('AnimationItem', ('timestamp', 'element', 'duration', 'values'))
+    AnimationItem = namedtuple('TimelineAnimationItem', ('timestamp', 'element', 'duration', 'values', 'timestamp_end'))
+    Renderer = namedtuple('TimelineRenderer', ('items', 'active'))
 
     def __init__(self, delay=0, repeat=0, repeatDelay=0, onUpdate=None, onRepeat=None, onComplete=None):
         self._animation_items = []
         self._label_timestamps = {}
-        self.duration = 0
+        self._invalidate_timeline_cache()
 
     # Properties ---------------------------------------------------------------
 
     @property
     def _duration(self):
         return reduce(
-            lambda accumulator, item: max(accumulator, item.timestamp + item.duration),
+            lambda accumulator, i: max(accumulator, i.timestamp_end),
             self._animation_items, 0
         )
 
     # Build --------------------------------------------------------------------
+
+    def add_label(self, name, timestamp):
+        self._label_timestamps[name] = timestamp
 
     @invalidate_timeline_cache
     def to(self, elements, duration, values, label=None):
@@ -46,8 +49,16 @@ class Timeline(object):
             timestamp = self._label_timestamps.setdefault(label, timestamp)
 
         for element in elements:
-            self._animation_items.append(AnimationItem(timestamp, element, duration, values))
+            self._animation_items.append(AnimationItem(timestamp, element, duration, values, timestamp + duration))
         return self
+
+    def from(self):
+        # TODO
+        pass
+
+    def from_to(self):
+        # TODO
+        pass
 
     def set(self, elements, values, label=None):
         return self.to(elements, 0, values, label)
@@ -60,8 +71,13 @@ class Timeline(object):
 
     # Control ------------------------------------------------------------------
 
-    def render(self, timecode):
-        pass
+    @property
+    def renderer(self):
+        """
+        Return a new renderer to modify the animation items
+        The returned rendering caches the animation progress state
+        """
+        return Timeline.Renderer(self)
 
     # Decorators ---------------------------------------------------------------
 
@@ -106,6 +122,8 @@ class Timeline(object):
         return t
 
     def _add_(timeline1, timeline2):
+        assert isinstance(timeline1, Timeline)
+        assert isinstance(timeline2, Timeline)
         timeline1._animation_items += [
             self.AnimationItem(timestamp=timeline1.duration + i.timestamp, element=i.element, duration=i.duration, values=i.values)
             for i in timeline2._animation_items
@@ -128,6 +146,8 @@ class Timeline(object):
         pass
 
     def _and_(timeline1, timeline2):
+        assert isinstance(timeline1, Timeline)
+        assert isinstance(timeline2, Timeline)
         timeline1._animation_items += timeline2._animation_items
         timeline1._label_timestamps.update(timeline2._label_timestamps)
         timeline1._invalidate_timeline_cache()
@@ -153,6 +173,7 @@ class Timeline(object):
         self._reverse_()
 
     def _mul_(timeline, repeats):
+        assert isinstance(timeline, Timeline)
         assert isinstance(repeats, int)
         return [
             self.AnimationItem(timestamp=i.timestamp * r, element=i.element, duration=i.duration, values=i.values)
@@ -167,3 +188,45 @@ class Timeline(object):
 
     def __imul__(self, repeats):
         self._animation_items = self._mul_(self, repeats)
+
+
+    # Renderer -----------------------------------------------------------------
+
+    class Renderer(object):
+        def __init__(self, parent_timeline):
+            self._items = tuple(sorted(self._animation_items, key=lambda item: item.timestamp))
+            self.reset()
+
+        def reset(self):
+            self._active = []
+            self._next_item_index = 0
+            self._last_timecode = 0
+
+        def render(self, timecode):
+            # Active item cache only allows us to go forwards.
+            # If we travel backwards in time reset the cache state and calculate form scratch
+            if timecode < self._last_timecode:
+                self.reset()
+            self._last_timecode = timecode
+
+            # Update active items for current timecode
+            while self._next_item.timestamp > timecode and self._next_item_index < len(self._items):
+                self._add_active_item(self._next_item)
+                self._next_item_index += 1
+            self._expire_passed_animation_items(timecode)
+
+            # Render (as we have the current active items)
+            for i in self._active:
+                pass
+
+        @property
+        def _next_item(self):
+            return self._items[self._next_item_index]
+
+        def _add_active_item(self, item):
+            self._items.append(item)
+            self._items.sort(key=lambda i: i.timestamp_end)
+
+        def _expire_passed_animation_items(self, timecode):
+            while self._active and self._active[0].timestamp_end < timecode:
+                self._active.pop(0)
