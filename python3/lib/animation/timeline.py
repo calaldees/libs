@@ -14,7 +14,7 @@ class Timeline(object):
       * GSAP (GreenSock Animation Platform) - http://greensock.com/
       * Kivy - https://kivy.org/docs/api-kivy.animation.html
     """
-    AnimationItem = namedtuple('TimelineAnimationItem', ('timestamp', 'element', 'duration', 'values', 'timestamp_end'))
+    AnimationItem = namedtuple('TimelineAnimationItem', ('timestamp', 'element', 'duration', 'valuesFrom', 'valuesTo', 'timestamp_end'))
     Renderer = namedtuple('TimelineRenderer', ('items', 'active'))
 
     def __init__(self, delay=0, repeat=0, repeatDelay=0, onUpdate=None, onRepeat=None, onComplete=None):
@@ -37,7 +37,12 @@ class Timeline(object):
         self._label_timestamps[name] = timestamp
 
     @invalidate_timeline_cache
-    def to(self, elements, duration, values, label=None):
+    def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, label=None):
+        assert elements, 'No elements to animate'
+        assert duration >= 0, 'Duration must be positive value'
+        assert valuesFrom or valuesTo, 'No animation values provided'
+        if valuesFrom and valuesTo:
+            assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symetrical'
         if not hasattr(elements, '__iter__'):
             elements = (elements, )
 
@@ -49,16 +54,16 @@ class Timeline(object):
             timestamp = self._label_timestamps.setdefault(label, timestamp)
 
         for element in elements:
-            self._animation_items.append(AnimationItem(timestamp, element, duration, values, timestamp + duration))
+            self._animation_items.append(
+                AnimationItem(timestamp, element, duration, valuesFrom=copy(valuesFrom), valuesTo=copy(valuesTo), timestamp_end=timestamp + duration)
+            )
         return self
 
-    def from(self):
-        # TODO
-        pass
+    def to(self, elements, duration, values, label=None):
+        return self.from_to(elements, duration, valuesTo=values, label=label)
 
-    def from_to(self):
-        # TODO
-        pass
+    def from(self, elements, duration, values, label=None):
+        return self.from_to(elements, duration, valuesFrom=values, label=label)
 
     def set(self, elements, values, label=None):
         return self.to(elements, 0, values, label)
@@ -66,7 +71,7 @@ class Timeline(object):
     def staggerTo(self, elements, duration, values, offset, label=None):
         item_duration = duration - (offset * len(elements))
         for element in elements:
-            self.to(element, item_duration, values, label=-item_duration + offset)
+            self.to(element, item_duration, valuesTo=values, label=-item_duration + offset)
         return self
 
     # Control ------------------------------------------------------------------
@@ -124,8 +129,12 @@ class Timeline(object):
     def _add_(timeline1, timeline2):
         assert isinstance(timeline1, Timeline)
         assert isinstance(timeline2, Timeline)
+        def clone_item(i):
+            vars = i._asdict()
+            vars['timestamp'] += timeline1.duration
+            return self.AnimationItem(**vars)
         timeline1._animation_items += [
-            self.AnimationItem(timestamp=timeline1.duration + i.timestamp, element=i.element, duration=i.duration, values=i.values)
+            clone_item(i)
             for i in timeline2._animation_items
         ]
         timeline1._label_timestamps.update({
@@ -161,8 +170,12 @@ class Timeline(object):
         self._and_(other)
 
     def _reverse_(timeline):
+        def clone_item(i):
+            vars = i._asdict()
+            vars['timestamp'] = timeline.duration - vars['timestamp'] - vars['duration']
+            return self.AnimationItem(**vars)
         timeline._animation_items = [
-            self.AnimationItem(timestamp=timeline.duration - i.timestamp - i.duration, element=i.element, duration=i.duration, values=i.values)
+            clone_item(i)
             for i in reversed(timeline._animation_items)
         ]
 
@@ -209,22 +222,36 @@ class Timeline(object):
                 self.reset()
             self._last_timecode = timecode
 
-            # Update active items for current timecode
-            while self._next_item.timestamp > timecode and self._next_item_index < len(self._items):
+            # Update active items list for current timecode
+            while self._next_item_index < len(self._items) and self._next_item.timestamp > timecode:
                 self._add_active_item(self._next_item)
                 self._next_item_index += 1
             self._expire_passed_animation_items(timecode)
 
             # Render (as we have the current active items)
             for i in self._active:
-                pass
+                normalized_pos = (timecode - i.timestamp) / i.duration
+                assert normalized_pos >= 0 and normalized_pos <= 1, 'Animation item should be in range'  # Temp assertion for development
+                for field in i.valuesTo.keys():
+                    #setattr(i.element, field, i.tween(i.valueTo))
+                    pass
 
         @property
         def _next_item(self):
             return self._items[self._next_item_index]
 
         def _add_active_item(self, item):
+            # Derive missing to/from values
+            # This is done at the absolute final moment before the item is animated
+            if item.valuesFrom ^ item.valuesTo:
+                source = item.valuesFrom or item.valuesTo
+                destination = item.valuesFrom if not item.valuesFrom else item.valuesTo
+                for field in source.keys():
+                    destination[field] = copy(getattr(item.element, field))
+            assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symetrical'  # Temp assertion for development
+            # Activate item
             self._items.append(item)
+            # Sort in order of expiry for efficent removal
             self._items.sort(key=lambda i: i.timestamp_end)
 
         def _expire_passed_animation_items(self, timecode):
