@@ -15,7 +15,6 @@ class Timeline(object):
       * Kivy - https://kivy.org/docs/api-kivy.animation.html
     """
     AnimationItem = namedtuple('TimelineAnimationItem', ('timestamp', 'element', 'duration', 'valuesFrom', 'valuesTo', 'tween', 'timestamp_end'))
-    Renderer = namedtuple('TimelineRenderer', ('items', 'active'))
 
     def __init__(self):
         self._animation_items = []
@@ -44,7 +43,7 @@ class Timeline(object):
         if valuesFrom and valuesTo:
             assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symetrical'
 
-        tween = tween or Timeline.tween_linear
+        tween = tween or Timeline.Tween.tween_linear
         if not hasattr(elements, '__iter__'):
             elements = (elements, )
 
@@ -105,21 +104,6 @@ class Timeline(object):
             def wrapped_function(self, *args, **kwargs):
                 _return = function(self, *args, **kwargs)
                 self._invalidate_timeline_cache()
-                return _return
-            return wrapped_function
-        return _decorate(original_function) if original_function else _decorate
-
-    def elements_to_multiple_calls(original_function=None):
-        """
-        Convert element iterables into single calls
-        """
-        def _decorate(function):
-            @wraps(function)
-            def wrapped_function(self, elements, *args, **kwargs):
-                if isinstance(elements, str) or not hasattr(str, '__iter__'):
-                    return function(self, elements, *args, **kwargs)
-                for element in elements:
-                    _return = function(self, element, *args, **kwargs)
                 return _return
             return wrapped_function
         return _decorate(original_function) if original_function else _decorate
@@ -185,13 +169,7 @@ class Timeline(object):
             vars['valuesTo'] = vars['valuesFrom']
             vars['valuesFrom'] = temp
             # Invert tween
-            def tween_invert_wraper(tween_func):
-                def tween_invert(n):
-                    return tween_func(1 - n)
-                tween_invert.inverted = True
-                tween_invert.tween_func = tween_func
-                return tween_invert
-            vars['tween'] = vars['tween'].tween_func if getattr(i.tween, 'inverted', False) else tween_invert_wraper(vars['tween'])
+            vars['tween'] = vars['tween'].tween_func if getattr(i.tween, 'inverted', False) else Timeline.Tween.tween_invert(vars['tween'])
             return self.AnimationItem(**vars)
         timeline._animation_items = [
             reverse_item(i)
@@ -289,34 +267,45 @@ class Timeline(object):
 
     # Tweens ---------------------------------------------------------------
 
-    @staticmethod
-    def _checkRange(n):
-        """Raises ValueError if the argument is not between 0.0 and 1.0."""
-        if not 0.0 <= n <= 1.0:
-            raise ValueError('Argument must be between 0.0 and 1.0.')
+    class Tween(object):
+        @staticmethod
+        def _checkRange(n):
+            """Raises ValueError if the argument is not between 0.0 and 1.0."""
+            if not 0.0 <= n <= 1.0:
+                raise ValueError('Argument must be between 0.0 and 1.0.')
 
-    @staticmethod
-    def tween_linear(n):
-        """A linear tween function"""
-        Timeline._checkRange(n)
-        return n
-
-    @staticmethod
-    def tween_step(num_steps):
-        """
-        >>> tween_step(4)(0)
-        0.0
-        >>> tween_step(4)(0.1)
-        0.0
-        >>> tween_step(4)(0.25)
-        0.25
-        >>> tween_step(4)(0.513)
-        0.5
-        >>> tween_step(4)(1)
-        1
-        """
-        increment = 1 / num_steps
-        def _tween_step(n):
+        @staticmethod
+        def tween_linear(n):
+            """A linear tween function"""
             Timeline._checkRange(n)
-            return (n // increment) * increment
-        return _tween_step
+            return n
+
+        @staticmethod
+        def tween_invert(tween_func):
+            """
+            """
+            def _tween_invert(n):
+                return tween_func(1 - n)
+            _tween_invert.inverted = True
+            _tween_invert.tween_func = tween_func
+            return _tween_invert
+
+        @staticmethod
+        def tween_step(num_steps):
+            """
+            >>> tween_step(4)(0)
+            0.0
+            >>> tween_step(4)(0.1)
+            0.0
+            >>> tween_step(4)(0.25)
+            0.25
+            >>> tween_step(4)(0.513)
+            0.5
+            >>> tween_step(4)(1)
+            1
+            """
+            increment = 1 / num_steps
+            def _tween_step(n):
+                Timeline._checkRange(n)
+                return (n // increment) * increment
+            return _tween_step
