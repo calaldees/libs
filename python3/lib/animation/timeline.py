@@ -19,23 +19,27 @@ class Timeline(object):
     def __init__(self):
         self._animation_items = []
         self._label_timestamps = {}
-        self._invalidate_timeline_cache()
+        self._duration = None
 
     # Properties ---------------------------------------------------------------
 
     @property
-    def _duration(self):
-        return reduce(
-            lambda accumulator, i: max(accumulator, i.timestamp_end),
-            self._animation_items, 0
-        )
+    def duration(self):
+        if self._duration == None:
+            self._duration = reduce(
+                lambda accumulator, i: max(accumulator, i.timestamp_end),
+                self._animation_items, 0
+            )
+        return self._duration
+
+    def _invalidate_timeline_cache(self):
+        self._duration = None
 
     # Build --------------------------------------------------------------------
 
     def add_label(self, name, timestamp):
         self._label_timestamps[name] = timestamp
 
-    @invalidate_timeline_cache
     def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, tween=None, label=None):
         assert elements, 'No elements to animate'
         assert duration >= 0, 'Duration must be positive value'
@@ -64,15 +68,17 @@ class Timeline(object):
                     timestamp_end=timestamp + duration,
                 )
             )
+
+        self._invalidate_timeline_cache()
         return self
 
     def to(self, elements, duration, values, tween=None, label=None):
         return self.from_to(elements, duration, valuesTo=values, tween=tween, label=label)
 
-    def from(self, elements, duration, values, tween=None, label=None):
+    def from_(self, elements, duration, values, tween=None, label=None):
         return self.from_to(elements, duration, valuesFrom=values, tween=tween, label=label)
 
-    def set(self, elements, values, label=None):
+    def set_(self, elements, values, label=None):
         return self.to(elements, 0, values, label)
 
     def staggerTo(self, elements, duration, values, offset, tween=None, label=None):
@@ -89,24 +95,6 @@ class Timeline(object):
         The returned rendering caches the animation progress state
         """
         return Timeline.Renderer(self, *args, **kwargs)
-
-    # Decorators ---------------------------------------------------------------
-
-    def _invalidate_timeline_cache(self):
-        self.duration = self._duration
-    def invalidate_timeline_cache(original_function=None):
-        """
-        Decorator to place on methods that modify the timeline state
-        this invalidates
-        """
-        def _decorate(function):
-            @wraps(function)
-            def wrapped_function(self, *args, **kwargs):
-                _return = function(self, *args, **kwargs)
-                self._invalidate_timeline_cache()
-                return _return
-            return wrapped_function
-        return _decorate(original_function) if original_function else _decorate
 
     # Operators ----------------------------------------------------------------
 
