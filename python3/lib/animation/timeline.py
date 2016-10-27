@@ -29,7 +29,7 @@ class Timeline(object):
             self._duration = reduce(
                 lambda accumulator, i: max(accumulator, i.timestamp_end),
                 self._animation_items, 0
-            )
+            ) or 0
         return self._duration
 
     def _invalidate_timeline_cache(self):
@@ -55,12 +55,12 @@ class Timeline(object):
         timestamp = self.duration
         if isinstance(label, Number):
             timestamp += label
-        else:
+        elif label:
             timestamp = self._label_timestamps.setdefault(label, timestamp)
 
         for element in elements:
             self._animation_items.append(
-                AnimationItem(
+                self.AnimationItem(
                     timestamp, element, duration,
                     tween=tween,
                     valuesFrom=copy(valuesFrom),
@@ -191,7 +191,7 @@ class Timeline(object):
 
     class Renderer(object):
         def __init__(self, parent_timeline, delay=0, repeat=0, repeatDelay=0, onUpdate=None, onRepeat=None, onComplete=None):
-            self._items = tuple(sorted(self._animation_items, key=lambda item: item.timestamp))
+            self._items = tuple(sorted(parent_timeline._animation_items, key=lambda item: item.timestamp))
             self.reset()
             self.onUpdate = onUpdate
             self.onRepeat = onRepeat
@@ -210,7 +210,7 @@ class Timeline(object):
             self._last_timecode = timecode
 
             # Update active items list for current timecode
-            while self._next_item_index < len(self._items) and self._next_item.timestamp > timecode:
+            while self._next_item_index < len(self._items) and self._next_item.timestamp >= timecode:
                 self._add_active_item(self._next_item)
                 self._next_item_index += 1
             self._expire_passed_animation_items(timecode)
@@ -223,13 +223,15 @@ class Timeline(object):
                     setattr(
                         i.element,
                         field,
-                        i.valueFrom[field] + (i.tween(normalized_pos) * (i.valueTo[field] - i.valueFrom[field]))
+                        i.valuesFrom[field] + (i.tween(normalized_pos) * (i.valuesTo[field] - i.valuesFrom[field]))
                     )
 
             if timecode >= 1:
-                self.onComplete()
+                if self.onComplete:
+                    self.onComplete()
             else:
-                self.onUpdate()
+                if self.onUpdate:
+                    self.onUpdate()
 
         @property
         def _next_item(self):
@@ -238,16 +240,16 @@ class Timeline(object):
         def _add_active_item(self, item):
             # Derive missing to/from values
             # This is done at the absolute final moment before the item is animated
-            if item.valuesFrom ^ item.valuesTo:
+            if bool(item.valuesFrom) ^ bool(item.valuesTo):
                 source = item.valuesFrom or item.valuesTo
                 destination = item.valuesFrom if not item.valuesFrom else item.valuesTo
                 for field in source.keys():
                     destination[field] = copy(getattr(item.element, field))
             assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symetrical'  # Temp assertion for development
             # Activate item
-            self._items.append(item)
+            self._active.append(item)
             # Sort in order of expiry for efficent removal
-            self._items.sort(key=lambda i: i.timestamp_end)
+            self._active.sort(key=lambda i: i.timestamp_end)
 
         def _expire_passed_animation_items(self, timecode):
             while self._active and self._active[0].timestamp_end < timecode:
@@ -265,7 +267,7 @@ class Timeline(object):
         @staticmethod
         def tween_linear(n):
             """A linear tween function"""
-            Timeline._checkRange(n)
+            Timeline.Tween._checkRange(n)
             return n
 
         @staticmethod
@@ -294,6 +296,6 @@ class Timeline(object):
             """
             increment = 1 / num_steps
             def _tween_step(n):
-                Timeline._checkRange(n)
+                Timeline.Tween._checkRange(n)
                 return (n // increment) * increment
             return _tween_step

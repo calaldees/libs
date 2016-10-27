@@ -1,12 +1,76 @@
 import pytest
+from collections import namedtuple
 
 from .timeline import Timeline
 
+class Location(object):
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+
 
 @pytest.fixture()
-def timeline():
+def tl():
     return Timeline()
 
 
-def test_timeline_creation(timeline):
-    pass
+@pytest.fixture()
+def o1():
+    return Location()
+
+
+@pytest.fixture()
+def o2():
+    return Location()
+
+
+# Tests ------------------------------------------------------------------------
+
+def test_timeline_creation(tl):
+    assert tl.duration == 0
+
+
+InvalidArguemnts = namedtuple('InvalidArguments', ('args', 'kwargs'))
+@pytest.mark.parametrize(('argsX', 'kwargsX'), (
+    InvalidArguemnts(args=(), kwargs=dict()),
+    InvalidArguemnts(args=(o1(), -1), kwargs=dict(valuesFrom={'a': 1})),
+    InvalidArguemnts(args=(o1(), 0), kwargs=dict()),
+))
+def test_timeline_from_to_invalid(tl, argsX, kwargsX):
+    with pytest.raises((AssertionError, TypeError)) as exc:
+        tl.from_to(*argsX, **kwargsX)
+
+
+def test_timeline_to(tl, o1):
+    tl.to(o1, 10, {'x': 100})
+    assert tl.duration == 10
+    tl.to(o1, 10, {'y': 100})
+    assert tl.duration == 20
+
+
+def test_timeline_render_single(tl, o1):
+    assert o1.x == 0
+    assert o1.y == 0
+    tl.to(o1, 10, {'x': 100}).to(o1, 10, {'y': 100})
+
+    ren = tl.get_renderer()
+
+    ren.render(0)
+    assert o1.x == 0
+    assert o1.y == 0
+
+    ren.render(5)
+    assert o1.x == 50
+    assert o1.y == 0
+
+    ren.render(10)
+    assert o1.x == 100
+    assert o1.y == 0
+
+    ren.render(15)
+    assert o1.x == 100
+    assert o1.y == 50
+
+    ren.render(20)
+    assert o1.x == 100
+    assert o1.y == 100
