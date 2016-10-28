@@ -149,11 +149,23 @@ def test_timeline_operator_iand(tl, o1):
 
 
 def test_timeline_opertor_mul(tl, o1):
-    pass
+    tl2 = tl.to(o1, 10, {'x': 100}) * 2
+    assert tl2.duration == 20
+
+    ren = tl2.get_renderer()
+
+    ren.render(5)
+    assert o1.x == 50
+    ren.render(10)
+    assert o1.x == 0
+    ren.render(15)
+    assert o1.x == 50
 
 
 def test_timeline_opertor_imul(tl, o1):
-    pass
+    tl = tl.to(o1, 10, {'x': 100})
+    tl *= 2
+    assert tl.duration == 20
 
 
 def test_timeline_opertor_reverse(tl, o1):

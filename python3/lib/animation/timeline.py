@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 class Timeline(object):
     """
-    A generalised animation framework for tweeing python attributes.
+    A generalized animation framework for tweening python attributes.
     Inspired by:
       * GSAP (GreenSock Animation Platform) - http://greensock.com/
       * Kivy - https://kivy.org/docs/api-kivy.animation.html
@@ -45,7 +45,7 @@ class Timeline(object):
         assert duration >= 0, 'Duration must be positive value'
         assert valuesFrom or valuesTo, 'No animation values provided'
         if valuesFrom and valuesTo:
-            assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symetrical'
+            assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symmetrical'
 
         tween = tween or Timeline.Tween.tween_linear
         if not hasattr(elements, '__iter__'):
@@ -150,6 +150,25 @@ class Timeline(object):
         self._and_(other)
         return self
 
+    def _mul_(timeline, repeats):
+        assert isinstance(timeline, Timeline)
+        assert isinstance(repeats, int)
+        timeline._animation_items = [
+            timeline.AnimationItem(timestamp=i.timestamp + (timeline.duration * r), element=i.element, duration=i.duration, valuesTo=i.valuesTo, valuesFrom=i.valuesFrom, tween=i.tween, timestamp_end = i.timestamp_end + (timeline.duration * r))
+            for r in range(repeats)
+            for i in timeline._animation_items
+        ]
+        timeline._invalidate_timeline_cache()
+
+    def __mul__(timeline, repeats):
+        t = copy(timeline)
+        t._mul_(repeats)
+        return t
+
+    def __imul__(self, repeats):
+        self._mul_(repeats)
+        return self
+
     def _reverse_(timeline):
         def reverse_item(i):
             vars = i._asdict()
@@ -173,24 +192,6 @@ class Timeline(object):
 
     def __invert__(self):
         self._reverse_()
-
-    def _mul_(timeline, repeats):
-        assert isinstance(timeline, Timeline)
-        assert isinstance(repeats, int)
-        return [
-            self.AnimationItem(timestamp=i.timestamp * r, element=i.element, duration=i.duration, values=i.values)
-            for i in timeline._animation_items
-            for r in repeats
-        ]
-
-    def __mul__(timeline, repeats):
-        t = copy(timeline)
-        t._animation_items = self._mul_(repeats)
-        return t
-
-    def __imul__(self, repeats):
-        self._animation_items = self._mul_(self, repeats)
-        return self
 
     # Renderer -----------------------------------------------------------------
 
@@ -254,7 +255,7 @@ class Timeline(object):
                 destination = item.valuesFrom if not item.valuesFrom else item.valuesTo
                 for field in source.keys():
                     destination[field] = copy(getattr(item.element, field))
-            assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symetrical'  # Temp assertion for development
+            assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symmetrical'  # Temp assertion for development
             # Activate item
             self._active.append(item)
             # Sort in order of expiry for efficent removal
