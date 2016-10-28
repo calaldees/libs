@@ -171,6 +171,7 @@ class Timeline(object):
 
     def _reverse_(timeline):
         def reverse_item(i):
+            #Timeline.Renderer._derive_missing_from_to_values(i)
             vars = i._asdict()
             # Update position
             vars['timestamp'] = timeline.duration - vars['timestamp'] - vars['duration']
@@ -181,7 +182,7 @@ class Timeline(object):
             vars['valuesFrom'] = temp
             # Invert tween
             vars['tween'] = vars['tween'].tween_func if getattr(i.tween, 'inverted', False) else Timeline.Tween.tween_invert(vars['tween'])
-            return self.AnimationItem(**vars)
+            return Timeline.AnimationItem(**vars)
         timeline._animation_items = [
             reverse_item(i)
             for i in reversed(timeline._animation_items)
@@ -248,14 +249,8 @@ class Timeline(object):
             return self._items[self._next_item_index]
 
         def _add_active_item(self, item):
-            # Derive missing to/from values
             # This is done at the absolute final moment before the item is animated
-            if bool(item.valuesFrom) ^ bool(item.valuesTo):
-                source = item.valuesFrom or item.valuesTo
-                destination = item.valuesFrom if not item.valuesFrom else item.valuesTo
-                for field in source.keys():
-                    destination[field] = copy(getattr(item.element, field))
-            assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symmetrical'  # Temp assertion for development
+            self._derive_missing_from_to_values(item)
             # Activate item
             self._active.append(item)
             # Sort in order of expiry for efficent removal
@@ -264,6 +259,16 @@ class Timeline(object):
         def _expire_passed_animation_items(self, timecode):
             while self._active and self._active[0].timestamp_end < timecode:
                 self._render_item(self._active.pop(0))
+
+        @staticmethod
+        def _derive_missing_from_to_values(item):
+            if bool(item.valuesFrom) ^ bool(item.valuesTo):
+                source = item.valuesFrom or item.valuesTo
+                destination = item.valuesFrom if not item.valuesFrom else item.valuesTo
+                for field in source.keys():
+                    destination[field] = copy(getattr(item.element, field))
+            assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symmetrical'  # Temp assertion for development
+
 
     # Tweens ---------------------------------------------------------------
 

@@ -169,4 +169,20 @@ def test_timeline_opertor_imul(tl, o1):
 
 
 def test_timeline_opertor_reverse(tl, o1):
-    pass
+    tl.to(o1, 10, {'x': 100}).to(o1, 10, {'y': 100})
+    ~tl
+
+    ren = tl.get_renderer()
+
+    #ren.render(0)
+    ##assert o1.x == 100
+    #assert o1.y == 100
+    ren.render(5)
+    assert o1.y == 50
+    #assert o1.x == 100
+    ren.render(15)
+    assert o1.y == 0
+    assert o1.x == 50
+    ren.render(20)
+    assert o1.x == 0
+    assert o1.y == 0
