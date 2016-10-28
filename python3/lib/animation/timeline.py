@@ -176,10 +176,10 @@ class Timeline(object):
             # Update position
             vars['timestamp'] = timeline.duration - vars['timestamp'] - vars['duration']
             vars['timestamp_end'] = vars['timestamp'] + vars['duration']
-            # Swap from and to
-            temp = vars['valuesTo']
-            vars['valuesTo'] = vars['valuesFrom']
-            vars['valuesFrom'] = temp
+            # Swap from and to - (may not be needed as the tween is reversed)
+            #temp = vars['valuesTo']
+            #vars['valuesTo'] = vars['valuesFrom']
+            #vars['valuesFrom'] = temp
             # Invert tween
             vars['tween'] = vars['tween'].tween_func if getattr(i.tween, 'inverted', False) else Timeline.Tween.tween_invert(vars['tween'])
             return Timeline.AnimationItem(**vars)

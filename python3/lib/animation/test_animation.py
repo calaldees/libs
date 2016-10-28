@@ -174,12 +174,15 @@ def test_timeline_opertor_reverse(tl, o1):
 
     ren = tl.get_renderer()
 
-    #ren.render(0)
-    ##assert o1.x == 100
-    #assert o1.y == 100
+    ren.render(0)
+    #assert o1.x == 100  # x is NOT 100 as the the animation has been reversed but the starting value is still unaltered at 0
+    assert o1.y == 100
     ren.render(5)
     assert o1.y == 50
     #assert o1.x == 100
+    ren.render(10)
+    assert o1.x == 100
+    assert o1.y == 0
     ren.render(15)
     assert o1.y == 0
     assert o1.x == 50
