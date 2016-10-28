@@ -123,3 +123,26 @@ def test_timeline_operator_iadd(tl, o1):
     ren.render(15)
     assert o1.x == 100
     assert o1.y == 50
+
+
+def test_timeline_operator_and(tl, o1):
+    tl.to(o1, 10, {'x': 100})
+    tl2 = Timeline().to(o1, 10, {'y': 100})
+    tl3 = tl & tl2
+
+    ren = tl3.get_renderer()
+
+    ren.render(5)
+    assert o1.x == 50
+    assert o1.y == 50
+
+
+def test_timeline_operator_iand(tl, o1):
+    tl.to(o1, 10, {'x': 100})
+    tl &= Timeline().to(o1, 10, {'y': 100})
+
+    ren = tl.get_renderer()
+
+    ren.render(5)
+    assert o1.x == 50
+    assert o1.y == 50
