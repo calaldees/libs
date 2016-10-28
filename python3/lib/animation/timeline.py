@@ -210,7 +210,9 @@ class Timeline(object):
             self._last_timecode = timecode
 
             # Update active items list for current timecode
-            while self._next_item_index < len(self._items) and self._next_item.timestamp >= timecode:
+            has_more_items = lambda: self._next_item_index < len(self._items)
+            timecode_is_in_next_item = lambda: timecode >= self._next_item.timestamp
+            while has_more_items() and timecode_is_in_next_item():
                 self._add_active_item(self._next_item)
                 self._next_item_index += 1
             self._expire_passed_animation_items(timecode)
