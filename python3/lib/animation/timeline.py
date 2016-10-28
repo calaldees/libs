@@ -100,7 +100,7 @@ class Timeline(object):
 
     def __copy__(self):
         t = Timeline()
-        for field in ('_animation_items', '_label_timestamps', '_head_timestamp'):
+        for field in ('_animation_items', '_label_timestamps'):
             setattr(t, field, copy(getattr(self, field)))
         return t
 
@@ -110,7 +110,8 @@ class Timeline(object):
         def clone_item(i):
             vars = i._asdict()
             vars['timestamp'] += timeline1.duration
-            return self.AnimationItem(**vars)
+            vars['timestamp_end'] += timeline1.duration
+            return Timeline.AnimationItem(**vars)
         timeline1._animation_items += [
             clone_item(i)
             for i in timeline2._animation_items
@@ -123,11 +124,12 @@ class Timeline(object):
 
     def __add__(timeline1, timeline2):
         t = copy(timeline1)
-        t._and_(timeline2)
+        t._add_(timeline2)
         return t
 
     def __iadd__(self, other):
         self._add_(other)
+        return self
 
     def __concat__(self, other):
         pass
@@ -146,6 +148,7 @@ class Timeline(object):
 
     def __iand__(self, other):
         self._and_(other)
+        return self
 
     def _reverse_(timeline):
         def reverse_item(i):
@@ -220,13 +223,7 @@ class Timeline(object):
             # Render (as we have the current active items)
             for i in self._active:
                 normalized_pos = (timecode - i.timestamp) / i.duration
-                assert normalized_pos >= 0 and normalized_pos <= 1, 'Animation item should be in range'  # Temp assertion for development
-                for field in i.valuesTo.keys():
-                    setattr(
-                        i.element,
-                        field,
-                        i.valuesFrom[field] + (i.tween(normalized_pos) * (i.valuesTo[field] - i.valuesFrom[field]))
-                    )
+                self._render_item(i, normalized_pos)
 
             if timecode >= 1:
                 if self.onComplete:
@@ -234,6 +231,15 @@ class Timeline(object):
             else:
                 if self.onUpdate:
                     self.onUpdate()
+
+        def _render_item(self, i, pos=1):
+            assert pos >= 0 and pos <= 1, 'Animation item should be in range'  # Temp assertion for development
+            for field in i.valuesTo.keys():
+                setattr(
+                    i.element,
+                    field,
+                    i.valuesFrom[field] + (i.tween(pos) * (i.valuesTo[field] - i.valuesFrom[field]))
+                )
 
         @property
         def _next_item(self):
@@ -255,7 +261,7 @@ class Timeline(object):
 
         def _expire_passed_animation_items(self, timecode):
             while self._active and self._active[0].timestamp_end < timecode:
-                self._active.pop(0)
+                self._render_item(self._active.pop(0))
 
     # Tweens ---------------------------------------------------------------
 

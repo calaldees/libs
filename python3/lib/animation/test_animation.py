@@ -74,3 +74,52 @@ def test_timeline_render_single(tl, o1):
     ren.render(20)
     assert o1.x == 100
     assert o1.y == 100
+
+
+def test_timeline_render_multiple_elements(tl, o1, o2):
+    tl.to((o1, o2), 10, {'x': 100})
+
+    ren = tl.get_renderer()
+
+    ren.render(0)
+    assert o1.x == 0
+    assert o1.y == 0
+    assert o2.x == 0
+    assert o2.y == 0
+
+    ren.render(5)
+    assert o1.x == 50
+    assert o1.y == 0
+    assert o2.x == 50
+    assert o2.y == 0
+
+
+def test_timeline_operator_add(tl, o1):
+    tl.to(o1, 10, {'x': 100})
+    tl2 = Timeline().to(o1, 10, {'y': 100})
+    tl3 = tl + tl2
+
+    ren = tl3.get_renderer()
+
+    ren.render(5)
+    assert o1.x == 50
+    assert o1.y == 0
+
+    ren.render(15)
+    assert o1.x == 100
+    assert o1.y == 50
+
+
+def test_timeline_operator_iadd(tl, o1):
+    tl.to(o1, 10, {'x': 100})
+    tl += Timeline().to(o1, 10, {'y': 100})
+
+    ren = tl.get_renderer()
+
+    ren.render(5)
+    assert o1.x == 50
+    assert o1.y == 0
+
+    ren.render(15)
+    assert o1.x == 100
+    assert o1.y == 50
