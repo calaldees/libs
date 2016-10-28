@@ -155,6 +155,7 @@ class Timeline(object):
             vars = i._asdict()
             # Update position
             vars['timestamp'] = timeline.duration - vars['timestamp'] - vars['duration']
+            vars['timestamp_end'] = vars['timestamp'] + vars['duration']
             # Swap from and to
             temp = vars['valuesTo']
             vars['valuesTo'] = vars['valuesFrom']
@@ -189,6 +190,7 @@ class Timeline(object):
 
     def __imul__(self, repeats):
         self._animation_items = self._mul_(self, repeats)
+        return self
 
     # Renderer -----------------------------------------------------------------
 
@@ -233,7 +235,6 @@ class Timeline(object):
                     self.onUpdate()
 
         def _render_item(self, i, pos=1):
-            assert pos >= 0 and pos <= 1, 'Animation item should be in range'  # Temp assertion for development
             for field in i.valuesTo.keys():
                 setattr(
                     i.element,

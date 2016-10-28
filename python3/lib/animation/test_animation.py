@@ -146,3 +146,15 @@ def test_timeline_operator_iand(tl, o1):
     ren.render(5)
     assert o1.x == 50
     assert o1.y == 50
+
+
+def test_timeline_opertor_mul(tl, o1):
+    pass
+
+
+def test_timeline_opertor_imul(tl, o1):
+    pass
+
+
+def test_timeline_opertor_reverse(tl, o1):
+    pass
