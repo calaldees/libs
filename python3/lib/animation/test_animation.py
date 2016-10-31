@@ -170,7 +170,7 @@ def test_timeline_opertor_imul(tl, o1):
 
 def test_timeline_opertor_reverse(tl, o1):
     tl.to(o1, 10, {'x': 100}).to(o1, 10, {'y': 100})
-    ~tl
+    tl = ~tl
 
     ren = tl.get_renderer()
 

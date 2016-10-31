@@ -192,7 +192,9 @@ class Timeline(object):
         self._reverse_()
 
     def __invert__(self):
-        self._reverse_()
+        t = copy(self)
+        t._reverse_()
+        return t
 
     # Renderer -----------------------------------------------------------------
 
