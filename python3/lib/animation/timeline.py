@@ -132,7 +132,7 @@ class Timeline(object):
         return self
 
     def __concat__(self, other):
-        pass
+        return self.__add__(other)
 
     def _and_(timeline1, timeline2):
         assert isinstance(timeline1, Timeline)
@@ -169,6 +169,9 @@ class Timeline(object):
         self._mul_(repeats)
         return self
 
+    def __truediv__(self, divisor):
+        return self.__mul__(1/divisor)
+
     def _reverse_(timeline):
         def reverse_item(i):
             #Timeline.Renderer._derive_missing_from_to_values(i)
@@ -195,6 +198,9 @@ class Timeline(object):
         t = copy(self)
         t._reverse_()
         return t
+
+    def __neg__(self):
+        return self.__invert__()
 
     # Renderer -----------------------------------------------------------------
 
