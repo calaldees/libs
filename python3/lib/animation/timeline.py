@@ -306,6 +306,7 @@ class Timeline(object):
         @staticmethod
         def tween_step(num_steps):
             """
+            >>> tween_step = Timeline.Tween.tween_step
             >>> tween_step(4)(0)
             0.0
             >>> tween_step(4)(0.1)
@@ -315,7 +316,7 @@ class Timeline(object):
             >>> tween_step(4)(0.513)
             0.5
             >>> tween_step(4)(1)
-            1
+            1.0
             """
             increment = 1 / num_steps
             def _tween_step(n):
