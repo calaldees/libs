@@ -36,8 +36,8 @@ class AttributePackerMixin(object):
         if assert_attributes_exist:
             for attribute in attributes:
                 assert hasattr(self, attribute.name), """object '{}' should have the required attribute '{}'""".format(self, attribute.name)
-        self.attributes = attributes
-        self.pack_size = sum(struct.calcsize(self.AttributeEncoders[attribute.type].fmt) for attribute in self.attributes)
+        self.pack_attributes = attributes
+        self.pack_size = sum(struct.calcsize(self.AttributeEncoders[attribute.type].fmt) for attribute in self.pack_attributes)
 
     def pack(self, buffer, offset):
         r"""
@@ -59,7 +59,7 @@ class AttributePackerMixin(object):
         """
         for value, encoder in (
                 (getattr(self, attribute_name), self.AttributeEncoders[attribute_type])
-                for attribute_name, attribute_type in self.attributes
+                for attribute_name, attribute_type in self.pack_attributes
         ):
             struct.pack_into(encoder.fmt, buffer, offset, encoder.encode(value))
             offset += struct.calcsize(encoder.fmt)
@@ -86,7 +86,7 @@ class AttributePackerMixin(object):
         """
         for attribute_name, encoder in (
                 (attribute_name, self.AttributeEncoders[attribute_type])
-                for attribute_name, attribute_type in self.attributes
+                for attribute_name, attribute_type in self.pack_attributes
         ):
             value, = struct.unpack_from(encoder.fmt, buffer, offset)
             offset += struct.calcsize(encoder.fmt)
