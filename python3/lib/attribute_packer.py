@@ -36,8 +36,8 @@ class AttributePackerMixin(object):
         if assert_attributes_exist:
             for attribute in attributes:
                 assert hasattr(self, attribute.name), """object '{}' should have the required attribute '{}'""".format(self, attribute.name)
-        self.pack_attributes = attributes
-        self.pack_size = sum(struct.calcsize(self.AttributeEncoders[attribute.type].fmt) for attribute in self.pack_attributes)
+        self._pack_attributes = attributes
+        self.pack_size = sum(struct.calcsize(self.AttributeEncoders[attribute.type].fmt) for attribute in self._pack_attributes)
 
     def pack(self, buffer, offset):
         r"""
@@ -59,7 +59,7 @@ class AttributePackerMixin(object):
         """
         for value, encoder in (
                 (getattr(self, attribute_name), self.AttributeEncoders[attribute_type])
-                for attribute_name, attribute_type in self.pack_attributes
+                for attribute_name, attribute_type in self._pack_attributes
         ):
             struct.pack_into(encoder.fmt, buffer, offset, encoder.encode(value))
             offset += struct.calcsize(encoder.fmt)
@@ -86,9 +86,31 @@ class AttributePackerMixin(object):
         """
         for attribute_name, encoder in (
                 (attribute_name, self.AttributeEncoders[attribute_type])
-                for attribute_name, attribute_type in self.pack_attributes
+                for attribute_name, attribute_type in self._pack_attributes
         ):
             value, = struct.unpack_from(encoder.fmt, buffer, offset)
             offset += struct.calcsize(encoder.fmt)
             setattr(self, attribute_name, encoder.decode(value))
         return offset
+
+
+class CollectionPackerMixin(object):
+    """
+    Mixin for parent object that stores an iterable of items that support AttributePackerMixin
+    This provides the same interface as a single AttributePackerMixin
+    """
+    def __init__(self, pack_collection):
+        self._pack_collection = pack_collection
+
+    @property
+    def pack_size(self):
+        return sum((item.pack_size for item in self._pack_collection))
+
+    def pack(self, buffer, offset):
+        for item in self._pack_collection:
+            offset += item.pack(buffer, offset)
+        return offset
+
+    def unpack(self, buffer, offset):
+        for item in self._pack_collection:
+            offset += item.unpack(buffer, offset)
