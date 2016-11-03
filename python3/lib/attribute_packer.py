@@ -104,6 +104,24 @@ class CollectionPackerMixin(object):
 
     @property
     def pack_size(self):
+        r"""
+        >>> class TestItem(AttributePackerMixin):
+        ...     def __init__(self):
+        ...         self.a = 0
+        ...         self.b = 0
+        ...         AttributePackerMixin.__init__(self, (
+        ...             AttributePackerMixin.Attribute('a', 'byte'),
+        ...             AttributePackerMixin.Attribute('b', 'onebyte'),
+        ...         ))
+        >>> TestItem().pack_size
+        2
+        >>> class TestCollection(CollectionPackerMixin):
+        ...     def __init__(self):
+        ...         self.collection = (TestItem(), TestItem())
+        ...         CollectionPackerMixin.__init__(self, self.collection)
+        >>> TestCollection().pack_size
+        4
+        """
         return sum((item.pack_size for item in self._pack_collection))
 
     def pack(self, buffer, offset):
