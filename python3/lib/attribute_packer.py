@@ -2,7 +2,11 @@ import struct
 from collections import namedtuple
 
 
-class AttributePackerMixin(object):
+class BasePackerMixin(object):
+    pass
+
+
+class AttributePackerMixin(BasePackerMixin):
     Attribute = namedtuple('Attribute', ('name', 'type'))
     AttributeEncoder = namedtuple('AttributeEncoder', ('encode', 'decode', 'fmt'))
     AttributeEncoders = {
@@ -16,10 +20,18 @@ class AttributePackerMixin(object):
             lambda value: value / 255,
             'B',
         ),
+        'plusminusonebyte': AttributeEncoder(
+            lambda value: int(((value + 1)/2) * 255),
+            lambda value: ((value / 255) * 2) - 1,
+            'B',
+        ),
+
     }
 
     def __init__(self, attributes, assert_attributes_exist=True):
         r"""
+        This can be called multiple times
+
         >>> class tt(AttributePackerMixin):
         ...     def __init__(self):
         ...         self.a = 0
@@ -36,7 +48,9 @@ class AttributePackerMixin(object):
         if assert_attributes_exist:
             for attribute in attributes:
                 assert hasattr(self, attribute.name), """object '{}' should have the required attribute '{}'""".format(self, attribute.name)
-        self._pack_attributes = attributes
+        if not hasattr(self, '_pack_attributes'):
+            self._pack_attributes = tuple()
+        self._pack_attributes += attributes
         self.pack_size = sum(struct.calcsize(self.AttributeEncoders[attribute.type].fmt) for attribute in self._pack_attributes)
 
     def pack(self, buffer, offset):
@@ -94,7 +108,7 @@ class AttributePackerMixin(object):
         return offset
 
 
-class CollectionPackerMixin(object):
+class CollectionPackerMixin(BasePackerMixin):
     """
     Mixin for parent object that stores an iterable of items that support AttributePackerMixin
     This provides the same interface as a single AttributePackerMixin

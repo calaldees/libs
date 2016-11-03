@@ -13,6 +13,7 @@ class Timeline(object):
     Inspired by:
       * GSAP (GreenSock Animation Platform) - http://greensock.com/
       * Kivy - https://kivy.org/docs/api-kivy.animation.html
+    Recommended that this is used with `pytweening`'s tween functions
     """
     AnimationItem = namedtuple('TimelineAnimationItem', ('timestamp', 'element', 'duration', 'valuesFrom', 'valuesTo', 'tween', 'timestamp_end'))
 
