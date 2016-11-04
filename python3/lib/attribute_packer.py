@@ -150,3 +150,40 @@ class CollectionPackerMixin(BasePackerMixin):
     def unpack(self, buffer, offset):
         for item in self._pack_collection:
             offset += item.unpack(buffer, offset)
+
+
+class BaseFramePacker(object):
+    def __init__(self, pack_collection):
+        assert isinstance(pack_collection, BaseFramePacker)
+        self._pack_collection = pack_collection
+        self.frame_size = pack_collection.pack_size
+        self.current_frame = 0
+
+    def save_frame(self):
+        pass
+
+    def restore_frame(self):
+        pass
+
+
+class MemoryFramePacker(BaseFramePacker):
+    def __init__(self, packer_collection):
+        super().__init__(self, packer_collection)
+        self.buffer = bytearray()
+
+    def save_frame(self, frame_number=None, insert=True):
+        frame_number = frame_number if frame_number is not None else self.current_frame
+        frame_pos = frame_number * self.frame_size
+        if insert:
+            self.buffer[frame_pos:frame_pos] += bytearray(self.frame_size)
+        self._pack_collection.pack(self.buffer, frame_pos)
+        self.current_frame = frame_number + 1
+
+    def restore_frame(self, frame_number=None):
+        frame_number = frame_number if frame_number is not None else self.current_frame
+        
+        self.current_frame = frame_number + 1
+
+
+class PersistentFramePacker(BaseFramePacker):
+    pass
