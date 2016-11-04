@@ -114,10 +114,6 @@ class CollectionPackerMixin(BasePackerMixin):
     This provides the same interface as a single AttributePackerMixin
     """
     def __init__(self, pack_collection):
-        self._pack_collection = pack_collection
-
-    @property
-    def pack_size(self):
         r"""
         >>> class TestItem(AttributePackerMixin):
         ...     def __init__(self):
@@ -136,7 +132,15 @@ class CollectionPackerMixin(BasePackerMixin):
         >>> TestCollection().pack_size
         4
         """
-        return sum((item.pack_size for item in self._pack_collection))
+        assert isinstance(pack_collection, tuple), 'packable_collections must be an immutable `tuple`'
+        for item in pack_collection:
+            assert isinstance(item, BasePackerMixin), 'packable_collections must contain only `packable` items'
+        self._pack_collection = pack_collection
+        self._pack_size = sum((item.pack_size for item in self._pack_collection))
+
+    @property
+    def pack_size(self):
+        return self._pack_size
 
     def pack(self, buffer, offset):
         for item in self._pack_collection:
