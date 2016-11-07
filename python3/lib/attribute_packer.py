@@ -153,11 +153,22 @@ class CollectionPackerMixin(BasePackerMixin):
 
 
 class BaseFramePacker(object):
+    FrameDetails = namedtuple('FrameDetails', ('number', 'pos', 'size'))
+
     def __init__(self, pack_collection):
         assert isinstance(pack_collection, BaseFramePacker)
         self._pack_collection = pack_collection
         self.frame_size = pack_collection.pack_size
         self.current_frame = 0
+
+    def _get_frame_details(self, frame_number=None):
+        frame = self.FrameDetails(
+            number=frame_number if frame_number is not None else self.current_frame,
+            pos=frame_number * self.frame_size,
+            size=self.frame_size,
+        )
+        self.current_frame = frame.number + 1
+        return frame
 
     def save_frame(self):
         pass
@@ -172,17 +183,16 @@ class MemoryFramePacker(BaseFramePacker):
         self.buffer = bytearray()
 
     def save_frame(self, frame_number=None, insert=True):
-        frame_number = frame_number if frame_number is not None else self.current_frame
-        frame_pos = frame_number * self.frame_size
+        frame = self._get_frame_details(frame_number)
         if insert:
-            self.buffer[frame_pos:frame_pos] += bytearray(self.frame_size)
-        self._pack_collection.pack(self.buffer, frame_pos)
-        self.current_frame = frame_number + 1
+            self.buffer[frame.pos:frame.pos] += bytearray(frame.size)
+        offset = self._pack_collection.pack(self.buffer, frame.pos)
+        assert offset - frame.pos == frame.size, 'Should have written the exact frame.size of bytes'
 
     def restore_frame(self, frame_number=None):
-        frame_number = frame_number if frame_number is not None else self.current_frame
-        
-        self.current_frame = frame_number + 1
+        frame = self._get_frame_details(frame_number)
+        offset = self._pack_collection.unpack(self.buffer, frame.pos)
+        assert offset - frame.pos == frame.size, 'Should have read the exact frame.size of bytes'
 
 
 class PersistentFramePacker(BaseFramePacker):
