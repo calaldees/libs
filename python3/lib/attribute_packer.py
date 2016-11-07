@@ -144,26 +144,28 @@ class CollectionPackerMixin(BasePackerMixin):
 
     def pack(self, buffer, offset):
         for item in self._pack_collection:
-            offset += item.pack(buffer, offset)
+            offset = item.pack(buffer, offset)
         return offset
 
     def unpack(self, buffer, offset):
         for item in self._pack_collection:
-            offset += item.unpack(buffer, offset)
+            offset = item.unpack(buffer, offset)
+        return offset
 
 
 class BaseFramePacker(object):
     FrameDetails = namedtuple('FrameDetails', ('number', 'pos', 'size'))
 
     def __init__(self, pack_collection):
-        assert isinstance(pack_collection, BaseFramePacker)
-        self._pack_collection = pack_collection
+        assert isinstance(pack_collection, BasePackerMixin)
+        self._top_level_packer_collection = pack_collection
         self.frame_size = pack_collection.pack_size
         self.current_frame = 0
 
     def _get_frame_details(self, frame_number=None):
+        frame_number = frame_number if frame_number is not None else self.current_frame
         frame = self.FrameDetails(
-            number=frame_number if frame_number is not None else self.current_frame,
+            number=frame_number,
             pos=frame_number * self.frame_size,
             size=self.frame_size,
         )
@@ -179,19 +181,19 @@ class BaseFramePacker(object):
 
 class MemoryFramePacker(BaseFramePacker):
     def __init__(self, packer_collection):
-        super().__init__(self, packer_collection)
+        super().__init__(packer_collection)
         self.buffer = bytearray()
 
     def save_frame(self, frame_number=None, insert=True):
         frame = self._get_frame_details(frame_number)
         if insert:
             self.buffer[frame.pos:frame.pos] += bytearray(frame.size)
-        offset = self._pack_collection.pack(self.buffer, frame.pos)
+        offset = self._top_level_packer_collection.pack(self.buffer, frame.pos)
         assert offset - frame.pos == frame.size, 'Should have written the exact frame.size of bytes'
 
     def restore_frame(self, frame_number=None):
         frame = self._get_frame_details(frame_number)
-        offset = self._pack_collection.unpack(self.buffer, frame.pos)
+        offset = self._top_level_packer_collection.unpack(self.buffer, frame.pos)
         assert offset - frame.pos == frame.size, 'Should have read the exact frame.size of bytes'
 
 
