@@ -11,8 +11,11 @@ import colorsys
 import codecs
 import time
 import threading
+import inspect
 from itertools import chain
 from functools import partial
+from multiprocessing import Queue
+
 
 try:
     from pyramid.settings import asbool
@@ -179,7 +182,6 @@ def epoc(datetime_obj):
     return (datetime_obj - datetime.datetime.utcfromtimestamp(0)).total_seconds()
 
 
-import inspect
 def funcname(level=1):
     """
     Use: print("My name is: %s" % inspect.stack()[0][3])
@@ -395,33 +397,44 @@ def fast_scan(root, path=None, search_filter=fast_scan_regex_filter()):
                 yield sub_dir_entry
 
 
-
-def file_scan_diff_thread(paths, onchange_function, rescan_interval=2.0, **kwargs):
+def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **kwargs):
     """
     Used in a separate thread to indicate if a file has changed
+    onchange_function is deprecated and will be removed when lightingAutomation2 is live
     """
-    if not rescan_interval:
-        log.info('No scan interval, file_scan_diff_thread not started')
-        return
+
     if isinstance(paths, str):
         paths = paths.split(',')
-    kwargs['stats'] = True
-    def scan_set():
-        return {'|'.join((f.relative, str(f.stats.st_mtime))) for f in chain(*(file_scan(path, **kwargs) for path in (paths)))}
 
+    FileScanDiffItem = collections.namedtuple('FileScanDiffItem', ['folder', 'file', 'absolute', 'abspath', 'relative', 'ext', 'file_no_ext', 'mtime'])
+    def scan_set(paths):
+        def _create_tuple(f):
+            _fields = set(FileScanDiffItem._fields) & set(FileScan._fields)
+            return FileScanDiffItem(
+                mtime=f.stats.st_mtime,
+                **{k: v for k, v in f._asdict().items() if k in _fields}
+            )
+        return {_create_tuple(f) for f in chain(*(fast_scan(path, **kwargs) for path in paths))}
+
+    queue = Queue()
     def scan_loop():
-        reference_scan = scan_set()
+        reference_scan = scan_set(paths)
         while True:
-            this_scan = scan_set()
+            this_scan = scan_set(paths)
             changed_files = reference_scan ^ this_scan
             if changed_files:
                 reference_scan = this_scan
-                onchange_function(changed_files)
+                if onchange_function:  # To be deprecated
+                    onchange_function(changed_files)
+                else:
+                    queue.put(changed_files)
             time.sleep(rescan_interval)
 
-    thread = threading.Thread(target=scan_loop, args=())
+    thread = threading.Thread(target=scan_loop, args=())  # May need to update this with python3 way of threading
     thread.daemon = True
     thread.start()
+
+    return queue
 
 
 def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
@@ -504,7 +517,7 @@ def update_dict(dict_a, dict_b):
 def random_string(length=8):
     """
     TODO: Depricated! Moved to string_tools
-    
+
     Generate a random string of a-z A-Z 0-9
     (Without vowels to stop bad words from being generated!)
 
