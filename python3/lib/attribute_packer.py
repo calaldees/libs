@@ -148,20 +148,42 @@ class BaseFramePacker(object):
 class MemoryFramePacker(BaseFramePacker):
     def __init__(self, packer_collection):
         super().__init__(packer_collection)
-        self.buffer = bytearray()
+        self._buffer = bytearray()
 
     def save_frame(self, frame_number=None, insert=True):
         r"""
+        >>> obj1 = _TestAttributePacker()
+        >>> obj2 = _TestAttributePacker()
+        >>> mp = MemoryFramePacker(_TestPackerCollection((obj1, obj2)))
+        >>> mp.save_frame()
+        >>> obj1.a = 16
+        >>> obj1.b = 0.5
+        >>> obj2.a = 24
+        >>> obj2.b = 0
+        >>> mp.save_frame()
+        >>> mp._buffer
+        bytearray(b'\x00\x00\x00\x00\x10\x7f\x18\x00')
         """
         frame = self._get_frame_details(frame_number)
         if insert:
-            self.buffer[frame.pos:frame.pos] += bytearray(frame.size)
-        offset = self._top_level_packer_collection.pack(self.buffer, frame.pos)
+            self._buffer[frame.pos:frame.pos] += bytearray(frame.size)
+        offset = self._top_level_packer_collection.pack(self._buffer, frame.pos)
         assert offset - frame.pos == frame.size, 'Should have written the exact frame.size of bytes'
 
     def restore_frame(self, frame_number=None):
+        r"""
+        >>> obj1 = _TestAttributePacker()
+        >>> obj2 = _TestAttributePacker()
+        >>> mp = MemoryFramePacker(_TestPackerCollection((obj1, obj2)))
+        >>> mp._buffer = bytearray(b'\x00\x00\x00\x00' + b'\x10\x7f' + b'\x18\x00')
+        >>> mp.restore_frame(1)
+        >>> obj1.a
+        16
+        >>> obj2.a
+        24
+        """
         frame = self._get_frame_details(frame_number)
-        offset = self._top_level_packer_collection.unpack(self.buffer, frame.pos)
+        offset = self._top_level_packer_collection.unpack(self._buffer, frame.pos)
         assert offset - frame.pos == frame.size, 'Should have read the exact frame.size of bytes'
 
 
