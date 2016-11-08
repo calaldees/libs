@@ -32,15 +32,7 @@ class AttributePackerMixin(BasePackerMixin):
         r"""
         This can be called multiple times
 
-        >>> class tt(AttributePackerMixin):
-        ...     def __init__(self):
-        ...         self.a = 0
-        ...         self.b = 0
-        ...         AttributePackerMixin.__init__(self, (
-        ...             AttributePackerMixin.Attribute('a', 'byte'),
-        ...             AttributePackerMixin.Attribute('b', 'onebyte'),
-        ...         ))
-        >>> obj = tt()
+        >>> obj = _TestAttributePacker()
         >>> obj.pack_size
         2
 
@@ -55,15 +47,7 @@ class AttributePackerMixin(BasePackerMixin):
 
     def pack(self, buffer, offset):
         r"""
-        >>> class tt(AttributePackerMixin):
-        ...     def __init__(self):
-        ...         self.a = 16
-        ...         self.b = 0.5
-        ...         AttributePackerMixin.__init__(self, (
-        ...             AttributePackerMixin.Attribute('a', 'byte'),
-        ...             AttributePackerMixin.Attribute('b', 'onebyte'),
-        ...         ))
-        >>> obj = tt()
+        >>> obj = _TestAttributePacker(16, 0.5)
         >>> buffer = bytearray(b'\x01\x02\x03\x04')
         >>> obj.pack(buffer, 1)
         3
@@ -81,15 +65,7 @@ class AttributePackerMixin(BasePackerMixin):
 
     def unpack(self, buffer, offset):
         r"""
-        >>> class tt(AttributePackerMixin):
-        ...     def __init__(self):
-        ...         self.a = 0
-        ...         self.b = 0
-        ...         AttributePackerMixin.__init__(self, (
-        ...             AttributePackerMixin.Attribute('a', 'byte'),
-        ...             AttributePackerMixin.Attribute('b', 'onebyte'),
-        ...         ))
-        >>> obj = tt()
+        >>> obj = _TestAttributePacker()
         >>> buffer = bytearray(b'\x01\xff\x7f\x04')
         >>> obj.unpack(buffer, 1)
         3
@@ -115,21 +91,9 @@ class CollectionPackerMixin(BasePackerMixin):
     """
     def __init__(self, pack_collection):
         r"""
-        >>> class TestItem(AttributePackerMixin):
-        ...     def __init__(self):
-        ...         self.a = 0
-        ...         self.b = 0
-        ...         AttributePackerMixin.__init__(self, (
-        ...             AttributePackerMixin.Attribute('a', 'byte'),
-        ...             AttributePackerMixin.Attribute('b', 'onebyte'),
-        ...         ))
-        >>> TestItem().pack_size
+        >>> _TestAttributePacker().pack_size
         2
-        >>> class TestCollection(CollectionPackerMixin):
-        ...     def __init__(self):
-        ...         self.collection = (TestItem(), TestItem())
-        ...         CollectionPackerMixin.__init__(self, self.collection)
-        >>> TestCollection().pack_size
+        >>> _TestPackerCollection((_TestAttributePacker(), _TestAttributePacker())).pack_size
         4
         """
         assert isinstance(pack_collection, tuple), 'packable_collections must be an immutable `tuple`'
@@ -152,6 +116,8 @@ class CollectionPackerMixin(BasePackerMixin):
             offset = item.unpack(buffer, offset)
         return offset
 
+
+# Frame Persistence ------------------------------------------------------------
 
 class BaseFramePacker(object):
     FrameDetails = namedtuple('FrameDetails', ('number', 'pos', 'size'))
@@ -185,6 +151,8 @@ class MemoryFramePacker(BaseFramePacker):
         self.buffer = bytearray()
 
     def save_frame(self, frame_number=None, insert=True):
+        r"""
+        """
         frame = self._get_frame_details(frame_number)
         if insert:
             self.buffer[frame.pos:frame.pos] += bytearray(frame.size)
@@ -199,3 +167,20 @@ class MemoryFramePacker(BaseFramePacker):
 
 class PersistentFramePacker(BaseFramePacker):
     pass
+
+
+# Test Utils -------------------------------------------------------------------
+
+class _TestAttributePacker(AttributePackerMixin):
+    def __init__(self, a=0, b=0):
+        self.a = a
+        self.b = b
+        AttributePackerMixin.__init__(self, (
+            AttributePackerMixin.Attribute('a', 'byte'),
+            AttributePackerMixin.Attribute('b', 'onebyte'),
+        ))
+
+class _TestPackerCollection(CollectionPackerMixin):
+    def __init__(self, collection):
+        self.collection = collection
+        CollectionPackerMixin.__init__(self, self.collection)
