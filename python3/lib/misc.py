@@ -12,9 +12,10 @@ import codecs
 import time
 import threading
 import inspect
+import multiprocessing
 from itertools import chain
 from functools import partial
-from multiprocessing import Queue
+
 
 
 try:
@@ -193,16 +194,17 @@ def funcname(level=1):
     return inspect.stack()[level][3]
 
 
-def postmortem(func, *args, **kwargs):
-    import traceback
-    import pdb
-    import sys
-    try:
-        return func(*args, **kwargs)
-    except:
-        type, value, tb = sys.exc_info()
-        traceback.print_exc()
-        pdb.post_mortem(tb)
+def multiprocessing_process_event_queue(queue_event_processors, running=True):
+    def wait_for_queue_to_be_ready(queues):
+        _queue_lookup = {getattr(queue, '_reader'): queue for queue in queues}
+        while running:
+            for queue in (
+                    _queue_lookup[reader]
+                    for reader in multiprocessing.connection.wait(_queue_lookup.keys())
+            ):
+                yield queue
+    for ready_queue in wait_for_queue_to_be_ready(queue_event_processors.keys()):
+        queue_event_processors[ready_queue](ready_queue.get())
 
 
 # Reference - http://stackoverflow.com/questions/2182858/how-can-i-pack-serveral-decorators-into-one
@@ -416,7 +418,7 @@ def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **
             )
         return {_create_tuple(f) for f in chain(*(fast_scan(path, **kwargs) for path in paths))}
 
-    queue = Queue()
+    queue = multiprocessing.Queue()
     def scan_loop():
         reference_scan = scan_set(paths)
         while True:
