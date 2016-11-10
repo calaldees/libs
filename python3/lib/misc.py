@@ -196,9 +196,9 @@ def funcname(level=1):
 
 def multiprocessing_process_event_queue(queue_event_processors, is_running=True):
     """
-    Multiple multiple ready multiprocess.Queue's on a single thread.
+    Process multiple 'ready' multiprocess.Queue's on a single thread.
     Dispatch each queue to a handler function
-    Example:
+    Example of use:
 
         multiprocessing_process_event_queue({
             self.network_event_queue: self.network_event,
