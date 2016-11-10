@@ -428,12 +428,13 @@ def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **
     if isinstance(paths, str):
         paths = paths.split(',')
 
-    FileScanDiffItem = collections.namedtuple('FileScanDiffItem', ('absolute', 'mtime'))  # 'folder', 'file', 'abspath', 'relative', 'ext', 'file_no_ext'
+    FileScanDiffItem = collections.namedtuple('FileScanDiffItem', ('abspath', 'relative', 'mtime'))  # 'folder', 'file', 'abspath', 'ext', 'file_no_ext'
     #FILE_SCAN_FIELDS = set(FileScanDiffItem._fields) & set(FileScan._fields)
     def scan_set(paths):
         return {
             FileScanDiffItem(
-                absolute=f.absolute,
+                abspath=f.abspath,
+                relative=f.relative,
                 mtime=f.stats.st_mtime,
                 #**{k: v for k, v in f._asdict().items() if k in FILE_SCAN_FIELDS}
             )
@@ -449,7 +450,7 @@ def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **
             changed_files_diff = reference_scan ^ this_scan
             if changed_files_diff:
                 reference_scan = this_scan
-                report_filechange({f.absolute for f in changed_files_diff})
+                report_filechange({(f.relative, f.abspath) for f in changed_files_diff})
             time.sleep(rescan_interval)
 
     thread = threading.Thread(target=scan_loop, args=())  # May need to update this with python3 way of threading
