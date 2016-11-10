@@ -428,28 +428,28 @@ def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **
     if isinstance(paths, str):
         paths = paths.split(',')
 
-    FileScanDiffItem = collections.namedtuple('FileScanDiffItem', ['folder', 'file', 'absolute', 'abspath', 'relative', 'ext', 'file_no_ext', 'mtime'])
+    FileScanDiffItem = collections.namedtuple('FileScanDiffItem', ('absolute', 'mtime'))  # 'folder', 'file', 'abspath', 'relative', 'ext', 'file_no_ext'
+    #FILE_SCAN_FIELDS = set(FileScanDiffItem._fields) & set(FileScan._fields)
     def scan_set(paths):
-        def _create_tuple(f):
-            _fields = set(FileScanDiffItem._fields) & set(FileScan._fields)
-            return FileScanDiffItem(
+        return {
+            FileScanDiffItem(
+                absolute=f.absolute,
                 mtime=f.stats.st_mtime,
-                **{k: v for k, v in f._asdict().items() if k in _fields}
+                #**{k: v for k, v in f._asdict().items() if k in FILE_SCAN_FIELDS}
             )
-        return {_create_tuple(f) for f in chain(*(fast_scan(path, **kwargs) for path in paths))}
+            for f in chain(*(fast_scan(path, **kwargs) for path in paths))
+        }
 
     queue = multiprocessing.Queue()
+    report_filechange = onchange_function if onchange_function else queue.put
     def scan_loop():
         reference_scan = scan_set(paths)
         while True:
             this_scan = scan_set(paths)
-            changed_files = reference_scan ^ this_scan
-            if changed_files:
+            changed_files_diff = reference_scan ^ this_scan
+            if changed_files_diff:
                 reference_scan = this_scan
-                if onchange_function:  # To be deprecated
-                    onchange_function(changed_files)
-                else:
-                    queue.put(changed_files)
+                report_filechange({f.absolute for f in changed_files_diff})
             time.sleep(rescan_interval)
 
     thread = threading.Thread(target=scan_loop, args=())  # May need to update this with python3 way of threading
