@@ -1,6 +1,8 @@
 import struct
 from collections import namedtuple
 import os.path
+import tempfile
+
 
 class BasePackerMixin(object):
     pass
@@ -144,6 +146,9 @@ class BaseFramePacker(object):
     def restore_frame(self):
         pass
 
+    def close(self):
+        pass
+
 
 class MemoryFramePacker(BaseFramePacker):
     def __init__(self, packer_collection):
@@ -186,9 +191,11 @@ class MemoryFramePacker(BaseFramePacker):
         offset = self._top_level_packer_collection.unpack(self._buffer, frame.pos)
         assert offset - frame.pos == frame.size, 'Should have read the exact frame.size of bytes'
 
+    def close(self):
+        self._buffer[:] = bytearray()
 
 class PersistentFramePacker(BaseFramePacker):
-    def __init__(self, packer_collection, filename):
+    def __init__(self, packer_collection, filename=None):
         super().__init__(packer_collection)
         self.filename = filename
         self._handler = None
@@ -197,7 +204,10 @@ class PersistentFramePacker(BaseFramePacker):
     @property
     def handler(self):
         if not self._handler:
-            self._handler = open(self.filename, 'r+b' if os.path.exists(self.filename) else 'w+b')
+            if self.filename:
+                self._handler = open(self.filename, 'r+b' if os.path.exists(self.filename) else 'w+b')
+            else:
+                self._handler = tempfile.TemporaryFile(mode='w+b')
         return self._handler
 
     def close(self):
