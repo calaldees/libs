@@ -19,10 +19,13 @@ class Loop(object):
     def get_frame(self, timestamp):
         return int((timestamp - self.start_time) // self.period)
 
+    def is_running(self):
+        return self.running
+
     def run(self):
         self.running = True
         try:
-            while self.running and self.period:
+            while self.is_running() and self.period:
                 self.current_time = time.time()
 
                 current_frame = self.get_frame(self.current_time)

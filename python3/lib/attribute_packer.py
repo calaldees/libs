@@ -1,6 +1,6 @@
 import struct
 from collections import namedtuple
-
+import os.path
 
 class BasePackerMixin(object):
     pass
@@ -188,7 +188,33 @@ class MemoryFramePacker(BaseFramePacker):
 
 
 class PersistentFramePacker(BaseFramePacker):
-    pass
+    def __init__(self, packer_collection, filename):
+        super().__init__(packer_collection)
+        self.filename = filename
+        self._handler = None
+        self._buffer = bytearray(self.frame_size)
+
+    @property
+    def handler(self):
+        if not self._handler:
+            self._handler = open(self.filename, 'r+b' if os.path.exists(self.filename) else 'w+b')
+        return self._handler
+
+    def close(self):
+        if self._handler:
+            self._handler.close()
+            self._handler = None
+
+    def save_frame(self, frame_number=None):
+        frame = self._get_frame_details(frame_number)
+        self.handler.seek(frame.pos)
+        self._top_level_packer_collection.pack(self._buffer, 0)
+        self.handler.write(self._buffer)
+
+    def restore_frame(self, frame_number=None):
+        frame = self._get_frame_details(frame_number)
+        self.handler.seek(frame.pos)
+        self._top_level_packer_collection.unpack(self.handler.read(frame.size), 0)
 
 
 # Test Utils -------------------------------------------------------------------
