@@ -212,7 +212,7 @@ class PersistentFramePacker(BaseFramePacker):
     def __init__(self, packer_collection, filename=None):
         super().__init__(packer_collection)
         self.filename = filename
-        if filename:
+        if filename and os.path.exists(filename):
             self._byte_size = os.stat(filename).st_size
         self._handler = None
         self._buffer = bytearray(self.frame_size)

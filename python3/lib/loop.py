@@ -4,6 +4,9 @@ import time
 class Loop(object):
     SLEEP_FACTOR = 0.8
 
+    class LoopInterruptException(Exception):
+        pass
+
     def __init__(self, fps):
         self.set_period(fps)
         self.profile_timelog = []
@@ -39,6 +42,8 @@ class Loop(object):
                 if sleep_time > 0:
                     time.sleep(sleep_time)
         except KeyboardInterrupt:
+            pass
+        except self.LoopInterruptException:
             pass
         self.close()
 
