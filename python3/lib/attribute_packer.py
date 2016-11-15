@@ -140,6 +140,14 @@ class BaseFramePacker(object):
         self.current_frame = frame.number + 1
         return frame
 
+    def _get_byte_size(self):
+        """Override"""
+        return 0
+
+    @property
+    def frames(self):
+        return self._get_byte_size() // self.frame_size
+
     def save_frame(self):
         pass
 
@@ -149,11 +157,16 @@ class BaseFramePacker(object):
     def close(self):
         pass
 
+    # TODO: make this a context manager to call close?
+
 
 class MemoryFramePacker(BaseFramePacker):
     def __init__(self, packer_collection):
         super().__init__(packer_collection)
         self._buffer = bytearray()
+
+    def _get_byte_size(self):
+        return len(self._buffer)
 
     def save_frame(self, frame_number=None, insert=True):
         r"""
@@ -194,12 +207,18 @@ class MemoryFramePacker(BaseFramePacker):
     def close(self):
         self._buffer[:] = bytearray()
 
+
 class PersistentFramePacker(BaseFramePacker):
     def __init__(self, packer_collection, filename=None):
         super().__init__(packer_collection)
         self.filename = filename
+        if filename:
+            self._byte_size = os.stat(filename).st_size
         self._handler = None
         self._buffer = bytearray(self.frame_size)
+
+    def _get_byte_size(self):
+        return self._byte_size
 
     @property
     def handler(self):
