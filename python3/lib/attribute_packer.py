@@ -3,6 +3,8 @@ from collections import namedtuple
 import os.path
 import tempfile
 
+import logging
+log = logging.getLogger(__name__)
 
 class BasePackerMixin(object):
     pass
@@ -214,6 +216,7 @@ class PersistentFramePacker(BaseFramePacker):
         self.filename = filename
         if filename and os.path.exists(filename):
             self._byte_size = os.stat(filename).st_size
+            log.debug(f'Attach to existing packer with {self.frames} frames')
         self._handler = None
         self._buffer = bytearray(self.frame_size)
 
@@ -224,8 +227,10 @@ class PersistentFramePacker(BaseFramePacker):
     def handler(self):
         if not self._handler:
             if self.filename:
+                log.debug(f'Open {self.filename}')
                 self._handler = open(self.filename, 'r+b' if os.path.exists(self.filename) else 'w+b')
             else:
+                log.debug(f'Open [tempfile]')
                 self._handler = tempfile.TemporaryFile(mode='w+b')
         return self._handler
 
