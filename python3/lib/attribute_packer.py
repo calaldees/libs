@@ -214,6 +214,7 @@ class PersistentFramePacker(BaseFramePacker):
     def __init__(self, packer_collection, filename=None):
         super().__init__(packer_collection)
         self.filename = filename
+        self._byte_size = 0
         if filename and os.path.exists(filename):
             self._byte_size = os.stat(filename).st_size
             log.debug(f'Attach to existing packer with {self.frames} frames')
@@ -247,6 +248,7 @@ class PersistentFramePacker(BaseFramePacker):
 
     def restore_frame(self, frame_number=None):
         frame = self._get_frame_details(frame_number)
+        #if frame.number != self.current_frame:  # The hope is that .seek() already optimizes this.
         self.handler.seek(frame.pos)
         self._top_level_packer_collection.unpack(self.handler.read(frame.size), 0)
 

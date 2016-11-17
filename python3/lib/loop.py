@@ -34,7 +34,7 @@ class Loop(object):
                 current_frame = self.get_frame(self.current_time)
                 previous_frame = self.get_frame(self.previous_time)
                 for frame_offset in range(current_frame - previous_frame):
-                    self.render(current_frame + frame_offset)
+                    self.render(current_frame + frame_offset - 1)
 
                 self.previous_time = self.current_time
 
