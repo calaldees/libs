@@ -13,6 +13,7 @@ import time
 import threading
 import inspect
 import multiprocessing
+import enum
 from itertools import chain
 from functools import partial
 
@@ -263,6 +264,9 @@ def json_object_handler(obj):
     '2000-01-01T00:00:00'
     >>> json_object_handler(datetime.timedelta(days=1, seconds=1))
     86401.0
+    >>> TestEnum = enum.Enum('TestEnum', ('a', 'b'))
+    >>> json_object_handler(TestEnum.b)
+    '__enum__.TestEnum.b.2'
     >>> sorted(json_object_handler({'a','b','c'}))
     ['a', 'b', 'c']
     """
@@ -272,6 +276,8 @@ def json_object_handler(obj):
         return obj.total_seconds()
     if isinstance(obj, set):
         return tuple(obj)
+    if isinstance(obj, enum.Enum):
+        return '__enum__.{type}.{name}.{value}'.format(type=type(obj).__name__, name=obj.name, value=obj.value)
     raise TypeError
 
 
@@ -287,6 +293,10 @@ def json_object_handler_inverse(obj):
     if isinstance(obj, str):
         if re.match(r'\d+-\d+-\d+T\d+:\d+:\d+', obj):
             return convert_str(obj, datetime.datetime)
+        if re.match(r'__enum__\.(?P<type>.+)\.(?P<name>.+)\.(?P<value>\d+)'):
+            # TODO: Require register dispatch methods for registering enum types
+            # This should be split into another module
+            raise NotImplemented('Enum decoding requires implementing')
     return obj
 
 
