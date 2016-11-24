@@ -133,6 +133,19 @@ def get_beat(time_current, bpm, time_start=0.0):
     return max(0.0, ((time_current - time_start) / 60) * bpm)
 
 
+def get_time(timecode, timesigniture, bpm):
+    """
+    >>> get_time('1.0.0', parse_timesigniture('4:4'), 10)
+    6.0
+    >>> get_time('10.0.0', parse_timesigniture('4:4'), 10)
+    60.0
+    >>> get_time('11.0.0', parse_timesigniture('4:4'), 10)
+    66.0
+    >>> get_time('15.0.0', parse_timesigniture('4:4'), 60)
+    15.0
+    """
+    return (timecode_to_beat(timecode, timesigniture) / bpm) * 60
+
 # Scale defenitions ------------------------------------------------------------
 
 class Scale(object):
