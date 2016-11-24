@@ -29,7 +29,6 @@ class AttributePackerMixin(BasePackerMixin):
             lambda value: ((value / 255) * 2) - 1,
             'B',
         ),
-
     }
 
     def __init__(self, attributes, assert_attributes_exist=True):
@@ -41,6 +40,7 @@ class AttributePackerMixin(BasePackerMixin):
         2
 
         """
+        attributes = tuple(attributes)
         if assert_attributes_exist:
             for attribute in attributes:
                 assert hasattr(self, attribute.name), """object '{}' should have the required attribute '{}'""".format(self, attribute.name)
