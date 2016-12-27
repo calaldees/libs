@@ -270,6 +270,8 @@ def json_object_handler(obj):
     >>> sorted(json_object_handler({'a','b','c'}))
     ['a', 'b', 'c']
     """
+    if isinstance(obj, (str, int, float, list, tuple, dict)):
+        return obj
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
     if isinstance(obj, datetime.timedelta):
@@ -293,7 +295,7 @@ def json_object_handler_inverse(obj):
     if isinstance(obj, str):
         if re.match(r'\d+-\d+-\d+T\d+:\d+:\d+', obj):
             return convert_str(obj, datetime.datetime)
-        if re.match(r'__enum__\.(?P<type>.+)\.(?P<name>.+)\.(?P<value>\d+)'):
+        if re.match(r'__enum__\.(?P<type>.+)\.(?P<name>.+)\.(?P<value>\d+)', obj):
             # TODO: Require register dispatch methods for registering enum types
             # This should be split into another module
             raise NotImplemented('Enum decoding requires implementing')

@@ -171,7 +171,7 @@ class Timeline(object):
         return self
 
     def __truediv__(self, divisor):
-        return self.__mul__(1/divisor)
+        raise NotImplemented()
 
     def _reverse_(timeline):
         def reverse_item(i):
