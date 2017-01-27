@@ -43,10 +43,9 @@ def _fetch_file(fetch_function, source, destination, overwrite=False):
         log.info(f'Unable to fetch {source} -> {destination} with {fetch_function}')
         return False
 FetchFileMethod = namedtuple('FetchFileMethod', ('source_check', 'fetch_method'))
-FETCH_FILE_METHODS = (
+FETCH_FILE_METHODS = [
     FetchFileMethod(lambda text: '://' in text, partial(_fetch_file, urllib.request.urlretrieve)),
-    FetchFileMethod(os.path.exists, partial(_fetch_file, os.link))
-)
+]
 def fetch_file(source, destination):
     for source_check, fetch_method in FETCH_FILE_METHODS:
         if source_check(source):
@@ -69,7 +68,7 @@ def fetch(data, destination_path, clean=False):
             _split_destination_filename = split_destination_filename(replace_data_placeholders(filename))
             source_filename = os.path.join(source_path, _split_destination_filename.source)
             destination_filename = os.path.join(destination_path, _split_destination_filename.destination)
-            if clean:
+            if clean and os.path.exists(destination_filename):
                 os.remove(destination_filename)
             return fetch_file(source_filename, destination_filename)
         # All fetched files should return True. `all` with short circit and abort on any false and attempt next source
@@ -83,6 +82,24 @@ def main():
     args = get_args()
     logging.basicConfig(level=args['loglevel'])
 
+    with open(args['dependencies_datafile'], 'rt') as filehandle:
+        dependencies_data = json.load(filehandle)
+
+    # All source paths are based off the 'path' of the dependencies_datafile
+    base_path = os.path.abspath(os.path.dirname(args['dependencies_datafile']))
+
+    # Dynamically add the file fetcher method now the base path is known
+    FETCH_FILE_METHODS.append(
+        FetchFileMethod(
+            os.path.exists,
+            lambda source, *args, **kwargs: _fetch_file(
+                os.link,
+                os.path.normpath(os.path.join(base_path, source)),
+                *args, **kwargs
+            )
+        )
+    )
+
     # Open previously downloaded/links tracker state
     if os.path.exists(args['tracker']):
         with open(args['tracker'], 'rt') as filehandle:
@@ -92,14 +109,14 @@ def main():
     tracker_state_start = set(tracker.values())
 
     # Iterate over dependencies
-    for name, data in args['dependencies'].items():
+    for name, data in dependencies_data.items():
         log.debug(f'{name}')
         hashcode = hash_datastructure(data)
         # If not downloaded/linked before
         if tracker.get(name) != hashcode or args.get('force'):
             # Fetch the files
             log.info(f"""Fetching {name} {data.get('VERSION')}""")
-            if fetch(data, args['destination'], clean=True):
+            if fetch(data, args['destination_path'], clean=True):
                 tracker[name] = hashcode
 
     # Store current downloaded/linked state of the downloaded files
@@ -118,15 +135,13 @@ def get_args():
         """,
         epilog=""""""
     )
-    parser.add_argument('dependencies', nargs='?', type=argparse.FileType('rt'), help='the json data file of the dependencies', default='dependency_fetcher.json')
-    parser.add_argument('--destination', help='destination to place dependencies', default='./')
+    parser.add_argument('dependencies_datafile', nargs='?', help='the json data file of the dependencies', default='dependency_fetcher.json')
+    parser.add_argument('--destination_path', help='destination to place dependencies', default='./')
     parser.add_argument('--tracker', help='persistent tracker file for installed versions', default='dependency_fetcher.data.json')
     parser.add_argument('--loglevel', type=int, default=logging.INFO)
     parser.add_argument('--version', action='version', version=VERSION)
 
     args = vars(parser.parse_args())
-
-    args['dependencies'] = json.load(args['dependencies'])
 
     return args
 
