@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 
 VERSION = '0.0.0'
+DEFAULT_TRACKER_FILENAME = 'dependency_fetcher.data.json'
 
 
 def hash_datastructure(data):
@@ -137,11 +138,14 @@ def get_args():
     )
     parser.add_argument('dependencies_datafile', nargs='?', help='the json data file of the dependencies', default='dependency_fetcher.json')
     parser.add_argument('--destination_path', help='destination to place dependencies', default='./')
-    parser.add_argument('--tracker', help='persistent tracker file for installed versions', default='dependency_fetcher.data.json')
+    parser.add_argument('--tracker', help='persistent tracker file for installed versions', default=DEFAULT_TRACKER_FILENAME)
     parser.add_argument('--loglevel', type=int, default=logging.INFO)
     parser.add_argument('--version', action='version', version=VERSION)
 
     args = vars(parser.parse_args())
+
+    if os.path.isdir(args['tracker']):
+        args['tracker'] = os.path.join(args['tracker'], DEFAULT_TRACKER_FILENAME)
 
     return args
 
