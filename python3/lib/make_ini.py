@@ -10,7 +10,6 @@ import re
 
 version = "0.0"
 
-master_ini_filename = 'development.ini'
 
 #-------------------------------------------------------------------------------
 # Merge INI
@@ -18,7 +17,7 @@ master_ini_filename = 'development.ini'
 ini_group = None
 
 
-def make_ini(master_filename, destination_filename, diff_filename):
+def make_ini(master_filename, diff_filename, destination_filename):
 
     def split_line(line):
         try:
@@ -75,16 +74,22 @@ def get_args():
         description="""Make the ini files""",
         epilog=""""""
     )
-    parser.add_argument('ini', help='the ini file to create, by default will load inidiff and master')
-    parser.add_argument('--master', help='master ini filename', default=master_ini_filename)
+    parser.add_argument('source', help='')
+    parser.add_argument('diff', help='diff')
+    parser.add_argument('destination', help='destination ini filename')
     parser.add_argument('--version', action='version', version=version)
 
-    return parser.parse_args()
+    args = vars(parser.parse_args())
+    #args['destination'] = args['destination'] or f'{args["ini"]}.ini'
+    #args['diff'] = args['diff'] or f'{args["ini"]}.inidiff'
+
+    return args
 
 
 def main():
     args = get_args()
-    make_ini(args.master, args.ini+'.ini', args.ini+'.inidiff')
+    make_ini(args['source'], args['diff'], args['destination'])
+
 
 if __name__ == "__main__":
     main()
