@@ -799,8 +799,8 @@ def convert_str(value, return_type):
         return list(filter(_is_none, (v.strip() for v in value.split(','))))
     if return_type == 'jsonfile':
         return read_json(value)
-    if return_type == 'listfile':
-        return read_file_list(value)
+    #if return_type == 'listfile':
+    #    return read_file_list(value)
     assert False, 'unable to convert {0} to {1}'.format(value, return_type)
 
 
