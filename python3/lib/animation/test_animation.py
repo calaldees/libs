@@ -189,3 +189,22 @@ def test_timeline_opertor_reverse(tl, o1):
     ren.render(20)
     assert o1.x == 0
     assert o1.y == 0
+
+def test_set_():
+    """
+    TODO:
+    """
+    pass
+
+def test_label():
+    """
+    TODO:
+    """
+    pass
+
+
+def test_stagger():
+    """
+    TODO:
+    """
+    pass

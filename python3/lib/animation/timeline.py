@@ -38,10 +38,18 @@ class Timeline(object):
 
     # Build --------------------------------------------------------------------
 
+    def _resolve_timestamp(self, timestamp, offset=0):
+        if isinstance(timestamp, str):
+            timestamp = self._label_timestamps.setdefault(timestamp, self.duration)
+        elif not timestamp:
+            timestamp = self.duration
+        timestamp += offset
+        return timestamp
+
     def add_label(self, name, timestamp):
         self._label_timestamps[name] = timestamp
 
-    def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, tween=None, label=None):
+    def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, tween=None, timestamp=None, offset=0):
         assert elements, 'No elements to animate'
         assert duration >= 0, 'Duration must be positive value'
         assert valuesFrom or valuesTo, 'No animation values provided'
@@ -52,12 +60,7 @@ class Timeline(object):
         if not hasattr(elements, '__iter__'):
             elements = (elements, )
 
-        # Lookup/Calculate label timestamp
-        timestamp = self.duration
-        if isinstance(label, Number):
-            timestamp += label
-        elif label:
-            timestamp = self._label_timestamps.setdefault(label, timestamp)
+        timestamp = self._resolve_timestamp(timestamp, offset)
 
         for element in elements:
             self._animation_items.append(
@@ -73,19 +76,24 @@ class Timeline(object):
         self._invalidate_timeline_cache()
         return self
 
-    def to(self, elements, duration, values, tween=None, label=None):
-        return self.from_to(elements, duration, valuesTo=values, tween=tween, label=label)
+    def to(self, elements, duration, values, tween=None, timestamp=None):
+        return self.from_to(elements, duration, valuesTo=values, tween=tween, timestamp=timestamp)
 
-    def from_(self, elements, duration, values, tween=None, label=None):
-        return self.from_to(elements, duration, valuesFrom=values, tween=tween, label=label)
+    def from_(self, elements, duration, values, tween=None, timestamp=None):
+        return self.from_to(elements, duration, valuesFrom=values, tween=tween, timestamp=timestamp)
 
-    def set_(self, elements, values, label=None):
-        return self.to(elements, 0, values, label)
+    def set_(self, elements, values, timestamp=None):
+        return self.to(elements, 0, values, timestamp)
 
-    def staggerTo(self, elements, duration, values, offset, tween=None, label=None):
-        item_duration = duration - (offset * len(elements))
-        for element in elements:
-            self.to(element, item_duration, valuesTo=values, label=-item_duration + offset)
+    def staggerTo(self, elements, duration, values, item_delay, tween=None, timestamp=None):
+        """
+        duration is the duration of each individual element
+        Total time = duration + (item_delay * num of elements)
+        """
+        # TODO: Incorporate tween into item_delay?
+        timestamp = self._resolve_timestamp(timestamp)
+        for index, element in enumerate(elements):
+            self.to(element, duration, values=values, tween=tween, timestamp=timestamp + (index * item_delay))
         return self
 
     # Control ------------------------------------------------------------------
