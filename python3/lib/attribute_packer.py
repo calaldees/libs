@@ -235,8 +235,11 @@ class PersistentFramePacker(BaseFramePacker):
                 self._handler = tempfile.TemporaryFile(mode='w+b')
         return self._handler
 
-    def close(self):
+    def close(self, truncate_to_current_file_position_on_close=True):
         if self._handler:
+            if truncate_to_current_file_position_on_close and self.frames > self.current_frame and self._handler.tell():
+                log.debug(f'Existing persistant file has {self.frames} frames. Current frame is {self.current_frame}. {self.filename} will be truncated.')
+                self._handler.truncate()
             self._handler.close()
             self._handler = None
 
