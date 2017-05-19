@@ -220,6 +220,7 @@ class PersistentFramePacker(BaseFramePacker):
             log.debug(f'Attach to existing packer with {self.frames} frames')
         self._handler = None
         self._buffer = bytearray(self.frame_size)
+        self._has_been_modified = False
 
     def _get_byte_size(self):
         return self._byte_size
@@ -237,7 +238,7 @@ class PersistentFramePacker(BaseFramePacker):
 
     def close(self, truncate_to_current_file_position_on_close=True):
         if self._handler:
-            if truncate_to_current_file_position_on_close and self.frames > self.current_frame and self._handler.tell():
+            if self._has_been_modified and truncate_to_current_file_position_on_close and self.frames > self.current_frame and self._handler.tell():
                 log.debug(f'Existing persistant file has {self.frames} frames. Current frame is {self.current_frame}. {self.filename} will be truncated.')
                 self._handler.truncate()
             self._handler.close()
@@ -248,6 +249,7 @@ class PersistentFramePacker(BaseFramePacker):
         self.handler.seek(frame.pos)
         self._top_level_packer_collection.pack(self._buffer, 0)
         self.handler.write(self._buffer)
+        self._has_been_modified = True
 
     def restore_frame(self, frame_number=None):
         frame = self._get_frame_details(frame_number)
