@@ -250,6 +250,7 @@ class PersistentFramePacker(BaseFramePacker):
         self._top_level_packer_collection.pack(self._buffer, 0)
         self.handler.write(self._buffer)
         self._has_been_modified = True
+        # TODO: increment self._byte_size?
 
     def restore_frame(self, frame_number=None):
         frame = self._get_frame_details(frame_number)
