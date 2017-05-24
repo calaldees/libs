@@ -28,12 +28,13 @@ def http_dispatch(func_dispatch, request_regexs=(), port=23487):
             log.debug(f'HTTP Dispatch: Waiting on {port}')
             connection, ip_address = soc.accept()
             log.debug(f'Client Connected: {ip_address}')
+            # TODO: Thread the handling of each request?
             with connection:
-                data = connection.recv(1024)
+                data = connection.recv(1024)  # TODO: Loop over recv? We may have larger requests
                 if not data:
                     break
 
-                request = data.decode('utf8')
+                request = data.decode('utf8')  # TODO: Separate out head and body and decode separately (to allow binary bodys if required)
                 request_dict = dict(
                     ((match.group(1), match.group(2)) for match in re.finditer(r'(.*?)\: (.*)', request)),
                     **re.match(r'(?P<method>.*?) (?P<path>.*) HTTP/1', request).groupdict(),
