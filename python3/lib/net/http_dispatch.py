@@ -24,7 +24,7 @@ def http_dispatch(func_dispatch, port=23487):
     def _handle_request(connection, data):
         request = data.decode('utf8')  # TODO: Separate out head and body and decode separately (to allow binary bodys if required)
         request_dict = dict(
-            ((match.group(1), match.group(2)) for match in re.finditer(r'(.*?)\: (.*)', request)),
+            ((match.group(1).strip(), match.group(2).strip()) for match in re.finditer(r'(.*?)\: (.*)', request)),
             **re.match(r'(?P<method>.*?) (?P<path>.*) HTTP/1', request).groupdict(),
         )
 
@@ -43,7 +43,8 @@ def http_dispatch(func_dispatch, port=23487):
             response_dict = func_dispatch(request_dict, response_dict)
         except Exception as ex:
             response_dict['_status'] = '500 Internal Server Error'
-            response_dict['_body'] = str(ex).encode('utf8')  # TODO: get full traceback as string and return that
+            import traceback
+            response_dict['_body'] = traceback.format_exc().encode('utf8')
 
         if not response_dict['Content-Length']:
             response_dict['Content-Length'] = len(response_dict['_body'])
