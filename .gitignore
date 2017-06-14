@@ -1,6 +1,7 @@
 *.py[cod]
 .cache
 
+*.log
 *.egg
 *.egg-info
 __pycache__
