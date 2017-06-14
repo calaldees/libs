@@ -212,10 +212,10 @@ class SubscriptionClient(JsonSocketReconnect):
     def recive(self, data):
         if data and data.get('action') == 'message' and len(data.get('data', [])):
             for message in data.get('data'):
-                self.recive_message(message)
+                self.receive_message(message)
 
     # To be overridden
-    def recive_message(self, message):
+    def receive_message(self, message):
         pass
 
 

@@ -38,7 +38,7 @@ class TestSubscriptionClient(SubscriptionClient):
         self.message_received_queue = Queue()
         super().__init__(reconnect_timeout=self.RECONNECT_TIMEOUT)
 
-    def recive_message(self, message):
+    def receive_message(self, message):
         self.message_received_queue.put(message)
 
     @property
