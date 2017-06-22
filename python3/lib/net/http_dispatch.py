@@ -25,8 +25,9 @@ def http_dispatch(func_dispatch, port=23487):
         request = data.decode('utf8')  # TODO: Separate out head and body and decode separately (to allow binary bodys if required)
         request_dict = dict(
             ((match.group(1).strip(), match.group(2).strip()) for match in re.finditer(r'(.*?)\: (.*)', request)),
-            **re.match(r'(?P<method>.*?) (?P<path>.*) HTTP/1', request).groupdict(),
+            **re.match(r'(?P<method>.*?) (?P<path>.*?)(?P<query>\?.*)? HTTP/1', request).groupdict(),
         )
+        #request_dict['query'] = {i.split('=') for i in request_dic.get('query', '').lstrip('?').split('&')}
 
         # Create stub HTTP response headers
         response_dict = {
