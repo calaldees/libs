@@ -233,27 +233,37 @@ class Timeline(object):
                 self.reset()
             self._last_timecode = timecode
 
-            # Update active items list for current timecode
+            # Update _active items list for current timecode
             has_more_items = lambda: self._next_item_index < len(self._items)
             timecode_is_in_next_item = lambda: timecode >= self._next_item.timestamp
             while has_more_items() and timecode_is_in_next_item():
-                self._add_active_item(self._next_item)
+                self._active.append(self._next_item)
                 self._next_item_index += 1
-            self._expire_passed_animation_items(timecode)
+            self._active.sort(key=lambda i: i.timestamp_end)  # Sort in order of expiry for efficient removal
 
-            # Render (as we have the current active items)
+            # Render _active items
             for i in self._active:
-                normalized_pos = (timecode - i.timestamp) / i.duration
+                if i.duration == 0 or i.timestamp_end < timecode:
+                    normalized_pos = 1
+                else:
+                    normalized_pos = (timecode - i.timestamp) / i.duration
                 self._render_item(i, normalized_pos)
 
-            if timecode >= 1:
-                if self.onComplete:
-                    self.onComplete()
-            else:
-                if self.onUpdate:
-                    self.onUpdate()
+            # Expire passed animation items form _active
+            while self._active and self._active[0].timestamp_end < timecode:
+                self._active.pop(0)
+
+            # Todo: Implement events
+            #if timecode >= 1:
+            #    if self.onComplete:
+            #        self.onComplete()
+            #else:
+            #    if self.onUpdate:
+            #        self.onUpdate()
 
         def _render_item(self, i, pos=1):
+            pos = min(max(pos, 0), 1)
+            self._derive_missing_from_to_values(i)  # done at the absolute final moment before the item is animated
             for field in i.valuesTo.keys():
                 setattr(
                     i.element,
@@ -264,18 +274,6 @@ class Timeline(object):
         @property
         def _next_item(self):
             return self._items[self._next_item_index]
-
-        def _add_active_item(self, item):
-            # This is done at the absolute final moment before the item is animated
-            self._derive_missing_from_to_values(item)
-            # Activate item
-            self._active.append(item)
-            # Sort in order of expiry for efficent removal
-            self._active.sort(key=lambda i: i.timestamp_end)
-
-        def _expire_passed_animation_items(self, timecode):
-            while self._active and self._active[0].timestamp_end < timecode:
-                self._render_item(self._active.pop(0))
 
         @staticmethod
         def _derive_missing_from_to_values(item):
