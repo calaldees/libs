@@ -3,6 +3,7 @@ from collections import namedtuple
 
 from .timeline import Timeline
 
+
 class Location(object):
     def __init__(self, x=0, y=0):
         self.x = x
@@ -190,11 +191,31 @@ def test_timeline_opertor_reverse(tl, o1):
     assert o1.x == 0
     assert o1.y == 0
 
-def test_set_():
-    """
-    TODO:
-    """
-    pass
+def test_set__passed_time(tl, o1):
+    tl.to(o1, 10, {'x': 100}).set_(o1, {'x': 0}).to(o1, 10, {'x': 100})
+    ren = tl.get_renderer()
+
+    ren.render(0)
+    assert o1.x == 0
+    ren.render(9)
+    assert o1.x == 90
+    ren.render(11)
+    assert o1.x == 10
+
+
+def test_set__on_time(tl, o1):
+    tl.to(o1, 10, {'x': 100}).set_(o1, {'x': 0}).to(o1, 10, {'x': 100})
+    ren = tl.get_renderer()
+
+    ren.render(0)
+    assert o1.x == 0
+    ren.render(9)
+    assert o1.x == 90
+    ren.render(10)
+    assert o1.x == 0
+    ren.render(11)
+    assert o1.x == 10
+
 
 def test_label():
     """
