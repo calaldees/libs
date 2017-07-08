@@ -57,7 +57,7 @@ class Timeline(object):
             assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symmetrical'
 
         tween = tween or Timeline.Tween.tween_linear
-        if not hasattr(elements, '__iter__'):
+        if not hasattr(elements, '__iter__') or hasattr(elements, '__getitem__'):
             elements = (elements, )
 
         timestamp = self._resolve_timestamp(timestamp, offset)
@@ -265,11 +265,14 @@ class Timeline(object):
             pos = min(max(pos, 0), 1)
             self._derive_missing_from_to_values(i)  # done at the absolute final moment before the item is animated
             for field in i.valuesTo.keys():
-                setattr(
-                    i.element,
-                    field,
-                    i.valuesFrom[field] + (i.tween(pos) * (i.valuesTo[field] - i.valuesFrom[field]))
-                )
+                value = i.valuesFrom[field] + (i.tween(pos) * (i.valuesTo[field] - i.valuesFrom[field]))
+                # Attempt 'dict key' assignment, and fall back to 'setattr'.
+                # There may be a more efficient way of doing this.
+                try:
+                    if field in i.element:
+                        i.element[field] = value
+                except TypeError:
+                    setattr(i.element, field, value)
 
         @property
         def _next_item(self):

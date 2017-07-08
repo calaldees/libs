@@ -229,3 +229,11 @@ def test_stagger():
     TODO:
     """
     pass
+
+
+def test_dict():
+    """
+    TODO:
+    if the element to be tweened is dict object
+    """
+    pass
