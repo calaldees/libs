@@ -237,7 +237,7 @@ def decorator_combine(*dec_funs):
     return _inner_chain
 
 
-def cmd_args(*args, **kwargs):
+def cmd_args(*args, flag_prefix='-', **kwargs):
     """
     >>> cmd_args('cmd', '-flag')
     ('cmd', '-flag')
@@ -247,7 +247,7 @@ def cmd_args(*args, **kwargs):
     def format_arg(k, v):
         arg = []
         if k:
-            arg.append('-{0}'.format(k))
+            arg.append(f'{flag_prefix}{k}')
         if v != None:
             arg.append(str(v))
         return arg
