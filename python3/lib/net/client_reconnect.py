@@ -195,6 +195,8 @@ class SubscriptionClient(JsonSocketReconnect):
             self.send_subscriptions()
 
     def send_message(self, *messages):
+        if not messages:
+            return
         self.send({
             'action': 'message',
             'data': messages,
