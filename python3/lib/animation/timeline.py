@@ -7,6 +7,18 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def get_attr_or_item(obj, field):
+    try:
+        return obj[field]
+    except:
+        return getattr(obj, field)
+def set_attr_or_item(obj, field, value):
+    try:
+        obj[field] = value
+    except TypeError:
+        setattr(obj, field, value)
+
+
 class Timeline(object):
     """
     A generalized animation framework for tweening python attributes.
@@ -266,13 +278,7 @@ class Timeline(object):
             self._derive_missing_from_to_values(i)  # done at the absolute final moment before the item is animated
             for field in i.valuesTo.keys():
                 value = i.valuesFrom[field] + (i.tween(pos) * (i.valuesTo[field] - i.valuesFrom[field]))
-                # Attempt 'dict key' assignment, and fall back to 'setattr'.
-                # There may be a more efficient way of doing this.
-                try:
-                    if field in i.element:
-                        i.element[field] = value
-                except TypeError:
-                    setattr(i.element, field, value)
+                set_attr_or_item(i.element, field, value)
 
         @property
         def _next_item(self):
@@ -284,7 +290,7 @@ class Timeline(object):
                 source = item.valuesFrom or item.valuesTo
                 destination = item.valuesFrom if not item.valuesFrom else item.valuesTo
                 for field in source.keys():
-                    destination[field] = copy(getattr(item.element, field))
+                    destination[field] = copy(get_attr_or_item(item.element, field))
             assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symmetrical'  # Temp assertion for development
 
 
