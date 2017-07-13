@@ -69,7 +69,7 @@ class Timeline(object):
             assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symmetrical'
 
         tween = tween or Timeline.Tween.tween_linear
-        if not hasattr(elements, '__iter__') or hasattr(elements, '__getitem__'):
+        if not hasattr(elements, '__iter__') or isinstance(elements, dict):
             elements = (elements, )
 
         timestamp = self._resolve_timestamp(timestamp, offset)

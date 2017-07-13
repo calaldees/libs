@@ -95,6 +95,18 @@ def test_timeline_render_multiple_elements(tl, o1, o2):
     assert o2.y == 0
 
 
+def test_timeline_render_multiple_elements_generator(tl, o1, o2):
+    elements = (o1, o2)
+    elements_generator = (o for o in elements)
+    tl.to(elements_generator, 10, {'x': 100})
+
+    ren = tl.get_renderer()
+
+    ren.render(5)
+    assert o1.x == 50
+    assert o2.x == 50
+
+
 def test_timeline_operator_add(tl, o1):
     tl.to(o1, 10, {'x': 100})
     tl2 = Timeline().to(o1, 10, {'y': 100})
@@ -231,9 +243,25 @@ def test_stagger():
     pass
 
 
-def test_dict():
-    """
-    TODO:
-    if the element to be tweened is dict object
-    """
-    pass
+def test_dict(tl):
+    o1 = {'x': 0, 'y': 0, 'z': 'test'}
+
+    tl.to(o1, 10, {'x': 100}).to(o1, 10, {'y': 100})
+
+    ren = tl.get_renderer()
+
+    ren.render(5)
+    assert o1['x'] == 50
+    assert o1['y'] == 0
+
+
+def test_multiple_dicts_different_direction(tl):
+    o1 = {'a': 100}
+    o2 = {'a': 0}
+    tl.to((o1, o2), 10, {'a': 50})
+
+    ren = tl.get_renderer()
+
+    ren.render(5)
+    assert o1['a'] == 75
+    assert o2['a'] == 25
