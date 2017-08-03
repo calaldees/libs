@@ -7,9 +7,10 @@ class Loop(object):
     class LoopInterruptException(Exception):
         pass
 
-    def __init__(self, fps):
+    def __init__(self, fps, timeshift=0):
         self.set_period(fps)
         self.profile_timelog = []
+        self.timeshift = timeshift
 
     def set_period(self, fps):
         assert fps, "Provide fps"
@@ -29,7 +30,7 @@ class Loop(object):
         self.running = True
         try:
             while self.is_running() and self.period:
-                self.current_time = time.time()
+                self.current_time = time.time() + self.timeshift
 
                 current_frame = self.get_frame(self.current_time)
                 previous_frame = self.get_frame(self.previous_time)
