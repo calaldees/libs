@@ -11,8 +11,9 @@ class SingleOutputStopableProcess():
     def stop(self):
         if self.close_event:
             self.close_event.set()
-            self.process.join()
             self.close_event = None
+        if self.process:
+            self.process.join()
             self.process = None
 
     def start(self, *args, **kwargs):
