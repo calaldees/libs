@@ -8,20 +8,19 @@ class Loop(object):
         pass
 
     def __init__(self, fps, timeshift=0):
-        self.set_period(fps)
+        self.set_period(fps, timeshift)
         self.profile_timelog = []
-        self.timeshift = timeshift
 
-    def set_period(self, fps):
+    def set_period(self, fps, timeshift=0):
         assert fps, "Provide fps"
         self.fps = fps
         self.period = 1 / fps
-        self.start_time = time.time()
+        self.start_time = time.time() - timeshift
         self.previous_time = self.start_time
         return self.period
 
     def get_frame(self, timestamp):
-        return int((timestamp - self.start_time + self.timeshift) // self.period)
+        return int((timestamp - self.start_time) // self.period)
 
     def is_running(self):
         return self.running

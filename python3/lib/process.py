@@ -23,6 +23,7 @@ class SingleOutputStopableProcess():
         self.stop()
         self.close_event = multiprocessing.Event()
         self.process = multiprocessing.Process(
+            name=self.func.__name__,
             target=self.func,
             args=(
                 self.queue,
