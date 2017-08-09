@@ -12,11 +12,12 @@ class Loop(object):
         self.profile_timelog = []
 
     def set_period(self, fps, timeshift=0):
-        assert fps, "Provide fps"
+        assert fps > 0, 'fps rate must be provided'
+        assert timeshift >= 0, 'timeshift must be positive'
         self.fps = fps
         self.period = 1 / fps
         self.start_time = time.time() - timeshift
-        self.previous_time = self.start_time
+        self.previous_time = time.time()
         return self.period
 
     def get_frame(self, timestamp):
