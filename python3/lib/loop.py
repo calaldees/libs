@@ -1,15 +1,20 @@
 import time
 
+DEFAULT_SLEEP_FACTOR = 0.8
+
 
 class Loop(object):
-    SLEEP_FACTOR = 0.8
 
     class LoopInterruptException(Exception):
         pass
 
-    def __init__(self, fps, timeshift=0):
+    def __init__(self, fps, timeshift=0, sleep_factor=DEFAULT_SLEEP_FACTOR):
+        """
+        Sleep factor could be set to 1.0? as python 3.5 respects time better
+        """
         self.set_period(fps, timeshift)
         self.profile_timelog = []
+        self.sleep_factor = sleep_factor
 
     def set_period(self, fps, timeshift=0):
         assert fps > 0, 'fps rate must be provided'
@@ -17,7 +22,7 @@ class Loop(object):
         self.fps = fps
         self.period = 1 / fps
         self.start_time = time.time() - timeshift
-        self.previous_time = time.time()
+        self.previous_time = time.time() - self.period  # Previous time is one frame ago to trigger immediately
         return self.period
 
     def get_frame(self, timestamp):
@@ -35,11 +40,11 @@ class Loop(object):
                 current_frame = self.get_frame(self.current_time)
                 previous_frame = self.get_frame(self.previous_time)
                 for frame in range(previous_frame, current_frame):
-                    self.render(frame)
+                    self.render(frame + 1)
 
                 self.previous_time = self.current_time
 
-                sleep_time = (self.start_time + (self.period * (current_frame + 1)) - time.time()) * self.SLEEP_FACTOR
+                sleep_time = (self.start_time + (self.period * (current_frame + 1)) - time.time()) * self.sleep_factor
                 if sleep_time > 0:
                     time.sleep(sleep_time)
         except KeyboardInterrupt:
