@@ -29,7 +29,7 @@ def http_dispatch(func_dispatch, port=23487):
             **re.match(r'(?P<method>.*?) (?P<path>.*?)(?P<query>\?.*)? HTTP/1', request).groupdict(),
         )
         #request_dict['query'] = {i.split('=') for i in request_dic.get('query', '').lstrip('?').split('&')}
-        request_dict['query'] = urllib.parse.parse_qs(request_dict['query'].strip('?'))
+        request_dict['query'] = urllib.parse.parse_qs((request_dict.get('query') or '').strip('?'))
 
         # Create stub HTTP response headers
         response_dict = {
