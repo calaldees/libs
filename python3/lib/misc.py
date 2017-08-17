@@ -472,11 +472,14 @@ def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **
     return queue
 
 
-def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65536):
+def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65535):
     if not hasher:
         return
     if isinstance(filehandle, str):
         filename = filehandle
+        if not os.path.isfile(filename):
+            log.warn('file to hash does not exist {}'.format(filename))
+            return ''
         filehandle = open(filename, 'rb')
     hasher = hasher()
     buf = filehandle.read(blocksize)
