@@ -6,8 +6,10 @@ import urllib.parse
 import logging
 log = logging.getLogger(__name__)
 
+DEFAULT_PORT = 23487
 
-def http_dispatch(func_dispatch, port=23487):
+
+def http_dispatch(func_dispatch, port=None):
     """
     A super simple single thread tiny http framework
 
@@ -21,6 +23,7 @@ def http_dispatch(func_dispatch, port=23487):
      - https://docs.python.org/3/howto/sockets.html
      - https://ruturajv.wordpress.com/2005/12/27/conditional-get-request/
     """
+    port = port or DEFAULT_PORT
 
     def _handle_request(connection, data):
         request = data.decode('utf8')  # TODO: Separate out head and body and decode separately (to allow binary bodys if required)
