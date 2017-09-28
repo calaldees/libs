@@ -28,6 +28,10 @@ class ILoginProvider(object):
         """
         Should check if the required state is present to show dialog
         Then return dict with details for this provider for the template to render
+
+        run_js
+        redirect_url
+
         """
         return {}
 
@@ -249,3 +253,27 @@ class PersonaLogin(ILoginProvider):
         data.update(provider_token.response)
         data['name'] = data['email']
         return data
+
+
+class GoogleLogin(ILoginProvider):
+    name = 'google'
+
+    def __init__(self, appid, secret):
+        super().__init__()
+        self.appid = appid
+
+    #@property
+    #def html_include(self):
+    #    return dict()
+
+    def login_dialog_data(self, request):
+        if not request.params.get('THING'):
+            return dict()
+
+    def verify_cridentials(self, request):
+        if request.params.get('THING'):
+            #raise LoginProviderException(response.content)
+            return ProviderToken(self.name, email, data)
+
+    def aquire_additional_user_details(self, provider_token):
+        return {}
