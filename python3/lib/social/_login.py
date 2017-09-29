@@ -182,6 +182,20 @@ class PersonaLogin(ILoginProvider):
         }
 
         'server.url' should be set in the pyramid registry
+
+        -- Excert removed from header of template --
+        <!-- Mozilla Persona -->
+        <script type="text/javascript">
+            var mozilla_persona = {
+                currentUserEmail: null,
+                login_url: "${login_url}",
+                logout_url: "${logout_url}"
+            };
+            % if identity.get('user'):
+            mozilla_persona.currentUserEmail = "${identity.get('user', {}).get('email', '')}";
+            % endif
+        </script>
+
         """
         return """
             <script src="https://login.persona.org/include.js"></script>
@@ -256,24 +270,79 @@ class PersonaLogin(ILoginProvider):
 
 
 class GoogleLogin(ILoginProvider):
+    """
+    https://developers.google.com/identity/sign-in/web/server-side-flow
+    """
     name = 'google'
 
-    def __init__(self, appid, secret):
+    def __init__(self, clientid, secret):
         super().__init__()
-        self.appid = appid
+        self.clientid = clientid
+        self.secret = secret
 
-    #@property
-    #def html_include(self):
-    #    return dict()
+    @property
+    def html_include(self):
+        # <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        return '''
+            <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
+            <script>
+                function start() {
+                    gapi.load('auth2', function() {
+                        auth2 = gapi.auth2.init({
+                            client_id: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+                            // Scopes to request in addition to 'profile' and 'email'
+                            //scope: 'additional_scope'
+                        });
+                    });
+                }
+                function signInCallback(authResult) {
+                    if (authResult['code']) {
+                        $.ajax({
+                            type: 'POST',
+                            url: window.location,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            contentType: 'application/octet-stream; charset=utf-8',
+                            success: function(result) {
+                                // Handle or verify the server response.
+                            },
+                            processData: false,
+                            data: authResult['code']
+                        });
+                    } else {
+                        console.error('Google Auth', authResult);
+                    }
+                }
+            </script>
+        '''
 
     def login_dialog_data(self, request):
-        if not request.params.get('THING'):
-            return dict()
+        return dict(run_js="auth2.grantOfflineAccess().then(signInCallback);")
 
     def verify_cridentials(self, request):
-        if request.params.get('THING'):
-            #raise LoginProviderException(response.content)
-            return ProviderToken(self.name, email, data)
+        if not request.params.get('THING'):
+            return
+        from apiclient import discovery
+        import httplib2
+        from oauth2client import client
+
+        if not request.headers.get('X-Requested-With'):
+            raise 403
+
+        credentials = client.credentials_from_clientsecrets_and_code(
+            CLIENT_SECRET_FILE,
+            ['https://www.googleapis.com/auth/drive.appdata', 'profile', 'email'],
+            request.post,  # ??
+        )
+
+        # Call Google API
+        http_auth = credentials.authorize(httplib2.Http())
+        drive_service = discovery.build('drive', 'v3', http=http_auth)
+        appfolder = drive_service.files().get(fileId='appfolder').execute()
+
+        return ProviderToken(self.name, credentials.id_token['email'], credentials.id_token)
+        #raise LoginProviderException(response.content)
 
     def aquire_additional_user_details(self, provider_token):
         return {}
