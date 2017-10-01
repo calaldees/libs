@@ -296,8 +296,6 @@ class GoogleLogin(ILoginProvider):
                     gapi.load('auth2', function() {
                         auth2 = gapi.auth2.init({
                             client_id: '__CLIENT_ID__',
-                            // Scopes to request in addition to 'profile' and 'email'
-                            //scope: 'additional_scope'
                         });
                     });
                 }
@@ -315,31 +313,35 @@ class GoogleLogin(ILoginProvider):
         return dict(run_js="auth2.grantOfflineAccess().then(signInCallback);")
 
     def verify_cridentials(self, request):
+        """
+        https://developers.google.com/api-client-library/python/start/get_started
+        https://developers.google.com/+/web/api/rest/oauth
+        https://developers.google.com/+/web/api/rest/latest/people/get
+        """
         if not request.params.get('code'):
             return
-        from apiclient import discovery
+        from apiclient.discovery import build
         import httplib2
         from oauth2client import client
 
         if not request.headers.get('X-Requested-With'):
             raise 403  # TODO: raise real error
 
-        import pdb ; pdb.set_trace()
         credentials = client.credentials_from_clientsecrets_and_code(
             self.client_secret_file,
-            ['https://www.googleapis.com/auth/drive.appdata', 'profile', 'email'],
+            ['profile', 'email'],
             request.params.get('code'),
         )
 
-        # Call Google API
-        http_auth = credentials.authorize(httplib2.Http())
-        drive_service = discovery.build('drive', 'v3', http=http_auth)
-        appfolder = drive_service.files().get(fileId='appfolder').execute()
+        plus_service = build('plus', 'v1', http=credentials.authorize(httplib2.Http()))
+        profile = plus_service.people().get(userId='me').execute()
 
-        import pdb ; pdb.set_trace()
-
-        return ProviderToken(self.name, credentials.id_token['email'], credentials.id_token)
+        return ProviderToken(self.name, profile['id'], profile)
         #raise LoginProviderException(response.content)
 
     def aquire_additional_user_details(self, provider_token):
-        return {}
+        return {
+            'username': provider_token.response['displayName'],
+            'email': provider_token.response['emails'][0]['value'],
+            'avatar_url': provider_token.response['image']['url'],
+        }
