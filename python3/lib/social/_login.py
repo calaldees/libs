@@ -1,3 +1,5 @@
+import os.path
+import json
 import hashlib
 import requests
 
@@ -272,13 +274,17 @@ class PersonaLogin(ILoginProvider):
 class GoogleLogin(ILoginProvider):
     """
     https://developers.google.com/identity/sign-in/web/server-side-flow
+    https://console.developers.google.com/apis/credentials
     """
     name = 'google'
 
-    def __init__(self, clientid, secret):
+    def __init__(self, client_secret_file):
         super().__init__()
-        self.clientid = clientid
-        self.secret = secret
+        assert os.path.isfile(client_secret_file)
+        with open(client_secret_file, 'rt') as client_secret_filehandle:
+            self.client_secret_file_data = json.load(client_secret_filehandle)
+        self.client_secret_file = client_secret_file
+        assert self.client_secret_file_data, f'google client_secret_file {client_secret_file} should parse json'
 
     @property
     def html_include(self):
@@ -289,7 +295,7 @@ class GoogleLogin(ILoginProvider):
                 function start() {
                     gapi.load('auth2', function() {
                         auth2 = gapi.auth2.init({
-                            client_id: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+                            client_id: '__CLIENT_ID__',
                             // Scopes to request in addition to 'profile' and 'email'
                             //scope: 'additional_scope'
                         });
@@ -297,49 +303,40 @@ class GoogleLogin(ILoginProvider):
                 }
                 function signInCallback(authResult) {
                     if (authResult['code']) {
-                        $.ajax({
-                            type: 'POST',
-                            url: window.location,
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            contentType: 'application/octet-stream; charset=utf-8',
-                            success: function(result) {
-                                // Handle or verify the server response.
-                            },
-                            processData: false,
-                            data: authResult['code']
-                        });
+                        $.post(window.location, authResult);
                     } else {
                         console.error('Google Auth', authResult);
                     }
                 }
             </script>
-        '''
+        '''.replace('__CLIENT_ID__', self.client_secret_file_data['web']['client_id'])
 
     def login_dialog_data(self, request):
         return dict(run_js="auth2.grantOfflineAccess().then(signInCallback);")
 
     def verify_cridentials(self, request):
-        if not request.params.get('THING'):
+        if not request.params.get('code'):
             return
         from apiclient import discovery
         import httplib2
         from oauth2client import client
 
         if not request.headers.get('X-Requested-With'):
-            raise 403
+            raise 403  # TODO: raise real error
 
+        import pdb ; pdb.set_trace()
         credentials = client.credentials_from_clientsecrets_and_code(
-            CLIENT_SECRET_FILE,
+            self.client_secret_file,
             ['https://www.googleapis.com/auth/drive.appdata', 'profile', 'email'],
-            request.post,  # ??
+            request.params.get('code'),
         )
 
         # Call Google API
         http_auth = credentials.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         appfolder = drive_service.files().get(fileId='appfolder').execute()
+
+        import pdb ; pdb.set_trace()
 
         return ProviderToken(self.name, credentials.id_token['email'], credentials.id_token)
         #raise LoginProviderException(response.content)
