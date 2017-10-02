@@ -1,9 +1,13 @@
 import os.path
 import json
-import hashlib
-import requests
-
 from collections import namedtuple
+import hashlib
+
+import requests
+import httplib2
+from apiclient.discovery import build
+from oauth2client import client
+
 
 ProviderToken = namedtuple('ProviderToken', ['provider', 'token', 'response'])
 
@@ -288,8 +292,8 @@ class GoogleLogin(ILoginProvider):
 
     @property
     def html_include(self):
-        # <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
         return '''
+            <!-- jQuery is required before google login api -->
             <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
             <script>
                 function start() {
@@ -301,7 +305,7 @@ class GoogleLogin(ILoginProvider):
                 }
                 function signInCallback(authResult) {
                     if (authResult['code']) {
-                        $.post(window.location, authResult);
+                        $.post(window.location, authResult, (data)=>{window.location = window.location;} );
                     } else {
                         console.error('Google Auth', authResult);
                     }
@@ -320,12 +324,9 @@ class GoogleLogin(ILoginProvider):
         """
         if not request.params.get('code'):
             return
-        from apiclient.discovery import build
-        import httplib2
-        from oauth2client import client
 
         if not request.headers.get('X-Requested-With'):
-            raise 403  # TODO: raise real error
+            raise LoginProviderException('X-Requested-With required for google login')
 
         credentials = client.credentials_from_clientsecrets_and_code(
             self.client_secret_file,

@@ -61,7 +61,7 @@ class SocialLogin(object):
         provider_token = first((login_provider.verify_cridentials(request) for login_provider in login_providers.values()))
 
         if not provider_token:
-            error_message = 'error verifying cridentials'
+            error_message = 'error verifying credentials'
             log.error(error_message)
             raise action_error(message=error_message)
 
