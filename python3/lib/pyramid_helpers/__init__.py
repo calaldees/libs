@@ -40,7 +40,10 @@ def mark_external_request(target, *args, **kwargs):
 
     TODO: This is horrible ... can we do this in a better way?
     """
-    request_from_args(args).matchdict['internal_request'] = True
+    try:
+        request_from_args(args).matchdict['internal_request'] = True
+    except Exception:
+        pass
     return target(*args, **kwargs)
 
 
@@ -52,7 +55,7 @@ def gzip(target, *args, **kwargs):
     request = request_from_args(args)
 
     # Abort if internal call
-    if 'internal_request' in request.matchdict:
+    if 'internal_request' in (request.matchdict or {}):
         return target(*args, **kwargs)
 
     result = target(*args, **kwargs)

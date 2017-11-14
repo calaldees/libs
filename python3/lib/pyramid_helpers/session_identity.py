@@ -1,3 +1,6 @@
+
+# DEPRECATED - Use session_identity2
+
 from decorator import decorator
 
 import logging

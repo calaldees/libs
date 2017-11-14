@@ -57,7 +57,7 @@ def etag_decorator(cache_key=_generate_cache_key_default):
     """
     def _etag(target, *args, **kwargs):
         request = request_from_args(args)
-        if 'internal_request' in request.matchdict:  # Abort if internal call
+        if 'internal_request' in (request.matchdict or {}):  # Abort if internal call
             return target(*args, **kwargs)
         etag(request, cache_key)
         return target(*args, **kwargs)  # Execute the wrapped function

@@ -10,8 +10,16 @@ def log_event(request, **kwargs):
     events to the correct destination
     """
     data = kwargs
+
+    event = data.get('event')
+    try:
+        event = request.matched_route.name
+    except:
+        pass
+        # TODO: name from traversal context?
+
     data.update({
-        'event': data.get('event') or request.matched_route.name,
+        'event': event,
         'session_id': request.session.get('id'),
         'ip': request.environ.get('REMOTE_ADDR'),
         'timestamp': now(),

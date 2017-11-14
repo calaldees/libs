@@ -5,6 +5,9 @@
 *.egg
 *.egg-info
 __pycache__
+**/.cache/
+**/.vscode/
+**/.DS_Store
 
 pip-log.txt
 
