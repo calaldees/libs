@@ -112,6 +112,74 @@ class FormatRendererManager():
 format_manager = FormatRendererManager()
 
 
+# -----------------------------------
+
+class PostViewDictAugmentation():
+    def __init__(self):
+        self._pre_render_funcs = []
+        self._post_render_funcs = []
+
+    def register_pre_render_decorator(self):
+        def wrapper(augmenter_func):
+            assert callable(augmenter_func)
+            self._pre_render_funcs.append(augmenter_func)
+        return wrapper
+
+    def register_post_render_decorator(self):
+        def wrapper(augmenter_func):
+            assert callable(augmenter_func)
+            self._post_render_funcs.append(augmenter_func)
+        return wrapper
+
+    def pre_render_augmentation(self, request, response):
+        for _func in self._pre_render_funcs:
+            _func(request, response)
+
+    def post_render_augmentation(self, request, response, response_object):
+        for _func in self._post_render_funcs:
+            _func(request, response, response_object)
+
+
+post_view_dict_augmentation = PostViewDictAugmentation()
+
+
+@post_view_dict_augmentation.register_post_render_decorator()
+def overlay_return_code_on_response_object(request, response, response_object):
+    if isinstance(response_object, pyramid.response.Response):
+        response_object.status_int = response.get('code')
+
+
+@post_view_dict_augmentation.register_pre_render_decorator()
+def add_template_to_response(request, response):
+    try:
+        response.setdefault('template', request.context.__template__)
+    except AttributeError:
+        pass
+
+@post_view_dict_augmentation.register_pre_render_decorator()
+def add_format_to_response(request, response):
+    try:
+        response.setdefault('format', request.requested_response_format)
+    except AttributeError:
+        pass
+
+# TODO: move this to the session to reduce coupling
+@post_view_dict_augmentation.register_pre_render_decorator()
+def add_identity_to_response(request, response):
+    if hasattr(request, 'session_identity'):
+        response['identity'] = request.session_identity
+
+# TODO: Move this to reduce coupling
+@post_view_dict_augmentation.register_pre_render_decorator()
+def add_messages_in_session_to_response(request, response):
+    if request.session.peek_flash():
+        # TODO: This needs to be modularised
+        response.setdefault('messages', []).append(request.session.pop_flash())
+
+
+
+# -----------------------
+
 def before_traversal_extract_format_from_path_info_to_get_param(event):
     """
     We could have a path_info of '/track/t3.json'
@@ -155,18 +223,17 @@ def setup_pyramid_autoformater(config):
     def autoformat_view(view, info):
         if info.options.get('autoformat', True):
             def view_wrapper(context, request):
+                #if 'internal_request' in request.matchdict:  # Abort if internal call
+                #    return view(context, request)
                 try:
                     response = view(context, request)  # Execute View
                 except action_error as ae:
                     response = ae.d
                 if isinstance(response, dict) and response.keys() >= {'code', 'messages', 'data', 'status'}:
-                    if hasattr(request, 'session_identity'):
-                        # TODO: I wanted the session_identity to be decoupled from autoformater
-                        response['identity'] = request.session_identity
-                    if getattr(request, 'context', None) and hasattr(request.context, 'name'):
-                        response['context'] = request.context.name
-                    response['format'] = request.requested_response_format
-                    return format_manager.render(request, response)
+                    post_view_dict_augmentation.pre_render_augmentation(request, response)
+                    response_object = format_manager.render(request, response)
+                    post_view_dict_augmentation.post_render_augmentation(request, response, response_object)
+                    return response_object
                 return response
             return view_wrapper
         return view
@@ -178,100 +245,6 @@ def autoformat_response_adaptor(data):
     pass
 
 
-#-------------------------------------------------------------------------------
-# Decorator
-#-------------------------------------------------------------------------------
-
-#@decorator
-def auto_format_output(target, *args, **kwargs):
-    """
-    A decorator to decarate a Pyramid view
-
-    The view could return a plain python dict
-
-    it will try to:
-     - extract a sutable format string from the URL e.g html,json,xml,pdf,rss,etc
-     - apply a format function to the plain python dict return
-    """
-    # Extract request object from args
-    request = request_from_args(args)
-    request.matchdict = request.matchdict if request.matchdict else {}
-    if 'internal_request' in request.matchdict:  # Abort if internal call
-        return target(*args, **kwargs)
-
-    # Pre Processing -----------------------------------------------------------
-
-    # Find format string 'format' based on input params, to then find a render func 'formatter'  - add potential formats in order of precidence
-    # TODO: THis is RUBBISH!! .. if we dont return the format that is expected ... exception!!
-    formats = []
-    # add kwarg 'format'
-    try: formats.append(kwargs['format'])
-    except: pass
-    # From GET/POST params
-    try: formats.append(request.params['format'])
-    except: pass
-    # matched route 'format' key
-    try: formats.append(request.matchdict['format'])
-    except: pass
-    # add 'format' from URL path
-    try: formats.append(format_regex_path.match(request.path).group('format'))
-    except: pass
-    # add 'format' from URL query string
-    try: formats.append(format_regex_qs.match(request.path_qs).group('format'))
-    except: pass
-    # add 'format' from request content type
-    # Possible bug: This could lead to caching inconsitencys as etags and other caching must key the 'request-accept' before this is enabled
-    #try   : formats.append(format_request_accept[request.accept.header_value.split(',')[0]])
-    #except: pass
-    # add default format
-    formats.append()
-    formats = [format for format in formats if format]  # remove any blank entries in formats list
-
-    request.matchdict['format'] = formats[0]  # A way for all methods wraped by this decorator to determin what format they are targeted for
-
-    # Execute View ------------------------------------------------------------------
-    try:
-        result = target(*args, **kwargs)
-    except action_error as ae:
-        result = ae.d
-        #log.warn("Auto format exception needs to be handled")
-
-    # Post Processing ----------------------------------------------------------
-
-    # the result may have an overriding format that should always take precident
-    try: formats.insert(0,result['format'])
-    except: pass
-
-    # Attempt auto_format if result is a plain python dict and auto_format func exisits
-    if isinstance(result, dict):
-        # Add pending flash messages to result dict
-        result['messages'] = result.get('messages',[])
-        if request.session.peek_flash():
-            result['messages'] += request.session.pop_flash()
-
-        for formatter in filter(lambda i: i, [_auto_formaters.get(format) for format in formats]):
-            try:
-                # Format result dict using format func
-                response = formatter(request, result)
-                break
-            except FormatError:
-                log.warn('format refused')
-                # TODO - useful error message .. what was the exceptions message
-            except Exception:
-                log.warn('format rendering erorrs', exc_info=True)
-        else:
-            # TODO: This is rubish .. the original exception is obscured and needs to be surfaced
-            raise Exception('no format was able to render')
-
-        # Set http response code
-        if isinstance(response, pyramid.response.Response) and result.get('code'):
-            response.status_int = result.get('code')
-
-        request.response = response
-        result = response
-
-    return result
-
 
 #-------------------------------------------------------------------------------
 # Renderer Template
@@ -280,12 +253,11 @@ from pyramid.renderers import render_to_response
 import os.path
 
 def render_template(request, data, template_language='mako'):
-    assert data.keys() >= {'format', 'context'}
+    assert data.keys() >= {'format', 'template'}
     return render_to_response(
-        os.path.join(data['format'], '{}.{}'.format(data['context'], template_language)),
+        os.path.join(data['format'], '{}.{}'.format(data['template'], template_language)),
         data,
         request=request,
-        #response=request.response,
     )
 
 #-------------------------------------------------------------------------------
