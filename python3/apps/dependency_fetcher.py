@@ -116,7 +116,7 @@ def main():
         # If not downloaded/linked before
         if tracker.get(name) != hashcode or args.get('force'):
             # Fetch the files
-            log.info(f"""Fetching {name} {data.get('VERSION')}""")
+            log.info('''Fetching {name} {version}'''.format(name=name, version=data.get('VERSION')))  # TODO: replace with formatstring
             if fetch(data, args['destination_path'], clean=True):
                 tracker[name] = hashcode
 
