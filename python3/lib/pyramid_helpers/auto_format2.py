@@ -221,22 +221,22 @@ def setup_pyramid_autoformater(config):
     #config.add_subscriber(add_response_callbacks_to_newrequest, pyramid.events.NewRequest)
 
     def autoformat_view(view, info):
-        if info.options.get('autoformat', True):
-            def view_wrapper(context, request):
-                #if 'internal_request' in request.matchdict:  # Abort if internal call
-                #    return view(context, request)
-                try:
-                    response = view(context, request)  # Execute View
-                except action_error as ae:
-                    response = ae.d
-                if isinstance(response, dict) and response.keys() >= {'code', 'messages', 'data', 'status'}:
-                    post_view_dict_augmentation.pre_render_augmentation(request, response)
-                    response_object = format_manager.render(request, response)
-                    post_view_dict_augmentation.post_render_augmentation(request, response, response_object)
-                    return response_object
-                return response
-            return view_wrapper
-        return view
+        if not info.options.get('autoformat', True):
+            return view
+        def view_wrapper(context, request):
+            #if 'internal_request' in request.matchdict:  # Abort if internal call
+            #    return view(context, request)
+            try:
+                response = view(context, request)  # Execute View
+            except action_error as ae:
+                response = ae.d
+            if isinstance(response, dict) and response.keys() >= {'code', 'messages', 'data', 'status'}:
+                post_view_dict_augmentation.pre_render_augmentation(request, response)
+                response_object = format_manager.render(request, response)
+                post_view_dict_augmentation.post_render_augmentation(request, response, response_object)
+                return response_object
+            return response
+        return view_wrapper
     autoformat_view.options = ('autoformat', )
     config.add_view_deriver(autoformat_view, over='mapped_view', under='rendered_view')
 
