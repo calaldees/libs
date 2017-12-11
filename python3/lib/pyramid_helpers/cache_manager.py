@@ -1,6 +1,54 @@
+import random
 from collections import namedtuple
 from itertools import chain
 from functools import partial
+
+
+def setup_pyramid_cache_manager(config):
+    """
+    Any view callable defined with the argument 'acquire_cache_manager_func'
+    will automatically add a cache_manager to that request
+    """
+
+    def add_cache_manager_to_request(view, info):
+        acquire_cache_manager_func = info.options.get('acquire_cache_manager_func')
+        if not callable(acquire_cache_manager_func):
+            return view
+        def view_wrapper(context, request):
+            setattr(request, 'cache_manager', acquire_cache_manager_func(request))
+            return view(context, request)
+        return view_wrapper
+    add_cache_manager_to_request.options = ('acquire_cache_manager_func', )
+    config.add_view_deriver(add_cache_manager_to_request)
+
+    def etag_handler(view, info):
+        def view_warpper(context, request):
+
+        return view
+    config.add_view_deriver(etag_handler)
+
+
+def etag(request, cache_key=_generate_cache_key_default):
+    if request.registry.settings.get('server.etag.enabled'):
+        try:
+            etag = cache_key(request)
+        except TypeError:  # If we cant run it, then it's probably they key
+            etag = cache_key
+        except LookupError:
+            log.debug('etag generation aborted, unique response detected')
+            etag = None
+        except Exception:
+            log.debug('etag generation aborted, unable to generate etag')
+            etag = None
+        if etag:
+            etag += request.registry.settings.get('server.etag.cache_buster','')
+            if etag in request.if_none_match:
+                log.debug('etag matched - aborting render - %s' % etag)
+                raise exception_response(304)
+            else:
+                log.debug('etag set - %s' % etag)
+                request.response.etag = (etag, False)  # The tuple and 'False' signifys a weak etag that can be gziped later
+
 
 
 CacheFunctionWrapper = namedtuple('CacheFunctionWrapper', ('func', 'named_positional_args'))
@@ -75,4 +123,3 @@ class CacheManager():
         if bucket not in self._cache_buckets:
             self._cache_buckets[bucket] = self._create_buckets(bucket)
         return self._cache_buckets[bucket]
-
