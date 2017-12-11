@@ -288,7 +288,7 @@ class GoogleLogin(ILoginProvider):
         with open(client_secret_file, 'rt') as client_secret_filehandle:
             self.client_secret_file_data = json.load(client_secret_filehandle)
         self.client_secret_file = client_secret_file
-        assert self.client_secret_file_data, f'google client_secret_file {client_secret_file} should parse json'
+        assert self.client_secret_file_data, 'google client_secret_file {client_secret_file} should parse json'.format(client_secret_file=client_secret_file)    # TODO: replace with formatstring
 
     @property
     def html_include(self):

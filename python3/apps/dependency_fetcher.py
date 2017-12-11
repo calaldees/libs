@@ -29,9 +29,9 @@ def split_destination_filename(filename):
 
 
 def _fetch_file(fetch_function, source, destination, overwrite=False):
-    log.debug(f'{source} -> {destination}')
+    log.debug('{source} -> {destination}'.format(source=source, destination=destination))  # TODO: replace with formatstring
     if not overwrite and os.path.exists(destination):
-        log.debug(f'{destination} already exists')
+        log.debug('{destination} already exists'.format(destination=destination))  # TODO: replace with formatstring
         return True
     try:
         os.makedirs(os.path.dirname(destination))
@@ -41,7 +41,7 @@ def _fetch_file(fetch_function, source, destination, overwrite=False):
         fetch_function(source, destination)
         return True
     except Exception:
-        log.info(f'Unable to fetch {source} -> {destination} with {fetch_function}')
+        log.info('Unable to fetch {source} -> {destination} with {fetch_function}'.format(source=source, destination=destination, fetch_function=fetch_function))  # TODO: replace with formatstring
         return False
 FetchFileMethod = namedtuple('FetchFileMethod', ('source_check', 'fetch_method'))
 FETCH_FILE_METHODS = [
@@ -61,7 +61,7 @@ def fetch(data, destination_path, clean=False):
         data['sources'] = (data['sources'], )
     # Attempt sources in order
     for source_path in data['sources']:
-        log.debug(f'Attempting source_path {source_path}')
+        log.debug('Attempting source_path {source_path}'.format(source_path))  # TODO: replace with formatstring
         def replace_data_placeholders(text):
             return text.replace('VERSION', data['VERSION'])
         source_path = replace_data_placeholders(source_path)
@@ -111,7 +111,7 @@ def main():
 
     # Iterate over dependencies
     for name, data in dependencies_data.items():
-        log.debug(f'{name}')
+        log.debug('{name}'.format(name=name))  # TODO: replace with formatstring
         hashcode = hash_datastructure(data)
         # If not downloaded/linked before
         if tracker.get(name) != hashcode or args.get('force'):

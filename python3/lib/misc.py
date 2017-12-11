@@ -247,7 +247,7 @@ def cmd_args(*args, flag_prefix='-', **kwargs):
     def format_arg(k, v):
         arg = []
         if k:
-            arg.append(f'{flag_prefix}{k}')
+            arg.append('{flag_prefix}{k}'.format(flag_prefix=flag_prefix, k=k))  # TODO: replace with formatstring
         if v != None:
             arg.append(str(v))
         return arg
