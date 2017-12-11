@@ -61,7 +61,7 @@ def fetch(data, destination_path, clean=False):
         data['sources'] = (data['sources'], )
     # Attempt sources in order
     for source_path in data['sources']:
-        log.debug('Attempting source_path {source_path}'.format(source_path))  # TODO: replace with formatstring
+        log.debug('Attempting source_path {source_path}'.format(source_path=source_path))  # TODO: replace with formatstring
         def replace_data_placeholders(text):
             return text.replace('VERSION', data['VERSION'])
         source_path = replace_data_placeholders(source_path)
