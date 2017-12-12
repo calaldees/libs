@@ -16,22 +16,6 @@ log = logging.getLogger(__name__)
 
 from ..misc import json_object_handler
 
-#-------------------------------------------------------------------------------
-# Constants
-#-------------------------------------------------------------------------------
-
-#FORMAT_REQUEST_ACCEPT = {
-#    'text/html': 'html',
-#    'text/csv': 'csv',
-#    'text/plain': 'csv',
-#    'text/javascript': 'json',
-#    'application/json': 'json',
-#    'text/xml': 'xml',
-#    'application/xml': 'xml',
-#    'application/atom+xml': 'rss',
-#    'application/xml+rss': 'rss',
-#    'application/pdf': 'pdf',
-#}
 
 #-------------------------------------------------------------------------------
 # Class's
@@ -177,8 +161,8 @@ def add_messages_in_session_to_response(request, response):
         response.setdefault('messages', []).append(request.session.pop_flash())
 
 
-
 # -----------------------
+
 
 def before_traversal_extract_format_from_path_info_to_get_param(event):
     """
@@ -241,11 +225,6 @@ def setup_pyramid_autoformater(config):
     config.add_view_deriver(autoformat_view, over='mapped_view', under='rendered_view')
 
 
-def autoformat_response_adaptor(data):
-    pass
-
-
-
 #-------------------------------------------------------------------------------
 # Renderer Template
 #-------------------------------------------------------------------------------
@@ -258,6 +237,7 @@ def render_template(request, data, template_language='mako'):
         os.path.join(data['format'], '{}.{}'.format(data['template'], template_language)),
         data,
         request=request,
+        response=request.response,
     )
 
 #-------------------------------------------------------------------------------
@@ -272,46 +252,22 @@ def format_python(request, data):
 import json
 @format_manager.register_format_decorator('json', content_type='application/json')
 def format_json(request, data):
-    return pyramid.response.Response(
-        body=json.dumps(data, default=json_object_handler),
-        charset='utf-8'
-    )
+    request.response.body = json.dumps(data, default=json_object_handler),
+    return request.response
+    #charset='utf-8',
 
 
 from ..xml import dictToXMLString
 @format_manager.register_format_decorator('xml', content_type='text/xml')
 def format_xml(request, data):
-    return pyramid.response.Response(
-        body='<?xml version="1.0" encoding="UTF-8"?>'.encode('utf-8') + dictToXMLString(data),
-        charset='utf-8',
-    )
+    request.response.body = '<?xml version="1.0" encoding="UTF-8"?>'.encode('utf-8') + dictToXMLString(data),
+    return request.response
+    #charset='utf-8',
 
-# # RSS -------------------------------
-# def format_rss(request, result):
-#     response = render_template(request, result, 'rss')
-#     request.response.content_type = "application/rss+xml; charset=utf-8"
-#     return response
-# register_formater('rss', format_rss)
 
-# # GRAPH ------------------------------
-# def format_graph(request, result):
-#     request.response = render_template(request, result, 'graph')
-#     return request.response
-# register_formater('graph', format_graph)
-
-# # HTML ------------------------------
 @format_manager.register_format_decorator('html', content_type='text/html')
 def format_html(request, data):
      return render_template(request, data)
-# register_formater('html', format_html)
-# def format_html_template(request, result):
-#     """
-#     Return html content with no head/body tags
-#     Base templates must support result['format'] for this to function
-#     """
-#     result['format'] = 'html_template'
-#     return format_html(request, result)
-# register_formater('html_template', format_html_template)
 
 
 # # Redirect---------------------------
@@ -327,4 +283,3 @@ def format_html(request, data):
 #     del result['code']
 #     return HTTPFound(location=request.referer)
 # register_formater('redirect', format_redirect)
-

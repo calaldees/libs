@@ -3,6 +3,11 @@ from collections import namedtuple
 from itertools import chain
 from functools import partial
 
+from pyramid.httpexceptions import exception_response
+
+import logging
+log = logging.getLogger(__name__)
+
 
 def setup_pyramid_cache_manager(config):
     """
@@ -10,45 +15,35 @@ def setup_pyramid_cache_manager(config):
     will automatically add a cache_manager to that request
     """
 
-    def add_cache_manager_to_request(view, info):
-        acquire_cache_manager_func = info.options.get('acquire_cache_manager_func')
-        if not callable(acquire_cache_manager_func):
+    def add_cache_bucket_to_request(view, info):
+        acquire_cache_bucket_func = info.options.get('acquire_cache_bucket_func')
+        if not callable(acquire_cache_bucket_func):
             return view
         def view_wrapper(context, request):
-            setattr(request, 'cache_manager', acquire_cache_manager_func(request))
+            setattr(request, 'cache_bucket', acquire_cache_bucket_func(request))
             return view(context, request)
         return view_wrapper
-    add_cache_manager_to_request.options = ('acquire_cache_manager_func', )
-    config.add_view_deriver(add_cache_manager_to_request)
+    add_cache_bucket_to_request.options = ('acquire_cache_bucket_func', )
+    config.add_view_deriver(add_cache_bucket_to_request)
 
     def etag_handler(view, info):
-        def view_warpper(context, request):
-
-        return view
+        def view_wrapper(context, request):
+            if (
+                request.registry.settings.get('server.etag.enabled', False) and
+                request.method == 'GET' and
+                hasattr(request, 'cache_bucket')
+            ):
+                etag = request.cache_bucket.cache_key(request=request)
+                if etag:
+                    if etag in request.if_none_match:
+                        log.debug(f'etag matched - aborting render - {etag}')
+                        raise exception_response(304)
+                    else:
+                        log.debug(f'etag set - {etag}')
+                        request.response.etag = (etag, False)  # The tuple and 'False' signifies a weak etag that can be gziped later
+            return view(context, request)
+        return view_wrapper
     config.add_view_deriver(etag_handler)
-
-
-def etag(request, cache_key=_generate_cache_key_default):
-    if request.registry.settings.get('server.etag.enabled'):
-        try:
-            etag = cache_key(request)
-        except TypeError:  # If we cant run it, then it's probably they key
-            etag = cache_key
-        except LookupError:
-            log.debug('etag generation aborted, unique response detected')
-            etag = None
-        except Exception:
-            log.debug('etag generation aborted, unable to generate etag')
-            etag = None
-        if etag:
-            etag += request.registry.settings.get('server.etag.cache_buster','')
-            if etag in request.if_none_match:
-                log.debug('etag matched - aborting render - %s' % etag)
-                raise exception_response(304)
-            else:
-                log.debug('etag set - %s' % etag)
-                request.response.etag = (etag, False)  # The tuple and 'False' signifys a weak etag that can be gziped later
-
 
 
 CacheFunctionWrapper = namedtuple('CacheFunctionWrapper', ('func', 'named_positional_args'))
