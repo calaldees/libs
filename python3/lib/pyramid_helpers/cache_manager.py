@@ -64,7 +64,6 @@ class CacheBucket():
         }
         self.register_cache_key_generator(self.join_args_func, ('bucket', 'version'))
 
-
     def _register_functionwrapper(self, _type, func, named_positional_args=()):
         self._func_store[_type].append(
             self.CacheFunctionWrapper(func, tuple(named_positional_args))
@@ -105,16 +104,16 @@ class CacheManager():
         self._cache_buckets = {}
         self._default_cache_key_generators = list(default_cache_key_generators)
 
-    def _create_item(self, bucket):
-        cache_bucket = CacheBucket(bucket=bucket)
+    def _create_bucket(self, bucket_name):
+        cache_bucket = CacheBucket(bucket=bucket_name)
         #cm.register_invalidate_callback(self.commit_func)
         cache_bucket.register_invalidate_callback(self.cache_store.delete, ('bucket', ))
         for cache_key_generator in self._default_cache_key_generators:
             cache_bucket.register_cache_key_generator(*cache_key_generator)
-        cache_bucket.get_or_create = partial(self.cache.get_or_create, bucket)
+        cache_bucket.get_or_create = partial(self.cache.get_or_create, bucket_name)
         return cache_bucket
 
-    def get(self, bucket):
-        if bucket not in self._cache_buckets:
-            self._cache_buckets[bucket] = self._create_buckets(bucket)
-        return self._cache_buckets[bucket]
+    def get(self, bucket_name):
+        if bucket_name not in self._cache_buckets:
+            self._cache_buckets[bucket_name] = self._create_bucket(bucket_name)
+        return self._cache_buckets[bucket_name]
