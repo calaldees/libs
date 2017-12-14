@@ -66,7 +66,7 @@ class CacheBucket():
 
     def _register_functionwrapper(self, _type, func, named_positional_args=()):
         self._func_store[_type].append(
-            self.CacheFunctionWrapper(func, tuple(named_positional_args))
+            CacheFunctionWrapper(func, tuple(named_positional_args))
         )
 
     def _set_default_keys(self, kwargs):
@@ -107,10 +107,10 @@ class CacheManager():
     def _create_bucket(self, bucket_name):
         cache_bucket = CacheBucket(bucket=bucket_name)
         #cm.register_invalidate_callback(self.commit_func)
-        cache_bucket.register_invalidate_callback(self.cache_store.delete, ('bucket', ))
+        cache_bucket.register_invalidate_callback(self._cache_store.delete, ('bucket', ))
         for cache_key_generator in self._default_cache_key_generators:
             cache_bucket.register_cache_key_generator(*cache_key_generator)
-        cache_bucket.get_or_create = partial(self.cache.get_or_create, bucket_name)
+        cache_bucket.get_or_create = partial(self._cache_store.get_or_create, bucket_name)
         return cache_bucket
 
     def get(self, bucket_name):

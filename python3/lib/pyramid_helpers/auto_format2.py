@@ -252,7 +252,7 @@ def format_python(request, data):
 import json
 @format_manager.register_format_decorator('json', content_type='application/json')
 def format_json(request, data):
-    request.response.body = json.dumps(data, default=json_object_handler),
+    request.response.text = json.dumps(data, default=json_object_handler)
     return request.response
     #charset='utf-8',
 
@@ -260,7 +260,7 @@ def format_json(request, data):
 from ..xml import dictToXMLString
 @format_manager.register_format_decorator('xml', content_type='text/xml')
 def format_xml(request, data):
-    request.response.body = '<?xml version="1.0" encoding="UTF-8"?>'.encode('utf-8') + dictToXMLString(data),
+    request.response.text = '<?xml version="1.0" encoding="UTF-8"?>'.encode('utf-8') + dictToXMLString(data)
     return request.response
     #charset='utf-8',
 
