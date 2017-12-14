@@ -24,7 +24,7 @@ def setup_pyramid_cache_manager(config):
             return view(context, request)
         return view_wrapper
     add_cache_bucket_to_request.options = ('acquire_cache_bucket_func', )
-    config.add_view_deriver(add_cache_bucket_to_request)
+    config.add_view_deriver(add_cache_bucket_to_request, name='cache_bucket')
 
     def etag_handler(view, info):
         def view_wrapper(context, request):
@@ -43,7 +43,7 @@ def setup_pyramid_cache_manager(config):
                         request.response.etag = (etag, False)  # The tuple and 'False' signifies a weak etag that can be gziped later
             return view(context, request)
         return view_wrapper
-    config.add_view_deriver(etag_handler)
+    config.add_view_deriver(etag_handler, name='etag', under='cache_bucket')
 
 
 CacheFunctionWrapper = namedtuple('CacheFunctionWrapper', ('func', 'named_positional_args'))
@@ -53,7 +53,7 @@ class CacheBucket():
 
     @staticmethod
     def join_args_func(*args):
-        return '-'.join(map(str(args)))
+        return '-'.join(map(str, args))
 
     def __init__(self, bucket, version=None):
         self.version = int(version or random.randint(0, 2000000000))
