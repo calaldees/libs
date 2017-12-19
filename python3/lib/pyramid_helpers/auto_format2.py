@@ -222,7 +222,7 @@ def setup_pyramid_autoformater(config):
             return response
         return view_wrapper
     autoformat_view.options = ('autoformat', )
-    config.add_view_deriver(autoformat_view, over='mapped_view', under='rendered_view')
+    config.add_view_deriver(autoformat_view, name='autoformat', over='mapped_view', under='rendered_view')
 
 
 #-------------------------------------------------------------------------------
