@@ -1,12 +1,24 @@
 import random
 from collections import namedtuple
 from itertools import chain
-from functools import partial
+from functools import partial, wraps
+from unittest.mock import patch
 
 from pyramid.httpexceptions import exception_response
 
 import logging
 log = logging.getLogger(__name__)
+
+
+def patch_cache_bucket_decorator(acquire_cache_bucket_func=None):
+    def f(_func):
+        @wraps(_func)
+        def wrapper(*args, **kwargs):
+            request = args[0]
+            with patch.object(request, 'cache_bucket', acquire_cache_bucket_func(request)):
+                return _func(*args, **kwargs)
+        return wrapper
+    return f
 
 
 def setup_pyramid_cache_manager(config):
