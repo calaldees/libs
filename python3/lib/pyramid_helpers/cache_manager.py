@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 
 def patch_cache_bucket_decorator(acquire_cache_bucket_func=None):
     def f(_func):
+        assert callable(acquire_cache_bucket_func)
         @wraps(_func)
         def wrapper(*args, **kwargs):
             request = args[0]
