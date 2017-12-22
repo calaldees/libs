@@ -1,3 +1,5 @@
+# DEPRECATE DELETE THIS WHOLE FILE!!!
+
 from .misc import now, json_string
 
 import logging
