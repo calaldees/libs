@@ -67,6 +67,7 @@ def gzip(target, *args, **kwargs):
     return result
 
 
+# TODO: Depricated
 def _generate_max_age_seconds_default(request):
     return request.registry.settings.get('server.max_age.default')
 def max_age(gen_max_age_seconds=_generate_max_age_seconds_default, **options):

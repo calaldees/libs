@@ -28,12 +28,15 @@ def setup_pyramid_cache_manager(config):
     will automatically add a cache_manager to that request
     """
 
+    #config.add_request_method(lambda request: null_cache_bucket, 'cache_bucket', property=True)
+
     def add_cache_bucket_to_request(view, info):
         acquire_cache_bucket_func = info.options.get('acquire_cache_bucket_func')
-        if not callable(acquire_cache_bucket_func):
-            return view
         def view_wrapper(context, request):
-            setattr(request, 'cache_bucket', acquire_cache_bucket_func(request))
+            if callable(acquire_cache_bucket_func):
+                setattr(request, 'cache_bucket', acquire_cache_bucket_func(request))
+            else:
+                setattr(request, 'cache_bucket', null_cache_bucket)
             return view(context, request)
         return view_wrapper
     add_cache_bucket_to_request.options = ('acquire_cache_bucket_func', )
@@ -44,7 +47,8 @@ def setup_pyramid_cache_manager(config):
             if (
                 request.registry.settings.get('server.etag.enabled', False) and
                 request.method == 'GET' and
-                hasattr(request, 'cache_bucket')
+                #hasattr(request, 'cache_bucket') and
+                not isinstance(request.cache_bucket, NullCacheBucket)
             ):
                 etag = request.cache_bucket.cache_key(request=request)
                 if etag:
@@ -60,6 +64,21 @@ def setup_pyramid_cache_manager(config):
 
 
 CacheFunctionWrapper = namedtuple('CacheFunctionWrapper', ('func', 'named_positional_args'))
+
+
+class NullCacheBucket():
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def invalidate(self, **kwargs):
+        pass
+
+    def cache_key(self, **kwargs):
+        return ''
+
+    def get_or_create(self, bucket_name, data):
+        return data
+null_cache_bucket = NullCacheBucket()
 
 
 class CacheBucket():
