@@ -108,8 +108,8 @@ class CacheBucket():
     def _apply_funcs(self, _type, kwargs):
         self._set_default_keys(kwargs)
         required_arguments = set(chain.from_iterable(function_wrapper.named_positional_args for function_wrapper in self._func_store[_type]))
-        assert required_arguments >= kwargs.keys(), f'CacheManager function executed with kwargs {kwargs.keys()} but required to pass {required_arguments}'
-        return (
+        assert kwargs.keys() >= required_arguments, f'CacheManager function executed with kwargs {kwargs.keys()} but required to pass {required_arguments}'
+        return tuple(
             func(*(kwargs.get(attr) for attr in named_positional_args))
             for func, named_positional_args in self._func_store[_type]
         )

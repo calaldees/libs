@@ -185,6 +185,7 @@ def requested_response_format(request):
             request.accept.best_match(format_manager._content_type_to_format.keys())
         ),
     ))) or {
+        # TODO: BUG: I don't think this html fallback works - a None content_type in `best_match` above defualts to the order they are registed in the `format_manager`
         request.registry.settings.get('api.format.default', 'html'),
     }
     if len(formats) >= 2:
@@ -194,7 +195,7 @@ def requested_response_format(request):
 
 def setup_pyramid_autoformater(config):
     config.add_subscriber(before_traversal_extract_format_from_path_info_to_get_param, pyramid.events.BeforeTraversal)
-    config.add_request_method(requested_response_format, 'requested_response_format', property=True)
+    config.add_request_method(requested_response_format, 'requested_response_format', property=True)  # TODO: could we use reify here? Do views modify this anywhere?
 
     #config.add_response_adapter(autoformat_response_adaptor, dict)
     #def autoformat_format_selector_response_callback(request, response):
@@ -249,6 +250,11 @@ def format_python(request, data):
      return data
 
 
+@format_manager.register_format_decorator('html', content_type='text/html')
+def format_html(request, data):
+     return render_template(request, data)
+
+
 import json
 @format_manager.register_format_decorator('json', content_type='application/json')
 def format_json(request, data):
@@ -263,11 +269,6 @@ def format_xml(request, data):
     request.response.text = '<?xml version="1.0" encoding="UTF-8"?>'.encode('utf-8') + dictToXMLString(data)
     return request.response
     #charset='utf-8',
-
-
-@format_manager.register_format_decorator('html', content_type='text/html')
-def format_html(request, data):
-     return render_template(request, data)
 
 
 # # Redirect---------------------------
