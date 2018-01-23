@@ -216,6 +216,7 @@ def setup_pyramid_autoformater(config):
             except action_error as ae:
                 response = ae.d
             if isinstance(response, dict) and response.keys() >= {'code', 'messages', 'data', 'status'}:
+                response = copy.copy(response)  # HACK: BUGFIX: dogpile in_python cache dicts were being modified on return
                 post_view_dict_augmentation.pre_render_augmentation(request, response)
                 response_object = format_manager.render(request, response)
                 post_view_dict_augmentation.post_render_augmentation(request, response, response_object)
