@@ -15,13 +15,15 @@ def session_identity(request, session_keys={'id', }):
     if 'id' not in request.session:
         request.session['id'] = random_string()
         request.registry.notify(SessionCreated(request))
-    return {
+    identity_dict = {
         **{
             key: request.session.get(key, None)
-            for key in session_keys & request.session.keys()
+            for key in session_keys
         },
         **{
             key: GENERATED_IDENTITY_OVERLAYS[key](request.session)
             for key in session_keys & GENERATED_IDENTITY_OVERLAYS.keys()
         },
     }
+    assert identity_dict.keys() >= session_keys
+    return identity_dict
