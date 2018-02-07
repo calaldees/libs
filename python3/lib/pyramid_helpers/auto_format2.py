@@ -233,10 +233,10 @@ def setup_pyramid_autoformater(config):
 from pyramid.renderers import render_to_response
 import os.path
 
-def render_template(request, data, template_language='mako'):
+def render_template(request, data, template_language='mako', format_path=''):
     assert data.keys() >= {'format', 'template'}
     return render_to_response(
-        os.path.join(data['format'], '{}.{}'.format(data['template'], template_language)),
+        os.path.join(format_path or data['format'], '{}.{}'.format(data['template'], template_language)),
         data,
         request=request,
         response=request.response,
@@ -255,6 +255,13 @@ def format_python(request, data):
 def format_html(request, data):
      return render_template(request, data)
 
+@format_manager.register_format_decorator('html_template')
+def format_html_template(request, data):
+    """
+    Return html content with no head/body tags
+    Base templates must support result['format'] for this to function
+    """
+    return render_template(request, data, format_path='html')
 
 import json
 @format_manager.register_format_decorator('json', content_type='application/json')
