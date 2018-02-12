@@ -158,7 +158,7 @@ def add_identity_to_response(request, response):
 def add_messages_in_session_to_response(request, response):
     if request.session.peek_flash():
         # TODO: This needs to be modularised
-        response.setdefault('messages', []).append(request.session.pop_flash())
+        response.setdefault('messages', []).extend(request.session.pop_flash())
 
 
 # -----------------------
@@ -255,6 +255,7 @@ def format_python(request, data):
 def format_html(request, data):
      return render_template(request, data)
 
+
 @format_manager.register_format_decorator('html_template')
 def format_html_template(request, data):
     """
@@ -262,6 +263,7 @@ def format_html_template(request, data):
     Base templates must support result['format'] for this to function
     """
     return render_template(request, data, format_path='html')
+
 
 import json
 @format_manager.register_format_decorator('json', content_type='application/json')
@@ -279,16 +281,15 @@ def format_xml(request, data):
     #charset='utf-8',
 
 
-# # Redirect---------------------------
-# from pyramid.httpexceptions import HTTPFound
-# def format_redirect(request, result):
-#     """
-#     A special case for compatable browsers making REST calls
-#     """
-#     if request.response.headers.get('Set-Cookie'):
-#         raise FormatError('format_redirect cannot function when cookies are being set')
-#     for message in result['messages']:
-#         request.session.flash(message)
-#     del result['code']
-#     return HTTPFound(location=request.referer)
-# register_formater('redirect', format_redirect)
+from pyramid.httpexceptions import HTTPFound
+@format_manager.register_format_decorator('redirect')
+def format_redirect(request, data):
+    """
+    A special case for compatable browsers making REST calls
+    """
+    if request.response.headers.get('Set-Cookie'):
+        raise FormatError('format_redirect cannot function when cookies are being set')
+    for message in data['messages']:
+        request.session.flash(message)
+    data['code'] = 302
+    return HTTPFound(location=request.referer or '/')
