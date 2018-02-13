@@ -48,7 +48,8 @@ def setup_pyramid_cache_manager(config):
                 request.registry.settings.get('server.etag.enabled', False) and
                 request.method == 'GET' and
                 #hasattr(request, 'cache_bucket') and
-                not isinstance(request.cache_bucket, NullCacheBucket)
+                not isinstance(request.cache_bucket, NullCacheBucket) and
+                not request.session.peek_flash()
             ):
                 etag = request.cache_bucket.cache_key(request=request)
                 if etag:
