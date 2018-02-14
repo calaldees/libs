@@ -1,13 +1,20 @@
 import json
 
-from decorator import decorator
+import logging
+log = logging.getLogger(__name__)
+
+
+try:
+    from decorator import decorator
+except ImportError:
+    log.error('Library not present')
+    def decorator(*args, **kwargs):
+        return args[0]
+
 import pyramid.request
 import pyramid.threadlocal
 
 from ..misc import json_object_handler
-
-import logging
-log = logging.getLogger(__name__)
 
 
 def request_from_args(args):
