@@ -131,18 +131,25 @@ class CacheBucket():
 
 class CacheManager():
 
-    def __init__(self, cache_store, default_cache_key_generators=()):  #commit_func,
+    def __init__(self, cache_store, default_cache_key_generators=(), default_invalidate_callbacks=()):
         #self.commit_func = commit_func
         self._cache_store = cache_store
         self._cache_buckets = {}
         self._default_cache_key_generators = list(default_cache_key_generators)
+        self._default_invalidate_callbacks = list(default_invalidate_callbacks)
 
     def _create_bucket(self, bucket_name):
         cache_bucket = CacheBucket(bucket=bucket_name)
-        #cm.register_invalidate_callback(self.commit_func)
+
+        # Default invalidators
+        for invalidate_callback in self._default_invalidate_callbacks:
+            cache_bucket.register_invalidate_callback(*invalidate_callback)
         cache_bucket.register_invalidate_callback(self._cache_store.delete, ('bucket', ))
+
+        # Default cache_key_generators
         for cache_key_generator in self._default_cache_key_generators:
             cache_bucket.register_cache_key_generator(*cache_key_generator)
+
         cache_bucket.get_or_create = partial(self._cache_store.get_or_create, bucket_name)
         return cache_bucket
 
