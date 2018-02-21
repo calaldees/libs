@@ -23,4 +23,4 @@ def dictToXMLString(d):
                 e.append(dictToElement(i, 'item'))
         return e
 
-    return tostring(dictToElement(d, 'root'), encoding="utf-8")
+    return tostring(dictToElement(d, 'root'), encoding="unicode")

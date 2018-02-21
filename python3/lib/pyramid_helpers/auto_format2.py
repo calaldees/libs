@@ -276,7 +276,7 @@ def format_json(request, data):
 from ..xml import dictToXMLString
 @format_manager.register_format_decorator('xml', content_type='text/xml')
 def format_xml(request, data):
-    request.response.text = '<?xml version="1.0" encoding="UTF-8"?>'.encode('utf-8') + dictToXMLString(data)
+    request.response.text = '<?xml version="1.0" encoding="UTF-8"?>' + dictToXMLString(data)  #.encode('utf-8')
     return request.response
     #charset='utf-8',
 
