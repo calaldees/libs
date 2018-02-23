@@ -287,9 +287,10 @@ def format_redirect(request, data):
     """
     A special case for compatable browsers making REST calls
     """
-    if request.response.headers.get('Set-Cookie'):
-        raise FormatError('format_redirect cannot function when cookies are being set')
+    # SetCookie is now supported on redirect. This legacy check can probably be removed?
+    #if request.response.headers.get('Set-Cookie'):
+    #    raise FormatError('format_redirect cannot function when cookies are being set')
     for message in data['messages']:
         request.session.flash(message)
     data['code'] = 302
-    return HTTPFound(location=request.referer or '/')
+    return HTTPFound(location=request.referer or '/', headers=request.response.headers)
