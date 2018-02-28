@@ -3,6 +3,7 @@ from collections import namedtuple
 from itertools import chain
 from functools import partial, wraps
 from unittest.mock import patch
+import urllib.parse
 
 from pyramid.httpexceptions import exception_response
 
@@ -51,7 +52,7 @@ def setup_pyramid_cache_manager(config):
                 not isinstance(request.cache_bucket, NullCacheBucket) and
                 not request.session.peek_flash()
             ):
-                etag = request.cache_bucket.cache_key(request=request)
+                etag = urllib.parse.quote(request.cache_bucket.cache_key(request=request))
                 if etag:
                     if etag in request.if_none_match:
                         log.debug(f'etag matched - aborting render - {etag}')
