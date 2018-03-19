@@ -305,7 +305,7 @@ class GoogleLogin(ILoginProvider):
                 }
                 function signInCallback(authResult) {
                     if (authResult['code']) {
-                        $.post(window.location, authResult, (data)=>{window.location = window.location;} );
+                        $.post(window.location, authResult, (data)=>{window.location = window.location.pathname;} );
                     } else {
                         console.error('Google Auth', authResult);
                     }
