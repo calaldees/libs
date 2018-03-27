@@ -6,7 +6,7 @@ def wait_for(
         func_attempt,
         func_is_ok=lambda response: response,
         func_generate_exception=lambda response: Exception('wait_for failed'),
-        seconds_to_wait=5,
+        timeout=5,
         sleep_duration=1,
         ignore_exceptions=False,
 ):
@@ -25,13 +25,13 @@ def wait_for(
             func_attempt=get_data,
             func_is_ok=lambda response: response.status_code == 'ok',
             func_generate_exception=lambda response: Exception(f'wait_for failed {response.message}'),
-            seconds_to_wait=10,
+            timeout=10,
         )
 
         Will repeat get_data() once perseconds for 10 seconds.
         Each time checking the return object from get_data() with func_is_ok.
         If it's not ok -> Retry again.
-        If no success after seconds_to_wait, func_generate_exception is called with the last response object.
+        If no success after timeout, func_generate_exception is called with the last response object.
     """
     def attempt():
         response = func_attempt()
@@ -39,7 +39,7 @@ def wait_for(
 
     response = None
     is_ok = None
-    expire_datetime = datetime.datetime.now() + datetime.timedelta(seconds=seconds_to_wait)
+    expire_datetime = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
     while datetime.datetime.now() <= expire_datetime:
         if ignore_exceptions:
             try:
