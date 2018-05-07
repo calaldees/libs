@@ -230,7 +230,7 @@ class PersistentFramePacker(BaseFramePacker):
         if not self._handler:
             if self.filename:
                 log.debug(f'Open {self.filename}')
-                self._handler = open(self.filename, 'r+b' if os.path.exists(self.filename) else 'w+b')
+                self._handler = open(self.filename, 'r+b' if os.path.isfile(self.filename) else 'w+b')
             else:
                 log.debug(f'Open [tempfile]')
                 self._handler = tempfile.TemporaryFile(mode='w+b')
