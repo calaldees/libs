@@ -8,6 +8,9 @@ class UDPMixin(object):
     DEFAULT_HOST = '127.0.0.1'
 
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, buffer_size=DEFAULT_BUFFER_SIZE):
+        assert host
+        assert port
+        assert buffer_size
         self.host = host
         self.port = port
         self.buffer_size = buffer_size
