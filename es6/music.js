@@ -125,6 +125,37 @@ export function* circle_of_fifths_text(starting_note=0) {
     yield* circle_of_fifths_notes(starting_note).map(note_to_text);
 }
 
+
+const CHORD_NAMES_RELATED_TO_C = {
+    'Maj': ['C', 'E', 'G'],
+    'Min': ['C', 'D#', 'G'],
+    '5': ['C', 'G'],
+    '7': ['C', 'E', 'G', 'B'],
+}
+function normalize_to_sorted_notes_as_single_octave(notes) {
+    return notes.map(text_to_note).map(normalize_octave).sort()
+}
+function normalize_sorted_single_octave_to_interval_pattern_string(notes_in_single_octave) {
+    return notes_in_single_octave.iterator_current_prev().map((note_current, note_previous) => note_current - note_previous).join('-');
+}
+const CHORD_LOOKUP = {
+    // Replace this Python3 psudocode with es6
+    //normalize_sorted_single_octave_to_interval_pattern_string(normalize_to_sorted_notes_as_single_octave(notes_text_array)): [k, normalize_to_sorted_notes_as_single_octave(notes_text_array).indexOf(0)]
+    //for chord_name, notes_text_array in CHORD_NAMES_RELATED_TO_C.items()
+}
+export function identify_chord(notes) {
+    notes = normalize_to_sorted_notes_as_single_octave(notes)
+    const [chord_name, root_index] = CHORD_LOOKUP[
+        normalize_sorted_single_octave_to_interval_pattern_string(notes)
+    ];
+    const root_note_text = note_to_text(
+        notes[root_index],
+        format='%NOTE_LETTER_WITH_SHARP%',
+    );
+    return `{root_note_text}{chord_type}`;
+}
+
+
 export default {
     midi_status,
     note_to_text,
