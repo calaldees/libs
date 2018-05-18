@@ -1,83 +1,56 @@
-import {range} from './core.js'
+import {range, zip, buildMapFromObject, invertMap, MapDefaultGet, assertEquals} from './core.js'
 
 // Human readable input/output -------------------------------------------------
 
-const LOOKUP_NOTE_STR = {
-    0: 'C',
-    1: 'C#',
-    2: 'D',
-    3: 'D#',
-    4: 'E',
-    5: 'F',
-    6: 'F#',
-    7: 'G',
-    8: 'G#',
-    9: 'A',
-    10: 'A#',
-    11: 'B',
-}
-const LOOKUP_STR_NOTE = _.mapObject(_.invert(LOOKUP_NOTE_STR), function(val, key){return Number(val)});
-const NUM_NOTES_IN_OCTAVE = LOOKUP_NOTE_STR.keys().length;
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NUM_NOTES_IN_OCTAVE = NOTES.length;
+const LOOKUP_STR_NOTE = new Map(zip(NOTES, range(NUM_NOTES_IN_OCTAVE)));
+const LOOKUP_NOTE_STR = invertMap(LOOKUP_STR_NOTE);
+
 const OFFSET_FROM_C0 = NUM_NOTES_IN_OCTAVE * 2;
 
-export function note_to_text(note, format='%NOTE_LETTER_WITH_SHARP%%OCTAVE%') {
-    // TODO: Add string format default arg. eg: format='%NOTE% %OCTAVE%'
-    // use something like "".replace('%NOTE%', note)
-
-    //>>> note_to_text(0)
-    //'C-2'
-    //>>> note_to_text(24)
-    //'C0'
-    //>>> note_to_text(60)
-    //'C3'
-    //>>> note_to_text(61)
-    //'C#3'
-    //>>> note_to_text(0, format='%NOTE_LETTER_WITH_SHARP%')
-    //'C'
-    //>>> note_to_text(0, format='%OCTAVE%')
-    //'-2'
-    //>>> note_to_text(1, format='%NOTE_LETTER_WITH_SHARP%')
-    //'C#'
-    //>>> note_to_text(1, format='%NOTE_LETTER_WITH_FLAT%')
-    //'Db'
+export function note_to_text(note, {format='%NOTE_LETTER_WITH_SHARP%%OCTAVE%'}={}) {
     return format.replace(
-        '%NOTE_LETTER_WITH_SHARP%', LOOKUP_NOTE_STR[note % NUM_NOTES_IN_OCTAVE]
+        '%NOTE_LETTER_WITH_SHARP%', LOOKUP_NOTE_STR.get(note % NUM_NOTES_IN_OCTAVE)
     ).replace(
         '%OCTAVE%', Math.floor((note - OFFSET_FROM_C0)/NUM_NOTES_IN_OCTAVE)
     );
 }
+assertEquals([
+    [note_to_text(0), 'C-2'],
+    [note_to_text(24), 'C0'],
+    [note_to_text(60), 'C3'],
+    [note_to_text(61), 'C#3'],
+    [note_to_text(0, {format:'%NOTE_LETTER_WITH_SHARP%'}), 'C'],
+    [note_to_text(0, {format:'%OCTAVE%'}), '-2'],
+    [note_to_text(1, {format:'%NOTE_LETTER_WITH_SHARP%'}), 'C#'],
+    [note_to_text(1, {format:'%NOTE_LETTER_WITH_FLAT%'}), 'Db'],
+]);
 
 export function text_to_note(item) {
-    /*
-    >>> text_to_note('C-2')
-    0
-    >>> text_to_note('C0')
-    24
-    >>> text_to_note('C3')
-    60
-    >>> text_to_note('C#3')
-    61
-    >>> text_to_note('60')
-    60
-    >>> text_to_note(60)
-    60
-    >>> text_to_note('C')
-    24
-    >>> text_to_note('No!')
-    null
-    */
     if (!isNaN(Number(item))) {
         return Number(item);
     }
-    const regex_match = item.toUpperCase().match(/([ABCDEFG]#?)(-?\d{1,2})/);
+    const regex_match = item.toUpperCase().match(/([ABCDEFG]#?)(-?\d{1,2})?/);
+    // const regex_match = item.toUpperCase().match(/([ABCDEFG]#?)(-?\d{1,2})/);
     if (!regex_match) {
-        console.warn("Unable to parse note", item);
+        //console.warn("Unable to parse note", item);
         return null;
     }
     const note_str = regex_match[1];
     const octave = Number(regex_match[2] || 0);
-    return LOOKUP_STR_NOTE[note_str] + (octave * NUM_NOTES_IN_OCTAVE) + OFFSET_FROM_C0;
+    return LOOKUP_STR_NOTE.get(note_str) + (octave * NUM_NOTES_IN_OCTAVE) + OFFSET_FROM_C0;
 }
+assertEquals([
+    [text_to_note('C-2'), 0],
+    [text_to_note('C0'), 24],
+    [text_to_note('C3'), 60],
+    [text_to_note('C#3'), 61],
+    [text_to_note('60'), 60],
+    [text_to_note(60), 60],
+    [text_to_note('C'), 24],
+    [text_to_note('No!'), null],
+]);
 
 const MIDI_STATUS_LOOKUP = {
     0x8: 'note_off',
@@ -99,61 +72,113 @@ export function midi_status(status_byte) {
 }
 
 export function normalize_octave(note) {
-    // >>> normalize_octave(0)
-    // 0
-    // >>> normalize_octave(24)
-    // 0
-    // >>> normalize_octave(25)
-    // 1
     return note % NUM_NOTES_IN_OCTAVE;
 }
+assertEquals([
+    [normalize_octave(0), 0],
+    [normalize_octave(24), 0],
+    [normalize_octave(25), 1],
+]);
+
 
 export function* circle_of_fifths_notes(starting_note=0) {
     // >>> circle_of_fiths_notes()
     // [0, 8, 2, ... TODO]
-    const _fifth_interval_in_semitones = 8;
+    const _fifth_interval_in_semitones = 7;
     const _starting_note = text_to_note(starting_note);
-    yield* range(NUM_NOTES_IN_OCTAVE).map(
+    yield* [...range(NUM_NOTES_IN_OCTAVE)].map(
         note => normalize_octave(_starting_note + (note * _fifth_interval_in_semitones))
     );
 }
 
 export function* circle_of_fifths_text(starting_note=0) {
     // Convenience method. For passing 'format' use .map() yourself
-    // >>> circle_of_fifths_text()
-    // ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F']
-    yield* circle_of_fifths_notes(starting_note).map(note_to_text);
+    yield* [...circle_of_fifths_notes(starting_note)].map(note => note_to_text(note, {format:'%NOTE_LETTER_WITH_SHARP%'}));
 }
+assertEquals([
+    [`${[...circle_of_fifths_text()]}`, ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F']],  // I have no fucking idea how this comparison works. It's madness! Try it in a console! `1,2,3` == [1,2,3]
+]);
 
 
-const CHORD_NAMES_RELATED_TO_C = {
-    'Maj': ['C', 'E', 'G'],
-    'Min': ['C', 'D#', 'G'],
-    '5': ['C', 'G'],
-    '7': ['C', 'E', 'G', 'B'],
-}
-function normalize_to_sorted_notes_as_single_octave(notes) {
-    return notes.map(text_to_note).map(normalize_octave).sort()
-}
-function normalize_sorted_single_octave_to_interval_pattern_string(notes_in_single_octave) {
-    return notes_in_single_octave.iterator_current_prev().map((note_current, note_previous) => note_current - note_previous).join('-');
-}
-const CHORD_LOOKUP = {
-    // Replace this Python3 psudocode with es6
-    //normalize_sorted_single_octave_to_interval_pattern_string(normalize_to_sorted_notes_as_single_octave(notes_text_array)): [k, normalize_to_sorted_notes_as_single_octave(notes_text_array).indexOf(0)]
-    //for chord_name, notes_text_array in CHORD_NAMES_RELATED_TO_C.items()
-}
-export function identify_chord(notes) {
-    notes = normalize_to_sorted_notes_as_single_octave(notes)
-    const [chord_name, root_index] = CHORD_LOOKUP[
-        normalize_sorted_single_octave_to_interval_pattern_string(notes)
-    ];
-    const root_note_text = note_to_text(
-        notes[root_index],
-        format='%NOTE_LETTER_WITH_SHARP%',
+function normalize_notes_to_bitmask(notes) {
+    return (notes
+        .map(text_to_note)
+        .map(normalize_octave)
+        .reduce((accumulator, note) => accumulator | 1 << note, 0)
     );
-    return `{root_note_text}{chord_type}`;
 }
+assertEquals([
+    [normalize_notes_to_bitmask([]), 0],
+    [normalize_notes_to_bitmask(['C']), 1],
+    [normalize_notes_to_bitmask(['C#']), 2],
+    [normalize_notes_to_bitmask(['D']), 4],
+    [normalize_notes_to_bitmask(['D#']), 8],
+    [normalize_notes_to_bitmask(['C', 'C#']), 3],
+]);
+
+
+const CHORD_NAMES_RELATIVE_TO_C = buildMapFromObject({
+    'major': ['C', 'E', 'G'],
+    'minor': ['C', 'D#', 'G'],
+    '5': ['C', 'G'],
+    'major7': ['C', 'E', 'G', 'B'],
+    'major7(add9)': ['C', 'E', 'G', 'B', 'D'],
+    'major7(add13)': ['C', 'E', 'G', 'B', 'A'],
+    'dom7': ['C', 'E', 'G', 'A#'], // C7
+    'dom7(add9)': ['C', 'E', 'G', 'A#', 'D'], //C9
+    'dom7(add13)': ['C', 'E', 'G', 'A#', 'A'], //C13 C7(add6)
+    'minor7': ['C', 'D#', 'G', 'A#'], //Cm7
+    'minor7(add9)': ['C', 'D#', 'G', 'A#', 'D'], //Cm9
+    'minor7(add13)': ['C', 'D#', 'G', 'A#', 'A'], //Cm13
+    'minor7(add11)': ['C', 'D#', 'G', 'A#', 'F'], //Cm7
+    'minor(add7)': ['C', 'D#', 'G', 'B'], //Cm7
+    'major9': ['C', 'E', 'G', 'A#', 'D'], // C9
+    'dim': ['C', 'D#', 'F#'],
+    'dim7': ['C', 'D#', 'F#', 'A'],
+    'aug':  ['C', 'E', 'G#'], // C7#5
+    'sus4': ['C', 'F', 'G'],
+    'sus2': ['C', 'D', 'G'],
+    'major6': ['C', 'E', 'G', 'A'], // C6
+    'minor6': ['C', 'D#', 'G', 'A'], // Cm6
+    'major6(add9)': ['C', 'D', 'E', 'G', 'A'],
+});
+const NOTE_BITMASK_CHORD_LOOKUP = function(){
+    const chord_lookup = new Map();
+    const chord_lookup_get_names = MapDefaultGet(chord_lookup, Array);
+    for (let [chord_type_name, notes] of CHORD_NAMES_RELATIVE_TO_C.entries()) {
+        notes = notes.map(text_to_note);
+        for (let root_note of range(NUM_NOTES_IN_OCTAVE)) {
+            const root_note_letter = note_to_text(root_note, {format:'%NOTE_LETTER_WITH_SHARP%'})
+            const chord_name_full = `${root_note_letter}${chord_type_name}`;
+            const notes_in_chord = notes.map(note => note + root_note);
+            chord_lookup_get_names(
+                normalize_notes_to_bitmask(notes_in_chord)
+            ).push(chord_name_full);
+        }
+    }
+    return chord_lookup;
+}();
+export function identify_chord(notes) {
+    const notes_bitmask = normalize_notes_to_bitmask(notes);
+    return NOTE_BITMASK_CHORD_LOOKUP.get(notes_bitmask)
+    //notes = normalize_to_sorted_notes_as_single_octave(notes);
+    //const [chord_name, root_index] = CHORD_LOOKUP[
+    //    normalize_sorted_single_octave_to_interval_pattern_string(notes)
+    //];
+    //const root_note_text = note_to_text(
+    //    notes[root_index],
+    //    format='%NOTE_LETTER_WITH_SHARP%',
+    //);
+    //return `{root_note_text}{chord_type}`;
+}
+assertEquals([
+    [identify_chord(['C', 'E', 'G'].map(text_to_note)), 'Cmajor'],
+    [identify_chord(['C2', 'D#2', 'G1'].map(text_to_note)), 'Cminor'],
+    [identify_chord(['C', 'G'].map(text_to_note)), 'C5'],
+    [identify_chord(['G', 'C'].map(text_to_note)), 'C5'],
+    [identify_chord(['D', 'A'].map(text_to_note)), 'D5'],
+    [identify_chord(['C', 'D#', 'G', 'A#'].map(text_to_note)), 'Cminor7,D#major6'],
+]);
 
 
 export default {
@@ -163,4 +188,5 @@ export default {
     normalize_octave,
     circle_of_fifths_notes,
     circle_of_fifths_text,
+    identify_chord,
 }
