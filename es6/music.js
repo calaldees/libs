@@ -6,6 +6,10 @@ const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NUM_NOTES_IN_OCTAVE = NOTES.length;
 const LOOKUP_STR_NOTE = new Map(zip(NOTES, range(NUM_NOTES_IN_OCTAVE)));
 const LOOKUP_NOTE_STR = invertMap(LOOKUP_STR_NOTE);
+const NOTE_ALIAS = new Map([['C#', 'Db'], ['D#', 'Eb'], ['F#', 'Gb'], ['G#', 'Ab'], ['A#', 'Bb']]);
+for (let [note, note_alias] of NOTE_ALIAS.entries()) {
+    LOOKUP_STR_NOTE.set(note_alias, LOOKUP_STR_NOTE.get(note));
+}
 
 const OFFSET_FROM_C0 = NUM_NOTES_IN_OCTAVE * 2;
 
@@ -14,6 +18,8 @@ export function note_to_text(note, {format='%NOTE_LETTER_WITH_SHARP%%OCTAVE%'}={
         '%NOTE_LETTER_WITH_SHARP%', LOOKUP_NOTE_STR.get(note % NUM_NOTES_IN_OCTAVE)
     ).replace(
         '%OCTAVE%', Math.floor((note - OFFSET_FROM_C0)/NUM_NOTES_IN_OCTAVE)
+    ).replace(
+        '%NOTE_LETTER_WITH_FLAT%', NOTE_ALIAS.get(LOOKUP_NOTE_STR.get(note % NUM_NOTES_IN_OCTAVE))
     );
 }
 assertEquals([
@@ -31,7 +37,8 @@ export function text_to_note(item) {
     if (!isNaN(Number(item))) {
         return Number(item);
     }
-    const regex_match = item.toUpperCase().match(/([ABCDEFG]#?)(-?\d{1,2})?/);
+    item = `${item[0].toUpperCase()}${item.substr(1)}`;
+    const regex_match = item.match(/([ABCDEFG][#b]?)(-?\d{1,2})?/);
     // const regex_match = item.toUpperCase().match(/([ABCDEFG]#?)(-?\d{1,2})/);
     if (!regex_match) {
         //console.warn("Unable to parse note", item);
@@ -46,6 +53,7 @@ assertEquals([
     [text_to_note('C0'), 24],
     [text_to_note('C3'), 60],
     [text_to_note('C#3'), 61],
+    [text_to_note('Db3'), 61],
     [text_to_note('60'), 60],
     [text_to_note(60), 60],
     [text_to_note('C'), 24],
