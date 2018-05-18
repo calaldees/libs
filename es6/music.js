@@ -52,24 +52,6 @@ assertEquals([
     [text_to_note('No!'), null],
 ]);
 
-const MIDI_STATUS_LOOKUP = {
-    0x8: 'note_off',
-    0x9: 'note_on',
-    0xA: 'polyphonic_aftertouch',
-    0xB: 'control_change',
-    0xC: 'program_change',
-    0xD: 'channel_aftertouch',
-    0xE: 'pitch_wheel',
-};
-
-export function midi_status(status_byte) {
-    var status_code = Math.floor(status_byte/16);
-    return {
-        code: status_code,
-        name:MIDI_STATUS_LOOKUP[status_code],
-        channel: status_byte % 16,
-    };
-}
 
 export function normalize_octave(note) {
     return note % NUM_NOTES_IN_OCTAVE;
@@ -181,6 +163,42 @@ assertEquals([
 ]);
 
 
+// System ----------------------------------------------------------------------
+
+const MIDI_STATUS_LOOKUP = {
+    0x8: 'note_off',
+    0x9: 'note_on',
+    0xA: 'polyphonic_aftertouch',
+    0xB: 'control_change',
+    0xC: 'program_change',
+    0xD: 'channel_aftertouch',
+    0xE: 'pitch_wheel',
+};
+function midi_status(status_byte) {
+    var status_code = Math.floor(status_byte/16);
+    return {
+        code: status_code,
+        name: MIDI_STATUS_LOOKUP[status_code],
+        channel: status_byte % 16,
+    };
+}
+export function normalize_javascript_midi_msg(msg) {
+    const midiMsg = {
+        status: midi_status(msg.data[0]),
+        note: msg.data[1],
+        velocity: msg.data[2],
+    }
+    // Normalize note_off status
+    if (midiMsg.status.name == 'note_on' && midiMsg.velocity == 0) {
+        midiMsg.status.code = 0x8;
+        midiMsg.status.name = 'note_off';
+    }
+    return midiMsg;
+}
+
+
+// Exports ---------------------------------------------------------------------
+
 export default {
     midi_status,
     note_to_text,
@@ -189,4 +207,5 @@ export default {
     circle_of_fifths_notes,
     circle_of_fifths_text,
     identify_chord,
+    normalize_javascript_midi_msg,
 }
