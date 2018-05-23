@@ -3,7 +3,7 @@ import {range, zip, buildMapFromObject, invertMap, MapDefaultGet, assertEquals} 
 // Human readable input/output -------------------------------------------------
 
 const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const NUM_NOTES_IN_OCTAVE = NOTES.length;
+export const NUM_NOTES_IN_OCTAVE = NOTES.length;
 const LOOKUP_STR_NOTE = new Map(zip(NOTES, range(NUM_NOTES_IN_OCTAVE)));
 const LOOKUP_NOTE_STR = invertMap(LOOKUP_STR_NOTE);
 const NOTE_ALIAS = new Map([['C#', 'Db'], ['D#', 'Eb'], ['F#', 'Gb'], ['G#', 'Ab'], ['A#', 'Bb']]);
@@ -91,7 +91,7 @@ assertEquals([
 
 
 function normalize_notes_to_bitmask(notes) {
-    return (notes
+    return ([...notes]
         .map(text_to_note)
         .map(normalize_octave)
         .reduce((accumulator, note) => accumulator | 1 << note, 0)
@@ -208,6 +208,7 @@ export function normalize_javascript_midi_msg(msg) {
 // Exports ---------------------------------------------------------------------
 
 export default {
+    NUM_NOTES_IN_OCTAVE,
     midi_status,
     note_to_text,
     text_to_note,
