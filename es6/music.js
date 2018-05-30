@@ -107,6 +107,7 @@ assertEquals([
 ]);
 
 
+// http://jjensen.org/CircleOf5thsFun.html
 const CHORD_NAMES_RELATIVE_TO_C = buildMapFromObject({
     'major': ['C', 'E', 'G'],
     'minor': ['C', 'D#', 'G'],
@@ -123,10 +124,12 @@ const CHORD_NAMES_RELATIVE_TO_C = buildMapFromObject({
     'minor7(add11)': ['C', 'D#', 'G', 'A#', 'F'], //Cm7
     'minor(add7)': ['C', 'D#', 'G', 'B'], //Cm7
     'major9': ['C', 'E', 'G', 'A#', 'D'], // C9
+    '7sus': ['C' ,'F', 'G', 'A#'],
     'dim': ['C', 'D#', 'F#'],
     'dim7': ['C', 'D#', 'F#', 'A'],
+    'dim6': ['C', 'A', 'F#', 'D#'],
     'aug':  ['C', 'E', 'G#'], // C7#5
-    'sus4': ['C', 'F', 'G'],
+    'sus4': ['C', 'F', 'G'], // Csus
     'sus2': ['C', 'D', 'G'],
     'major6': ['C', 'E', 'G', 'A'], // C6
     'minor6': ['C', 'D#', 'G', 'A'], // Cm6
