@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 _here = path.dirname(path.abspath(__file__))
 
 setup(
-    name='calaldees-libs',
+    name='calaldees_libs',
     description='A collection of low level python3 utils for files, network, animation, cryptography',
     version='0.0.0',
     packages=find_packages(),
