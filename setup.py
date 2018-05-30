@@ -6,7 +6,8 @@ _here = path.dirname(path.abspath(__file__))
 setup(
     name='calaldees_libs',
     description='A collection of low level python3 utils for files, network, animation, cryptography',
-    version='0.0.0',
+    version='0.0.1',
+    package_dir={'': 'python3/libs'},
     packages=find_packages(),
     long_description=open(path.join(_here, 'README.md')).read(),
     install_requires=[
