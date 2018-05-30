@@ -7,7 +7,7 @@ setup(
     name='calaldees_libs',
     description='A collection of low level python3 utils for files, network, animation, cryptography',
     version='0.0.1',
-    package_dir={'': 'python3/libs'},
+    package_dir={'': 'python3/lib'},
     packages=find_packages(),
     long_description=open(path.join(_here, 'README.md')).read(),
     install_requires=[
