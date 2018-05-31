@@ -3,7 +3,7 @@
 
 *.log
 *.egg
-*.egg-info
+**/*.egg-info
 __pycache__
 **/.cache/
 **/.vscode/

@@ -4,11 +4,15 @@ from setuptools import setup, find_packages
 _here = path.dirname(path.abspath(__file__))
 
 setup(
-    name='calaldees_libs',
+    name='calaldees',
     description='A collection of low level python3 utils for files, network, animation, cryptography',
     version='0.0.1',
-    package_dir={'': 'python3/lib'},
-    packages=find_packages(),
+    package_dir={'': 'python3'},
+    packages=find_packages(
+        'python3',
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests"],
+    ),
+    include_package_data=True,
     long_description=open(path.join(_here, 'README.md')).read(),
     install_requires=[
     ],
