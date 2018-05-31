@@ -1,5 +1,5 @@
 """
-External dependencys do not be commited to the repo
+External dependencies do not be committed to the repo
 """
 import os
 import json
@@ -57,13 +57,13 @@ def get_file(source, destination, overwrite=False):
 
 
 #-------------------------------------------------------------------------------
-# Download dependencys
+# Download dependencies
 #-------------------------------------------------------------------------------
 
 def fetch_dependencys(dependecys, tracker, destination_path):
     for name, info in dependecys.items():
         try:
-            # Get Versioned dependecys
+            # Get Versioned dependencies
             target_version = info.get('version')
             filenames_hash = hash_data(info.get('target'))
             if target_version:
