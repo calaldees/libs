@@ -10,6 +10,9 @@ export function assertEquals(comparison_tuples) {
         console.assert(a == b, `${a} should-equal ${b}`);
     }
 }
+export function assertEqualsObject(comparison_tuples) {
+    return assertEquals(comparison_tuples.map(v => v.map(JSON.stringify)))
+};
 
 
 export function* range(target, start=0, step=1) {
@@ -65,5 +68,5 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 
 
 export default {
-    range, zip, buildMapFromObject, invertMap, MapDefaultGet, assertEquals,
+    range, zip, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
 }
