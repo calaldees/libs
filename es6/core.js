@@ -19,6 +19,13 @@ export function* range(target, start=0, step=1) {
     for (let i=start ; i<target ; i+=step) {yield i;}
 }
 
+export function* enumerate(iterable) {
+    let count = 0;
+    for (let item of iterable) {
+        yield [count++, item];
+    }
+}
+
 export function* zip(a, b) {
     const ai = a[Symbol.iterator]();
     const bi = b[Symbol.iterator]();
@@ -68,5 +75,5 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 
 
 export default {
-    range, zip, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
+    range, enumerate, zip, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
 }

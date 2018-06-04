@@ -207,7 +207,10 @@ export function normalize_javascript_midi_msg(msg) {
     return midiMsg;
 }
 assertEqualsObject([
-    [normalize_javascript_midi_msg({data:[0x9 * 16, 24, 8]}), {status: {code: 0x9, name: 'note_on', channel: 0}, note: 24, velocity: 8}]
+    [
+        normalize_javascript_midi_msg({data:[0x9 * 16, 24, 8]}),
+        {status: {code: 0x9, name: 'note_on', channel: 0}, note: 24, velocity: 8}
+    ],
 ]);
 
 // Exports ---------------------------------------------------------------------
