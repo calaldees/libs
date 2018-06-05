@@ -27,6 +27,7 @@ export function* enumerate(iterable) {
 }
 
 export function* zip(a, b) {
+    // Upgrade this to take x number of inputs
     const ai = a[Symbol.iterator]();
     const bi = b[Symbol.iterator]();
     while (true) {
@@ -36,6 +37,17 @@ export function* zip(a, b) {
         yield [an.value, bn.value];
     }
 }
+
+export function* previousValueIterator(iterable) {
+    let previous_value = null;
+    for (let i of iterable) {
+        yield [previous_value, i];
+        previous_value = i;
+    }
+}
+assertEquals([
+    [ `${[...previousValueIterator([1,2,3])]}`, `${[ [null,1], [1,2], [2,3]] }`],
+]);
 
 export function buildMapFromObject(obj) {
     // https://stackoverflow.com/questions/36644438/how-to-convert-a-plain-object-into-an-es6-map
@@ -75,5 +87,5 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 
 
 export default {
-    range, enumerate, zip, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
+    range, enumerate, zip, previousValueIterator, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
 }
