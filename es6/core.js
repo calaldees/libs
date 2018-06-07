@@ -18,25 +18,46 @@ export function assertEqualsObject(comparison_tuples) {
 export function* range(target, start=0, step=1) {
     for (let i=start ; i<target ; i+=step) {yield i;}
 }
+assertEqualsObject([
+    [ [...range(3)], [0,1,2] ],
+]);
 
 export function* enumerate(iterable) {
     let count = 0;
     for (let item of iterable) {
-        yield [count++, item];
+        yield (item[Symbol.iterator]) ? [count++, ...item] : [count++, item];
     }
 }
+assertEqualsObject([
+    [ [...enumerate(['a','b','c'])], [[0,'a'],[1, 'b'],[2,'c']] ],
+    [ [...enumerate([['a','a'],['b','b'],['c','c']])], [[0,'a','a'],[1,'b','b'],[2,'c','c']] ],
+]);
 
-export function* zip(a, b) {
-    // Upgrade this to take x number of inputs
-    const ai = a[Symbol.iterator]();
-    const bi = b[Symbol.iterator]();
+export function all(iterable) {
+    for (let i of iterable) {
+        if (!i) {return false;}
+    }
+    return true;
+}
+assertEquals([
+    [ all([true, true]) , true],
+    [ all([true, false]) , false],
+    [ all([true, 'bob', 1]) , true],
+]);
+
+export function* zip(...iterables) {
+    const iterators = [...iterables].map(iterable => iterable[Symbol.iterator]());
     while (true) {
-        const an = ai.next();
-        const bn = bi.next();
-        if (an.done && bn.done) {break;}
-        yield [an.value, bn.value];
+        const iterable_items = iterators.map(iterator => iterator.next());
+        if (all(iterable_items.map(i => i.done))) {break;}
+        yield iterable_items.map(i => i.value);
     }
 }
+assertEqualsObject([
+    [ [...zip(['a','b'],['c','d'])], [['a','c'],['b','d']] ],
+    [ [...zip(['a','b'],['c','d'],['e','f'])], [['a','c','e'],['b','d','f']] ],
+]);
+
 
 export function* previousValueIterator(iterable) {
     let previous_value = null;
