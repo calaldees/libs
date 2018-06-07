@@ -58,6 +58,15 @@ assertEqualsObject([
     [ [...zip(['a','b'],['c','d'],['e','f'])], [['a','c','e'],['b','d','f']] ],
 ]);
 
+export function* chain(...iterables) {
+    for (let iterable of iterables) {
+        yield* iterable;
+    }
+}
+assertEqualsObject([
+    [ [...chain(['a','b'],['c','d'])], ['a','b','c','d'] ],
+]);
+
 
 export function* previousValueIterator(iterable) {
     let previous_value = null;
@@ -108,5 +117,5 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 
 
 export default {
-    range, enumerate, zip, previousValueIterator, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
+    range, enumerate, all, zip, chain, previousValueIterator, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
 }
