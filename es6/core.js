@@ -25,12 +25,13 @@ assertEqualsObject([
 export function* enumerate(iterable) {
     let count = 0;
     for (let item of iterable) {
-        yield (item[Symbol.iterator]) ? [count++, ...item] : [count++, item];
+        //yield (item[Symbol.iterator]) ? [count++, ...item] : [count++, item];
+        yield [count++, item];
     }
 }
 assertEqualsObject([
     [ [...enumerate(['a','b','c'])], [[0,'a'],[1, 'b'],[2,'c']] ],
-    [ [...enumerate([['a','a'],['b','b'],['c','c']])], [[0,'a','a'],[1,'b','b'],[2,'c','c']] ],
+    [ [...enumerate([['a','a'],['b','b'],['c','c']])], [[0,['a','a']],[1,['b','b']],[2,['c','c']]] ],
 ]);
 
 export function all(iterable) {
@@ -56,15 +57,22 @@ export function* zip(...iterables) {
 assertEqualsObject([
     [ [...zip(['a','b'],['c','d'])], [['a','c'],['b','d']] ],
     [ [...zip(['a','b'],['c','d'],['e','f'])], [['a','c','e'],['b','d','f']] ],
+    [ [...zip(['a','b'],['c'])], [['a','c'],['b',null]] ],
 ]);
 
 export function* chain(...iterables) {
     for (let iterable of iterables) {
-        yield* iterable;
+        if (iterable[Symbol.iterator]) {
+            yield* iterable;
+        }
+        else {
+            yield iterable;
+        }
     }
 }
 assertEqualsObject([
     [ [...chain(['a','b'],['c','d'])], ['a','b','c','d'] ],
+    [ [...chain(['a','b'],'c','d')], ['a','b','c','d'] ],
 ]);
 
 
