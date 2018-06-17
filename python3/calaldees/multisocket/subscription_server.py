@@ -106,7 +106,7 @@ def get_args():
     parser.add_argument('-t', '--tcp_port', type=int, help='TCP port', default=DEFAULT_TCP_PORT)
     parser.add_argument('-w', '--websocket_port', type=int, help='WebSocket port', default=DEFAULT_WEBSOCKET_PORT)
     parser.add_argument('--echo_back_to_source', action='store_true', help='All messages are reflected back to the client source', default=False)
-    parser.add_argument('--auto_subscribe_to_all', action='store_true', help='If no explicit subscriptions are given then subscribe to all messages', default=True)
+    parser.add_argument('--auto_subscribe_to_all', action='store_true', help='If no explicit subscriptions are given then subscribe to all messages', default=False)
 
     args = parser.parse_args()
     return vars(args)
