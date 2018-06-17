@@ -1,7 +1,7 @@
 # Dear Python3 ... this is retarded ...
 try:
     from .multisocket_server import ServerManager, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
-except SystemError:
+except (SystemError, ModuleNotFoundError):
     from multisocket_server import ServerManager, DEFAULT_TCP_PORT, DEFAULT_WEBSOCKET_PORT
 
 
