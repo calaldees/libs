@@ -7,13 +7,13 @@ from client_reconnect import SubscriptionClient
 DEFAULT_SUBSCRIPTION_SERVER_HOSTNAME = 'localhost:9872'
 
 
-class URLtoSubscriptionServerBridge(SubscriptionClient):
+class URLtoSubscriptionServerBridge():
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.client = SubscriptionClient(*args, **kwargs)
 
     def on_get(self, request, response):
-        if self.socket:
-            self.send_message({**json.load(request.stream), **request.params})
+        if self.client.socket:
+            self.client.send_message({**json.load(request.stream), **request.params})
             response.status = falcon.HTTP_200
         else:
             response.status = falcon.HTTP_500
