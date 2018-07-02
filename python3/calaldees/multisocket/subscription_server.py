@@ -107,13 +107,14 @@ def get_args():
     parser.add_argument('-w', '--websocket_port', type=int, help='WebSocket port', default=DEFAULT_WEBSOCKET_PORT)
     parser.add_argument('--echo_back_to_source', action='store_true', help='All messages are reflected back to the client source', default=False)
     parser.add_argument('--auto_subscribe_to_all', action='store_true', help='If no explicit subscriptions are given then subscribe to all messages', default=False)
+    parser.add_argument('--log_level', action='store', type=int, help='loglevel of output to stdout', default=logging.DEBUG)
 
     args = parser.parse_args()
     return vars(args)
 
 if __name__ == "__main__":
     options = get_args()
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=options['log_level'])
     manager = SubscriptionEchoServerManager(**options)
     import time
     try:
