@@ -15,8 +15,11 @@ export function queryStringListOrInit(
             .then(response => response.json())
             .then(initFunc)
             .catch(error => {
-                console.error(`Unable to load ${PATH} for display_config. Falling back to default`, error);
-                initFuncDefault();
+                console.error(`Unable to load ${PATH}`, error);
+                if (initFuncDefault) {
+                    console.warn(`Falling back to default`)
+                    initFuncDefault();
+                }
             })
         ;
     } else {
@@ -30,13 +33,20 @@ export function queryStringListOrInit(
                 _urlParams.append(QUERY_STRING_KEY_file, PATH + file);
                 elementContainer.insertAdjacentHTML('beforeend', `<li><a href="${window.location.pathname}?${_urlParams.toString()}">${file}</a></li>`);
             }
-            hostElement.appendChild(elementContainer);
+            const _hostElement = hostElement || document.getElementsByTagName('body').item(0);
+            _hostElement.appendChild(elementContainer);
         }
         console.log(`Loading ${PATH}. You can optionally override this path with querystring param ${QUERY_STRING_KEY_index}`);
         fetch(PATH)
             .then(response => response.json())
             .then(data => renderList(data))
-            .catch(error => console.error(`Failed to list files from ${PATH}`, error))
+            .catch(error => {
+                console.error(`Failed to list files from ${PATH}`, error);
+                if (initFuncDefault) {
+                    console.warn(`Falling back to default`)
+                    initFuncDefault();
+                }
+            })
         ;
     }
 }

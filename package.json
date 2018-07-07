@@ -1,37 +1,35 @@
 {
-    "name": "calaldees_libs",
-    "version": "0.0.1",
-    "description": "libs",
-    "main": "static/export.bundle.js",
-    "dependencies": {
-    },
-    "devDependencies": {
-      "karma": "latest",
-      "karma-chrome-launcher": "latest",
-      "karma-firefox-launcher": "latest",
-      "karma-jasmine": "latest",
-      "karma-sourcemap-loader": "latest",
-      "karma-spec-reporter": "latest"
-    },
-    "config": {
-      "ghooks": {
-        "pre-commit": "opt --in pre-commit --exec \"npm run validate\""
-      }
-    },
-    "scripts": {
-      "start": "webpack-dev-server",
-      "prod": "webpack-dev-server -p",
-      "build": "webpack -p",
-      "lint": "eslint ./src ./webpack.config.js -f table || true",
-      "test": "karma start",
-      "test:watch": "karma start --autoWatch=true --singleRun=false"
-    },
-    "repository": "git@github.com:calaldees/libs.git",
-    "keywords": [
-        "core"
-    ],
-    "author": "calaldees@gmail.com",
-    "license": "MIT",
-    "private": false
-  }
-  
+  "name": "calaldees_libs",
+  "version": "0.0.1",
+  "description": "libs",
+  "main": "",
+  "dependencies": {},
+  "devDependencies": {
+    "karma": "latest",
+    "karma-chrome-launcher": "latest",
+    "karma-firefox-launcher": "latest",
+    "karma-jasmine": "latest",
+    "karma-sourcemap-loader": "latest",
+    "karma-spec-reporter": "latest"
+  },
+  "config": {
+    "ghooks": {
+      "pre-commit": "opt --in pre-commit --exec \"npm run validate\""
+    }
+  },
+  "scripts": {
+    "start": "webpack-dev-server",
+    "prod": "webpack-dev-server -p",
+    "build": "webpack -p",
+    "lint": "eslint ./src ./webpack.config.js -f table || true",
+    "test": "karma start",
+    "test:watch": "karma start --autoWatch=true --singleRun=false"
+  },
+  "repository": "git@github.com:calaldees/libs.git",
+  "keywords": [
+    "core"
+  ],
+  "author": "calaldees@gmail.com",
+  "license": "MIT",
+  "private": false
+}
