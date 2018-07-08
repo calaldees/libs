@@ -52,6 +52,13 @@ def duplicates(list_with_duplicates):
     return [item for item in list_with_duplicates if not set_without_duplicates.pop(item)]
 
 
+# https://stackoverflow.com/a/434411/3356840
+from itertools import zip_longest
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
+
+
 def freeze(items):
     """
     todo: tests
@@ -434,7 +441,7 @@ def fast_scan(root, path=None, search_filter=fast_scan_regex_filter()):
 def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **kwargs):
     """
     Used in a separate thread to indicate if a file has changed
-    onchange_function is deprecated and will be removed when lightingAutomation2 is live
+    Use onchange_function if working in a single thread mode
     """
 
     if isinstance(paths, str):
@@ -465,11 +472,14 @@ def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **
                 report_filechange({(f.relative, f.abspath) for f in changed_files_diff})
             time.sleep(rescan_interval)
 
-    thread = threading.Thread(target=scan_loop, args=())  # May need to update this with python3 way of threading
-    thread.daemon = True
-    thread.start()
+    if onchange_function:
+        scan_loop()
+    else:
+        thread = threading.Thread(target=scan_loop, args=())  # May need to update this with python3 way of threading
+        thread.daemon = True
+        thread.start()
 
-    return queue
+        return queue
 
 
 def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65535):
