@@ -271,6 +271,19 @@ class WebSocketRequestHandler(socketserver.BaseRequestHandler):
 
         websocket_request = str(websocket_request, 'utf8')
 
+        # Store the headers that this connection was created with
+        # so we can use them for later processing (eg looking at
+        # the session cookie for authentication)
+        try:
+            # HTTP Headers happen to use the same MIME
+            # format as defined in the email spec.
+            import email
+            request_line, headers_alone = websocket_request.split('\r\n', 1)
+            msg = email.message_from_string(headers_alone)
+            self.original_headers = dict(msg.items())
+        except Exception:
+            self.original_headers = {}
+
         # HyBi 10 handshake
         if 'Sec-WebSocket-Key' in websocket_request:
             websocket_key     = re.search(r'Sec-WebSocket-Key:\s?(.*)', websocket_request).group(1).strip()

@@ -35,17 +35,29 @@ class AuthEchoServerManager(ServerManager):
             log.debug('authenticating {0}'.format(key))
             if self.authenticator(key):
                 self.clients_authenticated.append(source)
-                log.debug('authenticated')
+                log.debug('authenticated via first message')
+                return
+            elif (
+                hasattr(source.client_obj, "original_headers") and
+                self.authenticator(source.client_obj.original_headers.get('Cookie', ""))
+            ):
+                self.clients_authenticated.append(source)
+                log.debug('authenticated via cookie')
+                # our first message is not an auth message, so treat it
+                # as a real message - continue to message processing
+                # instead of returning
+                # return
             else:
                 log.debug('rejected')
                 source.close()
-        else:
-            try: source_id=source.id
-            except: source_id=None
-            log.info('message {0} - {1}'.format(source_id, str(data, 'utf8')))
-            #if isinstance(data,str):
-            #    data = data.encode('utf8')
-            self.send(data, source)
+                return
+
+        try: source_id=source.id
+        except: source_id=None
+        log.info('message {0} - {1}'.format(source_id, str(data, 'utf8')))
+        #if isinstance(data,str):
+        #    data = data.encode('utf8')
+        self.send(data, source)
 
     def stop(self):
         self.send(b'server_shutdown')
