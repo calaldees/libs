@@ -60,6 +60,9 @@ export function get_beat(time_current, bpm, time_start=0.0) {
     return Math.max(0.0, ((time_current - time_start) / 60) * bpm)
 }
 
+export function timestamp_to_timecode(timestamp, bpm, timesigniture=parse_timesigniture('4:4')) {
+    return beat_to_timecode(get_beat(timestamp, bpm), timesigniture);
+}
 
 export function get_time(timecode, timesigniture, bpm) {
     return (timecode_to_beat(timecode, timesigniture) / bpm) * 60
@@ -78,5 +81,6 @@ export default {
     timecode_to_beat,
     beat_to_timecode,
     get_beat,
+    timestamp_to_timecode,
     get_time,
 }
