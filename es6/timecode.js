@@ -75,6 +75,21 @@ assertEquals([
 ]);
 
 
+export function next_frame_from_timecode(timecode, frame_rate) {
+    return Math.ceil(timecode * frame_rate);
+}
+
+export function nearest_timecode_to_next_frame(timecode, frame_rate) {
+    return next_frame_from_timecode(timecode, frame_rate) / frame_rate;
+}
+assertEquals([
+    [nearest_timecode_to_next_frame(11.0, 1), 11.0],
+    [nearest_timecode_to_next_frame(11.1, 1), 12.0],
+    [nearest_timecode_to_next_frame(11.0, 4), 11.0],
+    [nearest_timecode_to_next_frame(11.72, 4), 11.75],
+    [nearest_timecode_to_next_frame(11.1, 4), 11.25],
+]);
+
 
 export default {
     parse_timesigniture,
@@ -83,4 +98,6 @@ export default {
     get_beat,
     timestamp_to_timecode,
     get_time,
+    next_frame_from_timecode,
+    nearest_timecode_to_next_frame,
 }
