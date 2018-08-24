@@ -34,5 +34,8 @@ class SingleOutputStopableProcess():
         )
         self.process.start()
 
+    def is_running(self):
+        return self.close_event and not self.close_event.is_set()
+
     def onComplete(self):
         raise NotImplementedError()
