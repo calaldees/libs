@@ -817,6 +817,18 @@ def convert_str(value, return_type):
     assert False, 'unable to convert {0} to {1}'.format(value, return_type)
 
 
+def _string_list_format_hack(value):
+    """
+    An inverse hack for convert_str list format
+    """
+    # Hack to fix reverting to empty list
+    #if value == []:
+    #    return '[]'
+    if isinstance(value, (list, tuple)):
+        return f"[{', '.join(map(str,value))}]"
+    return value
+
+
 #http://stackoverflow.com/questions/4126348/how-do-i-rewrite-this-function-to-implement-ordereddict/4127426#4127426
 class OrderedDefaultdict(collections.OrderedDict):
     def __init__(self, *args, **kwargs):
