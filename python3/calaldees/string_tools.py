@@ -88,8 +88,6 @@ baseconvert.BASE62 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuv
 
 
 TextOverlap = namedtuple('TextOverlap', ('index', 'text'))
-
-
 def commonOverlap(text1, text2):
     """
     https://neil.fraser.name/news/2010/11/04/
@@ -163,3 +161,4 @@ def substring_in(substrings, string_list, ignore_case=True):
             if ss in s:
                 return True
     return False
+

@@ -1,4 +1,5 @@
-from .misc import fast_scan, defaultdict_recursive
+from .scan import fast_scan
+from ..data import defaultdict_recursive
 
 
 class FolderStructure(object):
