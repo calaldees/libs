@@ -1,5 +1,14 @@
 from os import environ
 import re
+from functools import partial
+
+
+def _render_env(value, _get_env):
+    value_sub_keys = tuple(match.group(1) for match in re.finditer(r'{(.*?)}', value))
+    return value.format(**{
+        value_sub_key: _get_env(value_sub_key)
+        for value_sub_key in value_sub_keys
+    })
 
 
 def get_env(key, _environ=environ, _environ_templates={}):
@@ -21,16 +30,12 @@ def get_env(key, _environ=environ, _environ_templates={}):
     assert _environ, 'os.environ should be passed'
     if key in _environ:
         return _environ[key]
-    assert key in _environ_templates, 'unknown ENV'
+    assert key in _environ_templates, f'unknown environ key: {key}'
     value = _environ_templates[key]
     if callable(value):
         _return = value()
     elif isinstance(value, str):
-        value_sub_keys = tuple(match.group(1) for match in re.finditer(r'{(.*?)}', value))
-        _return = value.format(**{
-            value_sub_key: get_env(value_sub_key, _environ=_environ, _environ_templates=_environ_templates)
-            for value_sub_key in value_sub_keys
-        })
+        _return = _render_env(value, partial(get_env, _environ=_environ, _environ_templates=_environ_templates))
     else:
         raise Exception(f'_environ_templates[{key}] is not processable')
     _environ[key] = _return
