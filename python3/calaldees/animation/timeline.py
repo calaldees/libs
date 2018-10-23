@@ -1,5 +1,5 @@
 from collections import namedtuple
-from functools import wraps, reduce
+from functools import reduce
 from numbers import Number
 from copy import copy
 

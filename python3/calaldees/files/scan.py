@@ -6,11 +6,12 @@ from itertools import chain
 import hashlib
 
 from .exts import file_ext
+from ..lazy import LazyString
+
 
 
 import logging
 log = logging.getLogger(__name__)
-
 
 
 def fast_scan_regex_filter(file_regex=None, ignore_regex=r'\.git'):
@@ -45,7 +46,6 @@ def fast_scan(root, path=None, search_filter=fast_scan_regex_filter()):
                 yield sub_dir_entry
 
 
-
 def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65535):
     if not hasher:
         return
@@ -65,3 +65,21 @@ def hashfile(filehandle, hasher=hashlib.sha256, blocksize=65535):
         filehandle.close()
         log.debug('hashfile - {0} - {1}'.format(digest, filename))
     return digest
+
+
+def hash_data(data, hasher=hashlib.sha256):
+    hasher = hasher()
+    hasher.update(str(data).encode())
+    return hasher.hexdigest()
+
+
+def hashfiles(*args, **kwargs):
+    """
+    use same args as fast_scan
+    """
+    file_hashs = tuple(sorted(
+        (filescan.relative, filescan.hash)
+        for filescan in fast_scan(*args, **kwargs)
+    ))
+    #log.debug(file_hashs)
+    return hash_data(file_hashs)
