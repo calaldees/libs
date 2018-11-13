@@ -2,7 +2,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def clean_docker(project_id, ids_to_remove=(), docker_client=None):
+def clean_docker(project_id, ids_to_remove=(), docker_client=None, dry_run=True):
     """
     Remove 
      - containers
@@ -21,7 +21,8 @@ def clean_docker(project_id, ids_to_remove=(), docker_client=None):
             for _id in ids_to_remove:
                 if _id in item.name:
                     log.info(f'Removing {title} -> {item.name}')
-                    item.remove(**kwargs)
+                    if not dry_run:
+                        item.remove(**kwargs)
 
     log.info(f"""Removing docker state for {ids_to_remove}""")
     remove_items('containers', docker_client.containers.list(), ids_to_remove, force=True)
