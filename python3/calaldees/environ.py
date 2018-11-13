@@ -3,20 +3,30 @@ import re
 from functools import partial
 
 
-def _render_env(value, _get_env):
+def _render_env(value, _get_env, **kwargs):
+    """
+    >>> _render_env(
+    ...     '''My value is {value} and it is {overlay}''',
+    ...     partial(get_env, _environ={
+    ...         'value': 'bob',
+    ...     }),
+    ...     overlay='cool',
+    ... )
+    'My value is bob and it is cool'
+    """
     value_sub_keys = tuple(match.group(1) for match in re.finditer(r'{(.*?)}', value))
     return value.format(**{
-        value_sub_key: _get_env(value_sub_key)
+        value_sub_key: _get_env(value_sub_key, **kwargs)
         for value_sub_key in value_sub_keys
     })
 
 
-def get_env(key, _environ=environ, _environ_templates={}):
+def get_env(key, _environ=environ, _environ_templates={}, **kwargs):
     """
     >>> get_env(
-    ...    'IMAGE_API', 
-    ...    _environ={
-    ...        'IMAGE_PREFIX': 'gitlab.company.co.uk:1234/ci-testing',
+    ...     'IMAGE_API', 
+    ...     _environ={
+    ...         'IMAGE_PREFIX': 'gitlab.company.co.uk:1234/ci-testing',
     ...     }, 
     ...     _environ_templates={
     ...         'IMAGE_API': '{IMAGE_PREFIX_API}/api:{VERSION_API}',
@@ -24,10 +34,13 @@ def get_env(key, _environ=environ, _environ_templates={}):
     ...         'IMAGE_PREFIX_API': '{IMAGE_PREFIX}/api_repo',
     ...         'VERSION_API': lambda: 'lazy_value',
     ...     },
+    ...     OverlayTestValue='unused in this test',
     ... )
     'gitlab.company.co.uk:1234/ci-testing/api_repo/api:lazy_value'
     """
     assert _environ, 'os.environ should be passed'
+    if key in kwargs:
+        return kwargs[key]
     if key in _environ:
         return _environ[key]
     assert key in _environ_templates, f'unknown environ key: {key}'
