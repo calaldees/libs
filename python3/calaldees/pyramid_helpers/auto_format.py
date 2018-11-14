@@ -15,7 +15,7 @@ import pyramid.response
 import logging
 log = logging.getLogger(__name__)
 
-from ..misc import json_object_handler
+from ..json import json_object_handler
 from . import request_from_args
 
 #-------------------------------------------------------------------------------

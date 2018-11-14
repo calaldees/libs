@@ -7,7 +7,7 @@ from functools import lru_cache
 from pyramid.view import view_config, view_defaults
 import pyramid.response
 
-from ...misc import hash_data
+from ...hash import hash_data
 
 import logging
 log = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ import datetime
 import enum
 import re
 
-from .string_tools import convert_str
+from .date_tools import dateutil_parser
 
 
 def json_object_handler(obj):
@@ -46,7 +46,7 @@ def json_object_handler_inverse(obj):
         return [json_object_handler_inverse(o) for o in obj]
     if isinstance(obj, str):
         if re.match(r'\d+-\d+-\d+T\d+:\d+:\d+', obj):
-            return convert_str(obj, datetime.datetime)
+            return dateutil_parser.parse(obj)
         if re.match(r'__enum__\.(?P<type>.+)\.(?P<name>.+)\.(?P<value>\d+)', obj):
             # TODO: Require register dispatch methods for registering enum types
             # This should be split into another module

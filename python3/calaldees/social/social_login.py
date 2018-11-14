@@ -1,7 +1,7 @@
 import hashlib
 import time
 
-from ..misc import first
+from ..data import first
 from ..pyramid_helpers.auto_format2 import action_ok, action_error
 
 import logging

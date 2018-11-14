@@ -5,7 +5,7 @@ import logging
 log = logging.getLogger(__name__)
 
 from . import request_from_args
-from ..misc import normalize_datetime
+from ..date_tools import normalize_datetime
 
 
 #-------------------------------------------------------------------------------

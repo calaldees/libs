@@ -1,4 +1,6 @@
-from ..misc import random_string, now
+from ..date_tools import now
+from ..string_tools import random_string
+
 from .events import SessionCreated
 
 import logging

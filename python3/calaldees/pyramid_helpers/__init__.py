@@ -14,7 +14,7 @@ except ImportError:
 import pyramid.request
 import pyramid.threadlocal
 
-from ..misc import json_object_handler
+from ..json import json_object_handler
 
 
 def request_from_args(args):
