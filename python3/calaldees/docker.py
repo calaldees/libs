@@ -2,6 +2,23 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def docker_image_in_registry(image_name, docker_client=None):
+    if not docker_client:
+        import docker
+        docker_client = docker.from_env()
+
+    try:
+        return docker_client.images.get_registry_data(image_name)
+    except docker.errors.APIError:
+        pass
+        # may not have correct docker version to utilise this
+    try:
+        return docker_client.images.pull(image_name)
+    except docker.errors.NotFound:
+        pass
+    return False
+
+
 def clean_docker(project_id, ids_to_remove=(), docker_client=None, dry_run=True):
     """
     Remove 
