@@ -1,11 +1,11 @@
+import docker
+
 import logging
 log = logging.getLogger(__name__)
 
 
 def docker_image_in_registry(image_name, docker_client=None):
-    if not docker_client:
-        import docker
-        docker_client = docker.from_env()
+    docker_client = docker_client or docker.from_env()
 
     try:
         return docker_client.images.get_registry_data(image_name)
@@ -29,9 +29,7 @@ def clean_docker(project_id, ids_to_remove=(), docker_client=None, dry_run=True)
     ids_to_remove = ids_to_remove or ('',)
     ids_to_remove = tuple(f'{project_id}{_id}' for _id in ids_to_remove)
 
-    if not docker_client:
-        import docker
-        docker_client = docker.from_env()
+    docker_client = docker_client or docker.from_env()
 
     def remove_items(title, items, ids_to_remove, **kwargs):
         for item in items:
