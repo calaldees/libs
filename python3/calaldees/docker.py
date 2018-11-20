@@ -1,10 +1,16 @@
 import docker
 
+from .data import flatten
+from .string_tools import substring_in
+
 import logging
 log = logging.getLogger(__name__)
 
 
 def docker_image_in_registry(image_name, docker_client=None):
+    """
+    https://stackoverflow.com/questions/32113330/check-if-imagetag-combination-already-exists-on-docker-hub
+    """
     docker_client = docker_client or docker.from_env()
 
     try:
@@ -19,7 +25,25 @@ def docker_image_in_registry(image_name, docker_client=None):
     return False
 
 
-def clean_docker(project_id, ids_to_remove=(), docker_client=None, dry_run=True):
+def clean_images(image_prefix, docker_client=None, dry_run=False):
+    """
+    Remove all docker images managed/created from this project (images prefixed with {IMAGE_PREFIX}).
+    """
+    docker_client = docker_client or docker.from_env()
+
+    for image in docker_client.images.list():
+        if substring_in(image_prefix, flatten(image.tags)):
+            if dry_run:
+                log.info(f'remove {image.id}')
+            else:
+                try:
+                    docker_client.images.remove(image.id, force=True)
+                except Exception as ex:
+                    import traceback
+                    traceback.print_exc()
+
+
+def clean_containers(project_id, ids_to_remove=(), docker_client=None, dry_run=True):
     """
     Remove 
      - containers
