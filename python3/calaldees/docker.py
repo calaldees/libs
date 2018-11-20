@@ -12,10 +12,10 @@ def clean_docker_compose_name(value):
     """
     docker-compose names are compacted - we reproduce the same logic here.
 
-    >>> clean_docker_compose_name('company.best_build')
-    'companybestbuild'
+    >>> clean_docker_compose_name('company.best_build11')
+    'companybestbuild11'
     """
-    return re.sub(r'[+-_.]', '', value)
+    return re.sub(r'[-_.]', '', value)
 
 
 def docker_image_in_registry(image_name, docker_client=None):
