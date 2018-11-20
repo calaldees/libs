@@ -1,10 +1,21 @@
 import docker
+import re
 
 from .data import flatten
 from .string_tools import substring_in
 
 import logging
 log = logging.getLogger(__name__)
+
+
+def clean_docker_compose_name(value):
+    """
+    docker-compose names are compacted - we reproduce the same logic here.
+
+    >>> clean_docker_compose_name('company.best_build')
+    'companybestbuild'
+    """
+    return re.sub(r'[+-_.]', '', value)
 
 
 def docker_image_in_registry(image_name, docker_client=None):

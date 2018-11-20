@@ -21,7 +21,7 @@ def _render_env(value, _get_env, **kwargs):
     })
 
 
-def get_env(key, _environ=environ, _environ_templates={}, **kwargs):
+def get_env(key, _environ=environ, _environ_templates={}, _post_render_funcs={}, **kwargs):
     """
     >>> get_env(
     ...     'IMAGE_API', 
@@ -34,9 +34,12 @@ def get_env(key, _environ=environ, _environ_templates={}, **kwargs):
     ...         'IMAGE_PREFIX_API': '{IMAGE_PREFIX}/api_repo',
     ...         'VERSION_API': lambda: 'lazy_value',
     ...     },
+    ...     _post_render_funcs={
+    ...         'VERSION_API': lambda value: value.replace('_', ''),
+    ...     },
     ...     OverlayTestValue='unused in this test',
     ... )
-    'gitlab.company.co.uk:1234/ci-testing/api_repo/api:lazy_value'
+    'gitlab.company.co.uk:1234/ci-testing/api_repo/api:lazyvalue'
     """
     assert _environ, 'os.environ should be passed'
     if key in kwargs:
@@ -48,8 +51,9 @@ def get_env(key, _environ=environ, _environ_templates={}, **kwargs):
     if callable(value):
         _return = value()
     elif isinstance(value, str):
-        _return = _render_env(value, partial(get_env, _environ=_environ, _environ_templates=_environ_templates))
+        _return = _render_env(value, partial(get_env, _environ=_environ, _environ_templates=_environ_templates, _post_render_funcs=_post_render_funcs))
     else:
         raise Exception(f'_environ_templates[{key}] is not processable')
+    _return = _post_render_funcs.get(key, lambda x: x)(_return)
     _environ[key] = _return
     return _return
