@@ -33,9 +33,8 @@ def clean_images(image_prefix, docker_client=None, dry_run=False):
 
     for image in docker_client.images.list():
         if substring_in(image_prefix, flatten(image.tags)):
-            if dry_run:
-                log.info(f'remove {image.id}')
-            else:
+            log.info(f'remove {image.id}')
+            if not dry_run:
                 try:
                     docker_client.images.remove(image.id, force=True)
                 except Exception as ex:
