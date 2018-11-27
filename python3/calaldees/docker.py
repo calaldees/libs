@@ -1,4 +1,3 @@
-import docker
 import re
 
 from .data import flatten
@@ -6,6 +5,25 @@ from .string_tools import substring_in
 
 import logging
 log = logging.getLogger(__name__)
+
+try:
+    import docker
+except ImportError:
+    log.error('python docker package not present')
+
+
+def convert_docker_absolute_windows_path(path):
+    """
+    >>> convert_docker_absolute_windows_path('/path/linux')
+    '/path/linux'
+    >>> convert_docker_absolute_windows_path('C:\\\\Users\\\\me')
+    '//C//Users/me'
+    """
+    RE_WINDOWS_PATH_PREFIX = re.compile(r'^(\w):\\')
+    if RE_WINDOWS_PATH_PREFIX.match(path):
+        path = RE_WINDOWS_PATH_PREFIX.sub(r'//\1//', path)
+        path = path.replace('\\', '/')
+    return path
 
 
 def clean_docker_compose_name(value):
@@ -55,7 +73,7 @@ def clean_images(image_prefix, docker_client=None, dry_run=False):
 
 def clean_containers(project_id, ids_to_remove=(), docker_client=None, dry_run=True):
     """
-    Remove 
+    Remove
      - containers
      - volumes
      - networks
