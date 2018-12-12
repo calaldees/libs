@@ -163,12 +163,12 @@ def merge_dicts(*args, _allow_merge_condition_function=lambda v: v):
 
     This was created to prevent merging of dicts where the value of the key was 'None'
 
-    >>> merge_dicts({'a': 1, 'b': 2}, {'a': 4, 'b': None, 'c': 3})
-    {'a': 4, 'b': 2, 'c': 3}
+    >>> merge_dicts({'a': 1, 'b': 2, 'c': None}, {'a': 5, 'b': None, 'c': 3, 'd': 4})
+    {'a': 5, 'b': 2, 'c': 3, 'd': 4}
     """
     def _merge_dicts(accumulator, i):
         for k, v in i.items():
-            if _allow_merge_condition_function(v):
+            if (k in accumulator and _allow_merge_condition_function(v)) or (k not in accumulator):
                 accumulator[k] = v
         return accumulator
     return reduce(_merge_dicts, args, {})
