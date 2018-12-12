@@ -1,4 +1,5 @@
 import collections
+from functools import reduce
 
 
 def subdict(d, keys):
@@ -153,3 +154,21 @@ class OrderedDefaultdict(collections.OrderedDict):
 
 def defaultdict_recursive():
     return collections.defaultdict(defaultdict_recursive)
+
+
+def merge_dicts(*args, _allow_merge_condition_function=lambda v: v):
+    """
+    merge_dicts - with function to marshal the merging of a key
+    merge single level
+
+    This was created to prevent merging of dicts where the value of the key was 'None'
+
+    >>> merge_dicts({'a': 1, 'b': 2}, {'a': 4, 'b': None, 'c': 3})
+    {'a': 4, 'b': 2, 'c': 3}
+    """
+    def _merge_dicts(accumulator, i):
+        for k, v in i.items():
+            if _allow_merge_condition_function(v):
+                accumulator[k] = v
+        return accumulator
+    return reduce(_merge_dicts, args, {})
