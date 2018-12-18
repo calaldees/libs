@@ -14,7 +14,9 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def fast_scan_regex_filter(file_regex=None, ignore_regex=r'\.git'):
+DEFAULT_IGNORE_REGEX = r'^\.|/\.|^__|/__'  # Ignore folders starting with '.' or '__' by default
+
+def fast_scan_regex_filter(file_regex=None, ignore_regex=DEFAULT_IGNORE_REGEX):
     if not file_regex:
         file_regex = '.*'
     if isinstance(file_regex, str):
