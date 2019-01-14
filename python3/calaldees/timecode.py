@@ -2,8 +2,6 @@ import math
 from collections import namedtuple
 
 
-# Time signiture ---------------------------------------------------------------
-
 _timesignature = namedtuple('timesignature', ['beats_in_bar', 'one_beat'])
 
 
@@ -23,9 +21,9 @@ def parse_timesignature(value):
 
 def timecode_to_beatcount(timecode, timesignature=parse_timesignature('4:4')):
     """
-    There are lementably no standards in music timecodes.
+    There are lamentably no standards in music timecodes.
     This Parse's timecode that matchs the Ableton time system.
-    Further parser 'modes' could be passed to work like cubase and other systems.
+    Further parser 'modes' could be passed to work like cuebase and other systems.
 
     >>> timecode_to_beatcount('1.1.1')
     0.0
@@ -65,12 +63,18 @@ def timecode_to_beatcount(timecode, timesignature=parse_timesignature('4:4')):
     )
 
 
-def beatcount_to_timecode(beat, timesignature=parse_timesignature('4:4')):
+def beatcount_to_timecode(beat, timesignature=parse_timesignature('4:4'), slices=3):
     """
+    >>> beatcount_to_timecode(5.25)
+    '2.2.2'
+    >>> beatcount_to_timecode(2.0)
+    '1.3.1'
     >>> beatcount_to_timecode(0)
     '1.1.1'
     >>> beatcount_to_timecode(4.0)
     '2.1.1'
+    >>> beatcount_to_timecode(60.0)
+    '16.1.1'
     >>> beatcount_to_timecode(2.0)
     '1.3.1'
     >>> beatcount_to_timecode(0.25)
@@ -78,12 +82,14 @@ def beatcount_to_timecode(beat, timesignature=parse_timesignature('4:4')):
     >>> beatcount_to_timecode(3, '3:4')
     '2.1.1'
     """
-    raise NotImplementedError
-    return '.'.join(map(str, map(int, (
-        #((beat % (1/pow(timesignature.beats_in_bar, i))) // (1/pow(timesignature.beats_in_bar, i+1))) + 1
-        beat
-        for i in range(0, 3)
-    ))))
+    timesignature = parse_timesignature(timesignature)
+    def _pop_beat(accumulator, value):
+        value_slice = int(value // timesignature.beats_in_bar)
+        accumulator.append(str(1 + value_slice))
+        if len(accumulator) < slices:
+            _pop_beat(accumulator, (value - (value_slice * timesignature.beats_in_bar)) * timesignature.beats_in_bar)
+        return accumulator
+    return '.'.join(_pop_beat([], beat))
 
 
 def seconds_to_beatcount(time_current, bpm, time_start=0.0):
@@ -96,37 +102,37 @@ def seconds_to_beatcount(time_current, bpm, time_start=0.0):
 
 def timecode_to_seconds(timecode, bpm, timesignature=parse_timesignature('4:4')):
     """
-    >>> get_seconds('1.1.1', 60, '4:4')
+    >>> timecode_to_seconds('1.1.1', 60, '4:4')
     0.0
-    >>> get_seconds('1.2.1', 60, '4:4')
+    >>> timecode_to_seconds('1.2.1', 60, '4:4')
     1.0
-    >>> get_seconds('1.3.1', 60, '4:4')
+    >>> timecode_to_seconds('1.3.1', 60, '4:4')
     2.0
-    >>> get_seconds('2.1.1', 60, '4:4')
+    >>> timecode_to_seconds('2.1.1', 60, '4:4')
     4.0
-    >>> get_seconds('16.1.1', 60, '4:4')
+    >>> timecode_to_seconds('16.1.1', 60, '4:4')
     60.0
-    >>> get_seconds('2.1.1', 60, '4:8')
+    >>> timecode_to_seconds('2.1.1', 60, '4:8')
     2.0
-    >>> get_seconds('31.1.1', 60, '4:8')
+    >>> timecode_to_seconds('31.1.1', 60, '4:8')
     60.0
-    >>> get_seconds('2.1.1', 60, '8:4')
+    >>> timecode_to_seconds('2.1.1', 60, '8:4')
     8.0
-    >>> get_seconds('8.5.1', 60, '8:4')
+    >>> timecode_to_seconds('8.5.1', 60, '8:4')
     60.0
-    >>> get_seconds('2.1.1', 30, '4:8')
+    >>> timecode_to_seconds('2.1.1', 30, '4:8')
     4.0
-    >>> get_seconds('2.1.1', 30, '8:4')
+    >>> timecode_to_seconds('2.1.1', 30, '8:4')
     16.0
-    >>> get_seconds('2.1.1', 60, '3:4')
+    >>> timecode_to_seconds('2.1.1', 60, '3:4')
     3.0
-    >>> get_seconds('21.1.1', 60, '3:4')
+    >>> timecode_to_seconds('21.1.1', 60, '3:4')
     60.0
-    >>> get_seconds('5.1.1', 60, '3:4')
+    >>> timecode_to_seconds('5.1.1', 60, '3:4')
     12.0
-    >>> round(get_seconds('14.3.3', 134, '3:4'), 3)
+    >>> round(timecode_to_seconds('14.3.3', 134, '3:4'), 3)
     18.657
-    >>> round(get_seconds('11.2.3.1', 134), 3)
+    >>> round(timecode_to_seconds('11.2.3.1', 134), 3)
     18.582
     """
     timesignature = parse_timesignature(timesignature)
@@ -135,18 +141,19 @@ def timecode_to_seconds(timecode, bpm, timesignature=parse_timesignature('4:4'))
 
 def seconds_to_timecode(seconds, bpm, timesignature=parse_timesignature('4:4')):
     """
-    >>> seconds_to_timecode(0.0, 60, '4:4'):
+    >>> seconds_to_timecode(0.0, 60, '4:4')
     '1.1.1'
-    >>> seconds_to_timecode(4.0, 60, '4:4'):
+    >>> seconds_to_timecode(4.0, 60, '4:4')
     '2.1.1'
-    >>> seconds_to_timecode(3.0, 60, '3:4'):
+    >>> seconds_to_timecode(3.0, 60, '3:4')
     '2.1.1'
-    >>> seconds_to_timecode(60.0, 60, '8:4'):
+    >>> seconds_to_timecode(60.0, 60, '8:4')
     '8.5.1'
-    >>> seconds_to_timecode(60.0, 60, '4:8'):
+    >>> seconds_to_timecode(60.0, 60, '4:8')
     '31.1.1'
     """
-    raise NotImplementedError()
+    timesignature = parse_timesignature(timesignature)
+    return beatcount_to_timecode(seconds / (60 / bpm) / (4 / timesignature.one_beat), timesignature)
 
 
 def next_frame_from_time_current(time_current, frame_rate):
