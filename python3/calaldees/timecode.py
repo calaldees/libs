@@ -4,86 +4,156 @@ from collections import namedtuple
 
 # Time signiture ---------------------------------------------------------------
 
-timesigniture = namedtuple('timesigniture', ['beats', 'bar'])
+_timesignature = namedtuple('timesignature', ['beats_in_bar', 'one_beat'])
 
 
-def parse_timesigniture(timesigniture_string):
+def parse_timesignature(value):
     """
-    >>> parse_timesigniture('4:4')
-    timesigniture(beats=4, bar=4)
+    >>> parse_timesignature('4:4')
+    timesignature(beats_in_bar=4, one_beat=4)
+    >>> parse_timesignature('3:4')
+    timesignature(beats_in_bar=3, one_beat=4)
+    >>> parse_timesignature(parse_timesignature('4:8'))
+    timesignature(beats_in_bar=4, one_beat=8)
     """
-    assert isinstance(timesigniture_string, str)
-    return timesigniture(*map(int, timesigniture_string.split(':')))
+    if isinstance(value, str):
+        return _timesignature(*map(int, value.split(':')))
+    return value
 
 
-def timecode_to_beat(timecode, timesigniture=parse_timesigniture('4:4')):
+def timecode_to_beatcount(timecode, timesignature=parse_timesignature('4:4')):
     """
     There are lementably no standards in music timecodes.
     This Parse's timecode that matchs the Ableton time system.
     Further parser 'modes' could be passed to work like cubase and other systems.
 
-    >>> timecode_to_beat('4')
+    >>> timecode_to_beatcount('1.1.1')
+    0.0
+    >>> timecode_to_beatcount('1.1.2')
+    0.25
+    >>> timecode_to_beatcount('1.1.3')
+    0.5
+    >>> timecode_to_beatcount('1.2.1')
+    1.0
+    >>> timecode_to_beatcount('1.3.1')
+    2.0
+    >>> timecode_to_beatcount('1.4.1')
+    3.0
+    >>> timecode_to_beatcount('2.1.1')
     4.0
-    >>> timecode_to_beat('4.0.0')
+    >>> timecode_to_beatcount('2.1.1', '3:4')
+    3.0
+    >>> timecode_to_beatcount('3.1.1', '3:4')
+    6.0
+    >>> timecode_to_beatcount('21.1.1', '3:4')
+    60.0
+    >>> timecode_to_beatcount('2.1.1', '8:4')
+    8.0
+    >>> timecode_to_beatcount('1.5.1', '8:4')
     4.0
-    >>> timecode_to_beat('4.1.0')
-    4.25
-    >>> timecode_to_beat('4.2.0')
-    4.5
-    >>> timecode_to_beat('4.2.2')
-    4.625
-    >>> timecode_to_beat('4.6.0', parse_timesigniture('4:8'))
-    4.75
+    >>> timecode_to_beatcount('8.5.1', '8:4')
+    60.0
+    >>> timecode_to_beatcount('16.1.1', '4:4')
+    60.0
     """
+    timesignature = parse_timesignature(timesignature)
     if (isinstance(timecode, str)):
-        timecode = list(map(int, timecode.split('.')))
-    return sum(timecode_component/pow(timesigniture.bar, index) for index, timecode_component in enumerate(timecode))
+        timecode = tuple(map(int, timecode.split('.')))
+    return sum(
+        (timecode_component - 1) / pow(timesignature.beats_in_bar, index - 1)
+        for index, timecode_component in enumerate(timecode)
+    )
 
 
-def beat_to_timecode(beat, timesigniture=parse_timesigniture('4:4')):
+def beatcount_to_timecode(beat, timesignature=parse_timesignature('4:4')):
     """
-    >>> beat_to_timecode(4.0)
-    '4.0.0'
-    >>> beat_to_timecode(4.25)
-    '4.1.0'
-    >>> beat_to_timecode(4.5)
-    '4.2.0'
-    >>> beat_to_timecode(4.625)
-    '4.2.2'
-    >>> beat_to_timecode(4.75, parse_timesigniture('4:8'))
-    '4.6.0'
+    >>> beatcount_to_timecode(0)
+    '1.1.1'
+    >>> beatcount_to_timecode(4.0)
+    '2.1.1'
+    >>> beatcount_to_timecode(2.0)
+    '1.3.1'
+    >>> beatcount_to_timecode(0.25)
+    '1.1.2'
+    >>> beatcount_to_timecode(3, '3:4')
+    '2.1.1'
     """
-    beat_number = int(beat//1)
-    beat_remainder = beat % 1  # There must be a way to do this without the first number being a special case
-    return '.'.join(map(str, map(int, [beat_number]+[(beat_remainder % (1/pow(timesigniture.bar, i)) // (1/pow(timesigniture.bar, i+1))) for i in range(0, 2)])))
+    raise NotImplementedError
+    return '.'.join(map(str, map(int, (
+        #((beat % (1/pow(timesignature.beats_in_bar, i))) // (1/pow(timesignature.beats_in_bar, i+1))) + 1
+        beat
+        for i in range(0, 3)
+    ))))
 
 
-def get_beat(time_current, bpm, time_start=0.0):
+def seconds_to_beatcount(time_current, bpm, time_start=0.0):
     """
     Given a bpm and a time in seconds, what beat are we on
     """
+    # TODO - needs reworking?
     return max(0.0, ((time_current - time_start) / 60) * bpm)
 
 
-def get_time(timecode, timesigniture, bpm):
+def timecode_to_seconds(timecode, bpm, timesignature=parse_timesignature('4:4')):
     """
-    >>> get_time('1.0.0', parse_timesigniture('4:4'), 10)
-    6.0
-    >>> get_time('10.0.0', parse_timesigniture('4:4'), 10)
+    >>> get_seconds('1.1.1', 60, '4:4')
+    0.0
+    >>> get_seconds('1.2.1', 60, '4:4')
+    1.0
+    >>> get_seconds('1.3.1', 60, '4:4')
+    2.0
+    >>> get_seconds('2.1.1', 60, '4:4')
+    4.0
+    >>> get_seconds('16.1.1', 60, '4:4')
     60.0
-    >>> get_time('11.0.0', parse_timesigniture('4:4'), 10)
-    66.0
-    >>> get_time('15.0.0', parse_timesigniture('4:4'), 60)
-    15.0
+    >>> get_seconds('2.1.1', 60, '4:8')
+    2.0
+    >>> get_seconds('31.1.1', 60, '4:8')
+    60.0
+    >>> get_seconds('2.1.1', 60, '8:4')
+    8.0
+    >>> get_seconds('8.5.1', 60, '8:4')
+    60.0
+    >>> get_seconds('2.1.1', 30, '4:8')
+    4.0
+    >>> get_seconds('2.1.1', 30, '8:4')
+    16.0
+    >>> get_seconds('2.1.1', 60, '3:4')
+    3.0
+    >>> get_seconds('21.1.1', 60, '3:4')
+    60.0
+    >>> get_seconds('5.1.1', 60, '3:4')
+    12.0
+    >>> round(get_seconds('14.3.3', 134, '3:4'), 3)
+    18.657
+    >>> round(get_seconds('11.2.3.1', 134), 3)
+    18.582
     """
-    return (timecode_to_beat(timecode, timesigniture) / bpm) * 60
+    timesignature = parse_timesignature(timesignature)
+    return timecode_to_beatcount(timecode, timesignature) * (60 / bpm) * (4 / timesignature.one_beat)
 
 
-def next_frame_from_timecode(timecode, frame_rate):
-    return math.ceil(timecode * frame_rate)
+def seconds_to_timecode(seconds, bpm, timesignature=parse_timesignature('4:4')):
+    """
+    >>> seconds_to_timecode(0.0, 60, '4:4'):
+    '1.1.1'
+    >>> seconds_to_timecode(4.0, 60, '4:4'):
+    '2.1.1'
+    >>> seconds_to_timecode(3.0, 60, '3:4'):
+    '2.1.1'
+    >>> seconds_to_timecode(60.0, 60, '8:4'):
+    '8.5.1'
+    >>> seconds_to_timecode(60.0, 60, '4:8'):
+    '31.1.1'
+    """
+    raise NotImplementedError()
 
 
-def nearest_timecode_to_next_frame(timecode, frame_rate):
+def next_frame_from_time_current(time_current, frame_rate):
+    return math.ceil(time_current * frame_rate)
+
+
+def nearest_timecode_to_next_frame(time_current, frame_rate):
     """
     Match timecode to nearest 'next' frame
 
@@ -98,4 +168,4 @@ def nearest_timecode_to_next_frame(timecode, frame_rate):
     >>> nearest_timecode_to_next_frame(11.1, 4)
     11.25
     """
-    return next_frame_from_timecode(timecode, frame_rate) / frame_rate
+    return next_frame_from_time_current(time_current, frame_rate) / frame_rate
