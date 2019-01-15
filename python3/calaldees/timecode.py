@@ -156,8 +156,8 @@ def seconds_to_timecode(seconds, bpm, timesignature=parse_timesignature('4:4')):
     return beatcount_to_timecode(seconds / (60 / bpm) / (4 / timesignature.one_beat), timesignature)
 
 
-def next_frame_from_time_current(time_current, frame_rate):
-    return math.ceil(time_current * frame_rate)
+def next_frame_from_timestamp(timestamp, frame_rate):
+    return math.ceil(timestamp * frame_rate)
 
 
 def nearest_timecode_to_next_frame(time_current, frame_rate):

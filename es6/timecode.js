@@ -1,4 +1,4 @@
-import {range, enumerate, assertEquals, assertEqualsObject} from './core.js'
+import {enumerate, assertEquals, assertEqualsObject} from './core.js'
 
 
 export function parse_timesignature(value) {
