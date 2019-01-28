@@ -160,7 +160,7 @@ def next_frame_from_timestamp(timestamp, frame_rate):
     return math.ceil(timestamp * frame_rate)
 
 
-def nearest_timecode_to_next_frame(time_current, frame_rate):
+def nearest_timecode_to_next_frame(timestamp, frame_rate):
     """
     Match timecode to nearest 'next' frame
 
@@ -175,4 +175,4 @@ def nearest_timecode_to_next_frame(time_current, frame_rate):
     >>> nearest_timecode_to_next_frame(11.1, 4)
     11.25
     """
-    return next_frame_from_time_current(time_current, frame_rate) / frame_rate
+    return next_frame_from_timestamp(timestamp, frame_rate) / frame_rate
