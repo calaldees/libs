@@ -16,10 +16,10 @@ __version__ = 0.01
 
 class SubscriptionEchoServerManager(ServerManager):
 
-    def __init__(self, *args, echo_back_to_source=False, auto_subscribe_to_all=True, **kwargs):
+    def __init__(self, *args, prevent_echo_back_to_source=False, auto_subscribe_to_all_fallback=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self.echo_back_to_source = echo_back_to_source
-        self.auto_subscribe_to_all = auto_subscribe_to_all
+        self.prevent_echo_back_to_source = prevent_echo_back_to_source
+        self.auto_subscribe_to_all_fallback = auto_subscribe_to_all_fallback
         self.subscriptions = defaultdict(set)
         self.actions = {
             'subscribe': self._action_subscribe,
@@ -69,17 +69,16 @@ class SubscriptionEchoServerManager(ServerManager):
         self.subscriptions[source] = parse_subscription_set(data)
         return
 
-
     def _action_message(self, data, source):
         """
         Send message to subscribed clients
         """
         for client, client_subscriptions in self.subscriptions.items():
-            if not self.echo_back_to_source and client == source:
+            if self.prevent_echo_back_to_source and client == source:
                 continue
             messages_for_this_client = [
                 m for m in data
-                if (self.auto_subscribe_to_all and not client_subscriptions)
+                if (self.auto_subscribe_to_all_fallback and not client_subscriptions)
                 or isinstance(m, dict) and m.get('deviceid') in client_subscriptions
             ]
             if not messages_for_this_client:
@@ -105,8 +104,8 @@ def get_args():
     parser.add_argument('--version', action='version', version="%.2f" % __version__)
     parser.add_argument('-t', '--tcp_port', type=int, help='TCP port', default=DEFAULT_TCP_PORT)
     parser.add_argument('-w', '--websocket_port', type=int, help='WebSocket port', default=DEFAULT_WEBSOCKET_PORT)
-    parser.add_argument('--echo_back_to_source', action='store_true', help='All messages are reflected back to the client source', default=False)
-    parser.add_argument('--auto_subscribe_to_all', action='store_true', help='If no explicit subscriptions are given then subscribe to all messages', default=False)
+    parser.add_argument('--prevent_echo_back_to_source', action='store_true', help='Prevent messages sent from self being reflected back to self', default=False)
+    parser.add_argument('--auto_subscribe_to_all_fallback', action='store_true', help='If no explicit subscriptions are given then subscribe to all messages', default=False)
     parser.add_argument('--log_level', action='store', type=int, help='loglevel of output to stdout', default=logging.DEBUG)
 
     args = parser.parse_args()
