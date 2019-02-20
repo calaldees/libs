@@ -243,6 +243,22 @@ def test_stagger():
     pass
 
 
+def test_timestamp(tl):
+    o1 = {'x': 1, 'y': 1}
+    o2 = {'x': 2, 'y': 2}
+    o3 = {'x': 3, 'y': 3}
+    tl.to(o1, 10, {'x': 10}, timestamp=0).to(o2, 10, {'x': 20}, timestamp=0).to(o3, 10, {'x': 30})
+    ren = tl.get_renderer()
+    ren.render(10)
+    assert o1['x'] == 10
+    assert o2['x'] == 20
+    assert o3['x'] == 3
+    ren.render(20)
+    assert o1['x'] == 10
+    assert o2['x'] == 20
+    assert o3['x'] == 30
+
+
 def test_dict(tl):
     o1 = {'x': 0, 'y': 0, 'z': 'test'}
 

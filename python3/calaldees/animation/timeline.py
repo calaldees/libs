@@ -53,7 +53,7 @@ class Timeline(object):
     def _resolve_timestamp(self, timestamp, offset=0):
         if isinstance(timestamp, str):
             timestamp = self._label_timestamps.setdefault(timestamp, self.duration)
-        elif not timestamp:
+        elif timestamp == None:  # If no timestamp provided, return end of current timeline, this is like appending to end
             timestamp = self.duration
         timestamp += offset
         return timestamp
