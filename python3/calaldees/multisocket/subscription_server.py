@@ -13,6 +13,8 @@ log = logging.getLogger(__name__)
 
 __version__ = 0.01
 
+_ATTR_PARTIAL_MESSAGE = '_partial_message'
+
 
 class SubscriptionEchoServerManager(ServerManager):
 
@@ -37,11 +39,26 @@ class SubscriptionEchoServerManager(ServerManager):
     def recv(self, data, source=None):
         log.debug('message: {0} - {1}'.format(getattr(source, 'id', None), str(data, 'utf8')))
         for line in filter(None, data.decode('utf-8').split('\n')):
+            if not line.endswith('}'):
+                partial_messages = getattr(source, _ATTR_PARTIAL_MESSAGE, [])
+                partial_messages.append(line)
+                setattr(source, _ATTR_PARTIAL_MESSAGE, partial_messages)
+                #log.debug(f'setting incomplete message - {line}')
+                continue
+            if not line.startswith('{'):
+                partial_message = ''.join(getattr(source, _ATTR_PARTIAL_MESSAGE, []))
+                setattr(source, _ATTR_PARTIAL_MESSAGE, [])
+                #log.debug(f'reconstructing incomplete message - {partial_message} - {line}')
+                line = partial_message + line
             try:
                 message = json.loads(line)
+            except json.decoder.JSONDecodeError:
+                log.exception('Unable to json decode message: {0}'.format(line))
+                continue
+            try:
                 assert isinstance(message, dict), 'Top level json object must be a dict'
             except Exception:
-                log.exception('Unable to json decode message: {0}'.format(line))
+                log.exception('Message not dict?: {0}'.format(line))
                 continue
 
             action = message.get('action')
