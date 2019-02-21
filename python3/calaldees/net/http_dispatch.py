@@ -73,14 +73,17 @@ def http_dispatch(func_dispatch, port=None):
             log.info(f'Serving on {port}')
             try:
                 while True:
-                    log.debug(f'Accepting next connection on {port}')
-                    connection, ip_address = soc.accept()
-                    log.debug(f'Client Connected: {ip_address}')
-                    # TODO: Thread the handling of each request?
-                    with connection:
-                        data = connection.recv(1024)  # TODO: Loop over recv? We may have larger requests
-                        if data:
-                            _handle_request(connection, data)
+                    try:
+                        log.debug(f'Accepting next connection on {port}')
+                        connection, ip_address = soc.accept()
+                        log.debug(f'Client Connected: {ip_address}')
+                        # TODO: Thread the handling of each request?
+                        with connection:
+                            data = connection.recv(1024)  # TODO: Loop over recv? We may have larger requests
+                            if data:
+                                _handle_request(connection, data)
+                    except BrokenPipeError:
+                        log.warning(f'BrokenPipeError with {ip_address}')
             except KeyboardInterrupt:
                 pass
 
