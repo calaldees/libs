@@ -334,15 +334,22 @@ class GoogleLogin(ILoginProvider):
             request.params.get('code'),
         )
 
-        plus_service = build('plus', 'v1', http=credentials.authorize(httplib2.Http()))
-        profile = plus_service.people().get(userId='me').execute()
+        # Google API's
+        # https://developers.google.com/api-client-library/python/apis/
+        # Google API Explorer - Reference
+        # https://developers.google.com/apis-explorer/#p/people/v1/people.people.get?resourceName=people%252Fme&personFields=photos%252Cnames%252CemailAddresses&_h=11&
+        people_service = build('people', 'v1', http=credentials.authorize(httplib2.Http()))
+        profile = people_service.people().get(resourceName='people/me', personFields='photos,names,emailAddresses').execute()
 
-        return ProviderToken(self.name, profile['id'], profile)
-        #raise LoginProviderException(response.content)
+        return ProviderToken(self.name, profile['names'][0]['metadata']['source']['id'], profile)
 
     def aquire_additional_user_details(self, provider_token):
+        def get_primary(response, field):
+            for item in response.get(field):
+                if item.get('metadata', {'primary': False}).get('primary'):
+                    return item
         return {
-            'username': provider_token.response['displayName'],
-            'email': provider_token.response['emails'][0]['value'],
-            'avatar_url': provider_token.response['image']['url'],
+            'username': get_primary(provider_token.response, 'names')['displayName'],
+            'email': get_primary(provider_token.response, 'emailsAddresses')['value'],
+            'avatar_url': get_primary(provider_token.response, 'photos')['url'],
         }
