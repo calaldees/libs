@@ -1,0 +1,77 @@
+<html>
+
+<head>
+	<meta charset="utf-8"/>
+	<title>stopwatch</title>
+
+	<link rel="stylesheet" href="stopwatch.css">
+</head>
+
+<body>
+	<h1>stopwatch</h1>
+
+	<div class="stopwatch">
+		<ul class="stopwatch_display">
+			<li id="stopwatch_display_hour"></li>
+			<li id="stopwatch_display_min"></li>
+			<li id="stopwatch_display_sec"></li>
+			<li id="stopwatch_display_mil"></li>
+		</ul>
+
+		<div class="stopwatch_controls">
+			<button id="stopwatch_control_start">Start</button>
+			<button id="stopwatch_control_pause">Pause</button>
+			<button id="stopwatch_control_reset">Reset</button>
+			<button id="stopwatch_control_lap">Lap</button>
+			<button id="stopwatch_control_clear_lap_history">Clear Lap History</button>
+		</div>
+
+		<textarea id="stopwatch_laps"></textarea>
+	</div>
+
+	<script type="module">
+		const zip = (a, b) => a.map((v, i) => [v, b[i]]);  // es2015 does not have a builtin array 'zip' function
+
+		import {
+			StopWatch,
+			StopWatchLapManager,
+		} from './stopwatch.js'
+
+		const LOCALSTORAGE_STOPWATCH_KEY = "StopWatchLaps"
+
+		const stopwatch = new StopWatch();
+		const stopwatch_lap_manager = new StopWatchLapManager({
+			stopwatch: stopwatch,
+			laps: JSON.parse(localStorage.getItem(LOCALSTORAGE_STOPWATCH_KEY)),
+			function_persist_data: (data) => localStorage.setItem(LOCALSTORAGE_STOPWATCH_KEY, JSON.stringify(data)),
+		});
+
+		function update_laps() {
+			document.getElementById('stopwatch_laps').value = stopwatch_lap_manager.laps.join('\n');
+		}
+		update_laps();
+
+		const _CLICK_MAPPING = [
+			['stopwatch_control_start', stopwatch.start],
+			['stopwatch_control_pause', stopwatch.pause],
+			['stopwatch_control_reset', stopwatch.reset],
+			['stopwatch_control_lap', () => {stopwatch_lap_manager.lap(); update_laps();}],
+			['stopwatch_control_clear_lap_history', () => {stopwatch_lap_manager.clear_lap_history(); update_laps();}],
+		];
+		for (let [id, function_onclick] of _CLICK_MAPPING) {
+			document.getElementById(id).onclick = function_onclick;
+		}
+
+		const _DISPLAY_ELEMENTS_MAPPING = ['stopwatch_display_hour', 'stopwatch_display_min', 'stopwatch_display_sec', 'stopwatch_display_mil'];
+		const DISPLAY_ELEMENTS_MAPPING = _DISPLAY_ELEMENTS_MAPPING.map((id) => document.getElementById(id));
+
+		function render_frame() {
+			const stopwatch_text = stopwatch.text.split(':');
+			for (let [text, element] of zip(stopwatch_text, DISPLAY_ELEMENTS_MAPPING)) {
+				element.textContent = text;
+			}
+			window.requestAnimationFrame(render_frame);
+		}
+		render_frame();
+	</script>
+</body>

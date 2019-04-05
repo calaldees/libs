@@ -1,0 +1,112 @@
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>poster</title>
+
+	<style>
+		.poster_container {
+			background-color: #999999;
+			overflow: hidden;
+			width: 30em;
+			height: 38em;
+			border: 1px solid black;
+		}
+		.content_container {
+			position: relative;
+			left: -5em;
+
+			display: flex;
+			flex-wrap: nowrap;
+			align-items: stretch;
+			width: 120%;
+			height: 60%;
+
+			transform: rotate(-45deg);
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		.content_container > div:nth-child(1n) {
+			flex-grow: 0.5;
+			align-self: center;
+			font-size: 0.3em;
+		}
+		.content_container > div:nth-child(2n) {
+			flex-grow: 2;
+			align-self: flex-end;
+			width: 1em;
+			font-size: 0.3em;
+		}
+		.content_container > div:nth-child(3n) {
+			background-color: white;
+			flex-grow: 6;
+			align-self: stretch;
+		}
+
+		.squares {
+			position: relative;
+		}
+		.squares > div {
+			position: absolute;
+			width: 2em;
+			height: 2em;
+			background-color: black;
+		}
+		.squares > div:nth-child(1) {
+			left: 20em;
+			top: 40em;
+			background-color: red;
+		}
+		.squares > div:nth-child(2) {
+			left: 10em;
+			top: 50em;
+			background-color: blue;
+		}
+		.squares > div:nth-child(3) {
+			left: 30em;
+			top: 60em;
+			background-color: yellow;
+		}
+		.squares > div:nth-child(4) {
+			left: 25em;
+			top: 40em;
+		}
+		.squares > div:nth-child(5) {
+			left: 50em;
+			top: 30em;
+			background-color: blue;
+		}
+		.squares > div:nth-child(6) {
+			left: 22em;
+			top: 40em;
+			background-color: yellow;
+		}
+	</style>
+</head>
+
+<body>
+
+</body>
+	<div class="poster_container">
+		<div class="content_container">
+			<div class="text1">
+				some text
+			</div>
+			<div class="text2">
+					<p>impacatus - impacta - impactio - impactivus - impacto - impactum - impactus - impala - impanicus - impanio - imparo - imparto - impartus - impasso - impassibilis - impassum - impatibilis -
+						</p>
+					<p>impedibilis - impello - impendo - impendum - imperata - imperator - imperatora - imperatore - imperatori - imperatoris - imperatoro - imperatorum - imperatorus - imperia - imperiale -
+						</p>
+					<p>imperiali - imperialia - imperialis - imperialum - imperialus - imperator - imperatore -
+						</p>
+			</div>
+			<div class="squares">
+				<div></div>
+				<div></div>
+				<div></div>
+				<div></div>
+				<div></div>
+				<div></div>
+				<div></div>
+			</div>
+		</div>
+	</div>
+</html>
