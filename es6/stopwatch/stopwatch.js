@@ -50,11 +50,11 @@ export class StopWatch {
 
 
 export class StopWatchLapManager {
-    constructor({stopwatch, laps, function_persist_data}) {
-        console.assert(stopwatch.text, 'stopwatch must be provided');
-        console.assert(typeof(function_persist_data) == 'function', 'no persistent data-store function provided to StopWatchLapManager');
+    constructor({get_current_stopwatch_text, laps, function_persist_data}) {
+        console.assert(typeof(get_current_stopwatch_text) == 'function', 'get_current_stopwatch_text function must be provided');
+        console.assert(typeof(function_persist_data) == 'function', 'function_persistent_data function must be provided');
 
-        this.stopwatch = stopwatch;
+        this.get_current_stopwatch_text = get_current_stopwatch_text;
         this.function_persist_data = function_persist_data;
         this._laps = laps || [];
 
@@ -67,7 +67,7 @@ export class StopWatchLapManager {
     }
 
     lap() {
-        this._laps.push(this.stopwatch.text);
+        this._laps.push(this.get_current_stopwatch_text());
         this.function_persist_data(this._laps);
     }
 

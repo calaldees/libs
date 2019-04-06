@@ -41,7 +41,7 @@
 
 		const stopwatch = new StopWatch();
 		const stopwatch_lap_manager = new StopWatchLapManager({
-			stopwatch: stopwatch,
+			get_current_stopwatch_text: () => stopwatch.text,
 			laps: JSON.parse(localStorage.getItem(LOCALSTORAGE_STOPWATCH_KEY)),
 			function_persist_data: (data) => localStorage.setItem(LOCALSTORAGE_STOPWATCH_KEY, JSON.stringify(data)),
 		});
@@ -66,8 +66,7 @@
 		const DISPLAY_ELEMENTS_MAPPING = _DISPLAY_ELEMENTS_MAPPING.map((id) => document.getElementById(id));
 
 		function render_frame() {
-			const stopwatch_text = stopwatch.text.split(':');
-			for (let [text, element] of zip(stopwatch_text, DISPLAY_ELEMENTS_MAPPING)) {
+			for (let [text, element] of zip(stopwatch.text.split(':'), DISPLAY_ELEMENTS_MAPPING)) {
 				element.textContent = text;
 			}
 			window.requestAnimationFrame(render_frame);
