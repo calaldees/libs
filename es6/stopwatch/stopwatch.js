@@ -14,7 +14,7 @@ export class StopWatch {
 
     get time_milliseconds() {
         if (this.pause_milliseconds) {return this.pause_milliseconds;}
-        return this.timestamp_start ? Date.now() - this.timestamp_start : 0;
+        return this._timestamp_start ? Date.now() - this._timestamp_start : 0;
     }
     get date() {
         return new Date(this.time_milliseconds);
@@ -24,27 +24,27 @@ export class StopWatch {
         return `${String(date.getHours()-1).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}:${String(Math.floor(date.getMilliseconds()/10)).padStart(2, '0')}`;
     }
     get pause_milliseconds() {
-        return this.timestamp_start && this.timestamp_paused ? this.timestamp_paused - this.timestamp_start : 0;
+        return this._timestamp_start && this._timestamp_paused ? this._timestamp_paused - this._timestamp_start : 0;
     }
 
     start() {
         if (this.pause_milliseconds) {
-            this.timestamp_start = Date.now() - this.pause_milliseconds;
+            this._timestamp_start = Date.now() - this.pause_milliseconds;
         } else {
-            this.timestamp_start = Date.now();
+            this._timestamp_start = Date.now();
         }
-        this.timestamp_paused = 0;
+        this._timestamp_paused = 0;
     }
 
     pause() {
-        if (!this.timestamp_paused) {
-            this.timestamp_paused = Date.now();
+        if (!this._timestamp_paused) {
+            this._timestamp_paused = Date.now();
         }
     }
 
     reset() {
-        this.timestamp_start = 0;
-        this.timestamp_end = 0;
+        this._timestamp_start = 0;
+        this._timestamp_end = 0;
     }
 }
 
