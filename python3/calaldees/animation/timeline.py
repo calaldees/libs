@@ -108,6 +108,12 @@ class Timeline(object):
             self.to(element, duration, values=values, tween=tween, timestamp=timestamp + (index * item_delay))
         return self
 
+    def split(*timestamps):
+        """
+
+        """
+        raise NotImplementedError()
+
     # Control ------------------------------------------------------------------
 
     def get_renderer(self, *args, **kwargs):
@@ -318,6 +324,26 @@ class Timeline(object):
             _tween_invert.inverted = True
             _tween_invert.tween_func = tween_func
             return _tween_invert
+
+        @staticmethod
+        def tween_progress_split(tween_func, *progress_split):
+            """
+            >>> tween_a, tween_b = Timeline.Tween.tween_progress_split(Timeline.Tween.tween_linear, 0.5)
+            >>> tween_a(0)
+            0
+            >>> tween_a(0.5)
+            0.25
+            >>> tween_a(1)
+            0.5
+            >>> tween_b(0)
+            0.5
+            >>> tween_b(0.5)
+            0.75
+            >>> tween_b(1)
+            1
+            """
+            raise NotImplementedError()
+
 
         @staticmethod
         def tween_step(num_steps):

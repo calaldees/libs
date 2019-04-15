@@ -281,3 +281,29 @@ def test_multiple_dicts_different_direction(tl):
     ren.render(5)
     assert o1['a'] == 75
     assert o2['a'] == 25
+
+
+def test_split(tl):
+    o1 = {'a': 0}
+    tl.to((o1,), 10, {'a': 100})
+
+    tla, tlb = tl.split(5)
+
+    assert tla.duration == 5
+    assert tlb.duration == 5
+
+    ren = tla.get_renderer()
+    ren.render(0)
+    assert o1['a'] == 0
+    ren.render(2)
+    assert o1['a'] == 20
+    ren.render(5)
+    assert o1['a'] == 50
+
+    ren = tlb.get_renderer()
+    ren.render(0)
+    assert o1['a'] == 50
+    ren.render(2)
+    assert o1['a'] == 70
+    ren.render(5)
+    assert o1['a'] == 100
