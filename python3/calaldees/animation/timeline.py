@@ -108,11 +108,53 @@ class Timeline(object):
             self.to(element, duration, values=values, tween=tween, timestamp=timestamp + (index * item_delay))
         return self
 
-    def split(*timestamps):
+    def split(self, *timestamps):
         """
+        Split a timeline at n timestamps and return n + 1 timelines
+        """
+        timestamps_a = (0,) + tuple(timestamps)
+        timestamps_b = tuple(timestamps) + (self.duration,)
+        for timestamp_start, timestamp_end in zip(timestamps_a, timestamps_b):
+            def _in(timestamp):
+                return timestamp >= timestamp_start and timestamp <= timestamp_end
+            t = Timeline()
+            for i in self._animation_items:
+                if i.timestamp_end < timestamp_start or i.timestamp > timestamp_end:
+                    continue
+                _i = i._asdict()
+                original_duration = _i['duration']
+                original_timestamp = _i['timestamp']
+                original_timestamp_end = _i['timestamp_end']
+                if _in(i.timestamp) and _in(i.timestamp_end):
+                    _i['timestamp'] += -timestamp_start
+                    _i['timestamp_end'] = _i['timestamp'] + _i['duration']  # manually update timestamp_end (as it's a tuple not an object)
+                if not _in(i.timestamp) and _in(i.timestamp_end):
+                    _i['timestamp'] = 0
+                    new_duration = original_duration - (timestamp_start - original_timestamp)
+                    _i['duration'] = new_duration
+                    _i['timestamp_end'] = new_duration
+                    _, _i['tween'] = Timeline.Tween.tween_progress_split(_i['tween'], (timestamp_start - original_timestamp) / original_duration)
+                if _in(i.timestamp) and not _in(i.timestamp_end):
+                    new_timestamp = _i['timestamp'] - timestamp_start
+                    new_duration = timestamp_end - new_timestamp
+                    _i['timestamp'] = new_timestamp
+                    _i['duration'] = new_duration
+                    _i['timestamp_end'] = timestamp_end
+                    _i['tween'], _ = Timeline.Tween.tween_progress_split(_i['tween'], new_duration / original_duration)
+                if not _in(i.timestamp) and not _in(i.timestamp_end):
+                    new_duration = timestamp_end - timestamp_start
+                    _i['timestamp'] = 0
+                    _i['timestamp_end'] = new_duration
+                    _i['duration'] = new_duration
+                    _, _i['tween'], _ = Timeline.Tween.tween_progress_split(
+                        _i['tween'],
+                        (timestamp_start - original_timestamp) / original_duration,
+                        (timestamp_start - original_timestamp + new_duration) / original_duration,
+                    )
+                t._animation_items.append(Timeline.AnimationItem(**_i))
+            t._label_timestamps = {label: timestamp - timestamp_start for label, timestamp in self._label_timestamps.items() if _in(timestamp)}
+            yield t
 
-        """
-        raise NotImplementedError()
 
     # Control ------------------------------------------------------------------
 
@@ -376,6 +418,15 @@ class Timeline(object):
             0.75
             >>> tween_b(1)
             1.0
+
+
+            >>> tween_a, tween_b, tween_c = Timeline.Tween.tween_progress_split(Timeline.Tween.tween_linear, 0.2, 0.8)
+            >>> tween_a(0.5)
+            0.1
+            >>> tween_b(0.5)
+            0.5
+            >>> tween_c(0.5)
+            0.9
             """
             return (
                 Timeline.Tween._reframe_func(tween_func, _low, _high)

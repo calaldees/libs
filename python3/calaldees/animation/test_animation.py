@@ -283,16 +283,16 @@ def test_multiple_dicts_different_direction(tl):
     assert o2['a'] == 25
 
 
-def test_split(tl):
+def test_split_single(tl):
     o1 = {'a': 0}
     tl.to((o1,), 10, {'a': 100})
 
-    tla, tlb = tl.split(5)
+    tl_a, tl_b = tl.split(5)
 
-    assert tla.duration == 5
-    assert tlb.duration == 5
+    assert tl_a.duration == 5
+    assert tl_b.duration == 5
 
-    ren = tla.get_renderer()
+    ren = tl_a.get_renderer()
     ren.render(0)
     assert o1['a'] == 0
     ren.render(2)
@@ -300,10 +300,55 @@ def test_split(tl):
     ren.render(5)
     assert o1['a'] == 50
 
-    ren = tlb.get_renderer()
+    ren = tl_b.get_renderer()
     ren.render(0)
     assert o1['a'] == 50
     ren.render(2)
     assert o1['a'] == 70
     ren.render(5)
     assert o1['a'] == 100
+
+
+def test_split_multiple(tl):
+    o1 = {'a': 0, 'b': 0}
+    tl.to((o1,), 10, {'a': 100})
+    tl.to((o1,), 8, {'b': 100}, timestamp=1)
+
+    tl_a, tl_b, tl_c = tl.split(2, 8)
+
+    assert tl_a.duration == 2
+    assert tl_b.duration == 6
+    assert tl_c.duration == 2
+
+    ren = tl_a.get_renderer()
+    ren.render(0)
+    assert o1['a'] == 0
+    assert o1['b'] == 0
+    ren.render(1)
+    assert o1['a'] == 10
+    assert o1['b'] == 0
+    ren.render(2)
+    assert o1['a'] == 20
+    assert o1['b'] == 100*(1/8)
+
+    ren = tl_b.get_renderer()
+    ren.render(0)
+    assert o1['a'] == 20
+    assert o1['b'] == 100*(1/8)
+    ren.render(3)
+    assert o1['a'] == 50
+    assert o1['b'] == 100*(4/8)
+    ren.render(6)
+    assert o1['a'] == 80
+    assert o1['b'] == 100*(7/8)
+
+    ren = tl_c.get_renderer()
+    ren.render(0)
+    assert o1['a'] == 80
+    assert o1['b'] == 100*(7/8)
+    ren.render(1)
+    assert o1['a'] == 90
+    assert o1['b'] == 100
+    ren.render(2)
+    assert o1['a'] == 100
+    assert o1['b'] == 100
