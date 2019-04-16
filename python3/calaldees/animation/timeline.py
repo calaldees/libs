@@ -310,6 +310,41 @@ class Timeline(object):
                 raise ValueError('Argument must be between 0.0 and 1.0.')
 
         @staticmethod
+        def _split_values(*values, floor=0, ceiling=1):
+            """
+            >>> Timeline.Tween._split_values(0.5)
+            ((0, 0.5), (0.5, 1))
+            >>> Timeline.Tween._split_values(0.25, 0.75)
+            ((0, 0.25), (0.25, 0.75), (0.75, 1))
+            """
+            values = tuple(values)
+            assert all(True for value in values if floor < value < ceiling), f'all values must be between {floor} and {ceiling}'
+            values_a = (floor,) + values
+            values_b = values + (ceiling,)
+            return tuple(zip(values_a, values_b))
+
+        @staticmethod
+        def _reframe_value(n, min=0, max=1):
+            """
+            >>> Timeline.Tween._reframe_value(0, min=0.5, max=1.0)
+            0.5
+            >>> Timeline.Tween._reframe_value(0.5, min=0.5, max=1.0)
+            0.75
+            """
+            return min + ((max - min) * n)
+
+        @staticmethod
+        def _reframe_func(tween_func, min=0, max=1):
+            """
+            >>> reframed_func = Timeline.Tween._reframe_func(Timeline.Tween.tween_linear, min=0.5, max=1.0)
+            >>> reframed_func(0)
+            0.5
+            >>> reframed_func(0.5)
+            0.75
+            """
+            return lambda n: tween_func(Timeline.Tween._reframe_value(n, min, max))
+
+        @staticmethod
         def tween_linear(n):
             """A linear tween function"""
             Timeline.Tween._checkRange(n)
@@ -326,11 +361,11 @@ class Timeline(object):
             return _tween_invert
 
         @staticmethod
-        def tween_progress_split(tween_func, *progress_split):
+        def tween_progress_split(tween_func, *split_values):
             """
             >>> tween_a, tween_b = Timeline.Tween.tween_progress_split(Timeline.Tween.tween_linear, 0.5)
             >>> tween_a(0)
-            0
+            0.0
             >>> tween_a(0.5)
             0.25
             >>> tween_a(1)
@@ -340,10 +375,12 @@ class Timeline(object):
             >>> tween_b(0.5)
             0.75
             >>> tween_b(1)
-            1
+            1.0
             """
-            raise NotImplementedError()
-
+            return (
+                Timeline.Tween._reframe_func(tween_func, _low, _high)
+                for _low, _high in Timeline.Tween._split_values(*split_values)
+            )
 
         @staticmethod
         def tween_step(num_steps):
