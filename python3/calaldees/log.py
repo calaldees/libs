@@ -1,6 +1,6 @@
 # DEPRECATE DELETE THIS WHOLE FILE!!!
 
-from .misc import now, json_string
+#from .misc import now, json_string
 
 import logging
 event_log = logging.getLogger('json_log_event')

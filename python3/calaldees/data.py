@@ -1,5 +1,6 @@
 import collections
 from functools import reduce
+from itertools import tee, zip_longest
 
 
 def subdict(d, keys):
@@ -16,6 +17,19 @@ def list_neighbor_generator(_list, out_of_bounds_type=dict):
     length = len(_list)
     for index, item in enumerate(_list):
         yield _list[index-1] if index > 0 else out_of_bounds_type(), item, _list[index+1] if index < length-1 else out_of_bounds_type()
+
+
+def pairwise(iterable):
+    """
+    https://stackoverflow.com/a/5434936/3356840
+    s -> (s0,s1), (s1,s2), (s2, s3), ...
+
+    >>> tuple(pairwise((1,2,3)))
+    ((1, 2), (2, 3), (3, None))
+    """
+    a, b = tee(iterable)
+    next(b, None)
+    return zip_longest(a, b, fillvalue=None)
 
 
 def first(iterable):
