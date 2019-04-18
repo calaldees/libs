@@ -19,7 +19,7 @@ def list_neighbor_generator(_list, out_of_bounds_type=dict):
         yield _list[index-1] if index > 0 else out_of_bounds_type(), item, _list[index+1] if index < length-1 else out_of_bounds_type()
 
 
-def pairwise(iterable):
+def pairwise(iterable, fillvalue=None):
     """
     https://stackoverflow.com/a/5434936/3356840
     s -> (s0,s1), (s1,s2), (s2, s3), ...
@@ -29,7 +29,7 @@ def pairwise(iterable):
     """
     a, b = tee(iterable)
     next(b, None)
-    return zip_longest(a, b, fillvalue=None)
+    return zip_longest(a, b, fillvalue=fillvalue)
 
 
 def first(iterable):
