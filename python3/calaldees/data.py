@@ -1,6 +1,6 @@
 import collections
 from functools import reduce
-from itertools import tee, zip_longest
+from itertools import tee, zip_longest, cycle
 
 
 def subdict(d, keys):
@@ -10,6 +10,7 @@ def subdict(d, keys):
 def list_neighbor_generator(_list, out_of_bounds_type=dict):
     """
     Todo - this is rubish - replace with zip()
+    TODO: see cycle_offset() below
 
     >>> ['{0}:{1}:{2}'.format(prev, current, next) for prev, current, next in list_neighbor_generator([1,2,3], out_of_bounds_type=str)]
     [':1:2', '1:2:3', '2:3:']
@@ -30,6 +31,59 @@ def pairwise(iterable, fillvalue=None):
     a, b = tee(iterable)
     next(b, None)
     return zip_longest(a, b, fillvalue=fillvalue)
+
+
+def cycle_offset(iterator, offset=0, yield_values=1, num_yields=None):
+    """
+    >>> tuple(cycle_offset((1,2,3,4,5)))
+    (1, 2, 3, 4, 5)
+    >>> tuple(cycle_offset((1,2,3,4,5), offset=2))
+    (3, 4, 5, 1, 2)
+    >>> tuple(cycle_offset((1,2,3,4,5), offset=0, yield_values=2))
+    ((1, 2), (2, 3), (3, 4), (4, 5), (5, 1))
+    >>> tuple(cycle_offset((1,2,3,4,5), offset=-1, yield_values=3))
+    ((5, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 1))
+    >>> tuple(cycle_offset((1,2,3,4,5), num_yields=2))
+    (1, 2)
+    >>> tuple(cycle_offset((1,2,3,4,5), num_yields=6))
+    (1, 2, 3, 4, 5, 1)
+    """
+    original_length = len(iterator)
+    num_yields = num_yields if isinstance(num_yields, int) else original_length
+    iterators = tuple(cycle(_iterator) for _iterator in tee(iterator, yield_values))
+    for _iterator_index, _iterator in enumerate(iterators):
+        _offset = offset + _iterator_index
+        if _offset < 0:
+            _offset += original_length
+        for _ in range(_offset):
+            next(_iterator)
+    for _ in range(num_yields):
+        if len(iterators) == 1:
+            yield next(iterators[0])
+        else:
+            yield tuple(next(_iterator) for _iterator in iterators)
+
+
+def get_index_float(index, array):
+    """
+    >>> array = (0,1,2,3,4,5,6,7,8,9)
+    >>> get_index_float(0.00, array)
+    0
+    >>> get_index_float(0.50, array)
+    5
+    >>> get_index_float(0.55, array)
+    5
+    >>> get_index_float(0.59, array)
+    5
+    >>> get_index_float(0.60, array)
+    6
+    >>> get_index_float(0.99, array)
+    9
+    >>> get_index_float(1.00, array)
+    9
+    """
+    assert 0 <= index <= 1
+    return array[min(len(array)-1, int(index * len(array)))]
 
 
 def first(iterable):

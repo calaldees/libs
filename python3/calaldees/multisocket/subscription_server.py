@@ -39,7 +39,9 @@ class SubscriptionEchoServerManager(ServerManager):
     def recv(self, data, source=None):
         log.debug('message: {0} - {1}'.format(getattr(source, 'id', None), str(data, 'utf8')))
         for line in filter(None, data.decode('utf-8').split('\n')):
-            if not line.endswith('}'):
+            # TODO: This string looking for messages is FRAGILE and fraught with peril.
+            #  This needs rethinking
+            if not line.endswith('}'):  # the json package format always ends with the 'payload' object. This only works if the json is serialised in key order and the 'payload' is last. This is not guaranteed and fucking aweful.
                 partial_messages = getattr(source, _ATTR_PARTIAL_MESSAGE, [])
                 partial_messages.append(line)
                 setattr(source, _ATTR_PARTIAL_MESSAGE, partial_messages)

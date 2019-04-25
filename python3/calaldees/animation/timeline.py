@@ -345,6 +345,12 @@ class Timeline(object):
     # Tweens ---------------------------------------------------------------
 
     class Tween(object):
+        """
+        These tween functions support tween function modification.
+        The tween functions themselves can be imported from https://github.com/asweigart/pytweening/blob/master/pytweening/__init__.py
+        A handy visualisation of tween can be found at https://easings.net/en
+        """
+
         @staticmethod
         def _checkRange(n):
             """Raises ValueError if the argument is not between 0.0 and 1.0."""
