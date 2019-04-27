@@ -27,7 +27,29 @@ class Timeline(object):
       * Kivy - https://kivy.org/docs/api-kivy.animation.html
     Recommended that this is used with `pytweening`'s tween functions
     """
-    AnimationItem = namedtuple('TimelineAnimationItem', ('timestamp', 'element', 'duration', 'valuesFrom', 'valuesTo', 'tween', 'timestamp_end'))
+    class AnimationItem():
+        def __init__(self, timestamp=None, duration=None, render_item_func=None, tween=None):
+            assert timestamp != None  # TODO: could this be >= 0 like duration? or do we accept negative timestamps?
+            assert duration >= 0, 'Duration must be positive value'
+            assert callable(render_item_func)
+            self.timestamp = timestamp
+            self.duration = duration
+            self.render_item_func = render_item_func
+            self.tween = tween or Timeline.Tween.tween_linear
+
+        def __repr__(self):
+            return f'<AnimationItem timestamp={self.timestamp} duration={self.duration} tween={self.tween} render_item_func={vars(self.render_item_func)}>'
+
+        @property
+        def timestamp_end(self):
+            return self.timestamp + self.duration
+
+        def _asdict(self):
+            return copy(vars(self))
+
+        def copy_and_update(self, **kwargs):
+            return Timeline.AnimationItem(**{**self._asdict(), **kwargs})
+
 
     def __init__(self):
         self._animation_items = []
@@ -61,43 +83,66 @@ class Timeline(object):
     def add_label(self, name, timestamp):
         self._label_timestamps[name] = timestamp
 
-    def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, tween=None, timestamp=None, offset=0):
-        assert elements, 'No elements to animate'
-        assert duration >= 0, 'Duration must be positive value'
+
+    @staticmethod
+    def _get_default_render_item_func(element, valuesFrom={}, valuesTo={}):
         assert valuesFrom or valuesTo, 'No animation values provided'
         if valuesFrom and valuesTo:
             assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symmetrical'
+        valuesFrom = copy(valuesFrom)
+        valuesTo = copy(valuesTo)
 
-        tween = tween or Timeline.Tween.tween_linear
-        if not hasattr(elements, '__iter__') or isinstance(elements, dict):
-            elements = (elements, )
+        def _derive_missing_from_to_values():
+            if bool(valuesFrom) ^ bool(valuesTo):
+                source = valuesFrom or valuesTo
+                destination = valuesFrom if not valuesFrom else valuesTo
+                for field in source.keys():
+                    destination[field] = copy(get_attr_or_item(element, field))
+            assert valuesFrom.keys() == valuesTo.keys(), 'from/to animations should be symmetrical'  # Temp assertion for development
 
-        timestamp = self._resolve_timestamp(timestamp, offset)
+        def _render_item(tween_pos):
+            pos = min(max(tween_pos, 0), 1)
+            _derive_missing_from_to_values()  # done at the absolute final moment before the item is animated
+            for field in valuesTo.keys():
+                value = valuesFrom[field] + (tween_pos * (valuesTo[field] - valuesFrom[field]))
+                set_attr_or_item(element, field, value)
 
-        for element in elements:
-            self._animation_items.append(
-                self.AnimationItem(
-                    timestamp, element, duration,
-                    tween=tween,
-                    valuesFrom=copy(valuesFrom),
-                    valuesTo=copy(valuesTo),
-                    timestamp_end=timestamp + duration,
-                )
-            )
+        _render_item._element = element  # for debugging the function
+        _render_item._valuesFrom = valuesFrom
+        _render_item._valuesTo = valuesTo
 
+        return _render_item
+
+    def animation_item(self, timestamp, duration, render_item_func, tween, offset=0):
+        """
+        render_item_func takes a value between 0 and 1 and sets the values on element
+        """
+        self._animation_items.append(
+            self.AnimationItem(self._resolve_timestamp(timestamp, offset), duration, render_item_func, tween)
+        )
         self._invalidate_timeline_cache()
         return self
 
-    def to(self, elements, duration, values, tween=None, timestamp=None):
-        return self.from_to(elements, duration, valuesTo=values, tween=tween, timestamp=timestamp)
+    def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, tween=None, timestamp=None, offset=0):
+        assert elements, 'No elements to animate'
+        if not hasattr(elements, '__iter__') or isinstance(elements, dict):  # TODO: why is isinstance(dict) here? remove?
+            elements = (elements, )
+
+        timestamp = self._resolve_timestamp(timestamp, offset)
+        for element in elements:
+            self.animation_item(timestamp, duration, self._get_default_render_item_func(element, valuesFrom, valuesTo), tween)
+        return self
+
+    def to(self, elements, duration, valuesTo, tween=None, timestamp=None):
+        return self.from_to(elements, duration, valuesTo=valuesTo, tween=tween, timestamp=timestamp)
 
     def from_(self, elements, duration, values, tween=None, timestamp=None):
         return self.from_to(elements, duration, valuesFrom=values, tween=tween, timestamp=timestamp)
 
     def set_(self, elements, values, timestamp=None):
-        return self.to(elements, 0, values, timestamp)
+        return self.to(elements, 0, valuesTo=values, timestamp=timestamp)
 
-    def staggerTo(self, elements, duration, values, item_delay, tween=None, timestamp=None):
+    def staggerTo(self, elements, duration, valuesTo, item_delay, tween=None, timestamp=None):
         """
         duration is the duration of each individual element
         Total time = duration + (item_delay * num of elements)
@@ -105,7 +150,7 @@ class Timeline(object):
         # TODO: Incorporate tween into item_delay?
         timestamp = self._resolve_timestamp(timestamp)
         for index, element in enumerate(elements):
-            self.to(element, duration, values=values, tween=tween, timestamp=timestamp + (index * item_delay))
+            self.to(element, duration, valuesTo=valuesTo, tween=tween, timestamp=timestamp + (index * item_delay))
         return self
 
     def split(self, *timestamps):
@@ -121,35 +166,32 @@ class Timeline(object):
             for i in self._animation_items:
                 if i.timestamp_end < timestamp_start or i.timestamp > timestamp_end:
                     continue
+                original_duration = i.duration
+                original_timestamp = i.timestamp
+                original_timestamp_end = i.timestamp_end
                 _i = i._asdict()
-                original_duration = _i['duration']
-                original_timestamp = _i['timestamp']
-                original_timestamp_end = _i['timestamp_end']
                 if _in(i.timestamp) and _in(i.timestamp_end):
                     _i['timestamp'] += -timestamp_start
-                    _i['timestamp_end'] = _i['timestamp'] + _i['duration']  # manually update timestamp_end (as it's a tuple not an object)
                 if not _in(i.timestamp) and _in(i.timestamp_end):
-                    _i['timestamp'] = 0
                     new_duration = original_duration - (timestamp_start - original_timestamp)
+                    _i['timestamp'] = 0
                     _i['duration'] = new_duration
-                    _i['timestamp_end'] = new_duration
                     _, _i['tween'] = Timeline.Tween.tween_progress_split(_i['tween'], (timestamp_start - original_timestamp) / original_duration)
                 if _in(i.timestamp) and not _in(i.timestamp_end):
                     new_timestamp = _i['timestamp'] - timestamp_start
                     new_duration = timestamp_end - new_timestamp
                     _i['timestamp'] = new_timestamp
                     _i['duration'] = new_duration
-                    _i['timestamp_end'] = timestamp_end
                     _i['tween'], _ = Timeline.Tween.tween_progress_split(_i['tween'], new_duration / original_duration)
                 if not _in(i.timestamp) and not _in(i.timestamp_end):
                     new_duration = timestamp_end - timestamp_start
+                    new_timestamp_start = timestamp_start - original_timestamp
                     _i['timestamp'] = 0
-                    _i['timestamp_end'] = new_duration
                     _i['duration'] = new_duration
                     _, _i['tween'], _ = Timeline.Tween.tween_progress_split(
                         _i['tween'],
-                        (timestamp_start - original_timestamp) / original_duration,
-                        (timestamp_start - original_timestamp + new_duration) / original_duration,
+                        new_timestamp_start / original_duration,
+                        (new_timestamp_start + new_duration) / original_duration,
                     )
                 t._animation_items.append(Timeline.AnimationItem(**_i))
             t._label_timestamps = {label: timestamp - timestamp_start for label, timestamp in self._label_timestamps.items() if _in(timestamp)}
@@ -177,10 +219,7 @@ class Timeline(object):
         assert isinstance(timeline1, Timeline)
         assert isinstance(timeline2, Timeline)
         def clone_item(i):
-            vars = i._asdict()
-            vars['timestamp'] += timeline1.duration
-            vars['timestamp_end'] += timeline1.duration
-            return Timeline.AnimationItem(**vars)
+            return i.copy_and_update(timestamp=i.timestamp + timeline1.duration)
         timeline1._animation_items += [
             clone_item(i)
             for i in timeline2._animation_items
@@ -222,8 +261,9 @@ class Timeline(object):
     def _mul_(timeline, repeats):
         assert isinstance(timeline, Timeline)
         assert isinstance(repeats, int)
+        duration = timeline.duration
         timeline._animation_items = [
-            timeline.AnimationItem(timestamp=i.timestamp + (timeline.duration * r), element=i.element, duration=i.duration, valuesTo=i.valuesTo, valuesFrom=i.valuesFrom, tween=i.tween, timestamp_end = i.timestamp_end + (timeline.duration * r))
+            i.copy_and_update(timestamp=i.timestamp + (duration * r))
             for r in range(repeats)
             for i in timeline._animation_items
         ]
@@ -243,18 +283,10 @@ class Timeline(object):
 
     def _reverse_(timeline):
         def reverse_item(i):
-            #Timeline.Renderer._derive_missing_from_to_values(i)
-            vars = i._asdict()
-            # Update position
-            vars['timestamp'] = timeline.duration - vars['timestamp'] - vars['duration']
-            vars['timestamp_end'] = vars['timestamp'] + vars['duration']
-            # Swap from and to - (may not be needed as the tween is reversed)
-            #temp = vars['valuesTo']
-            #vars['valuesTo'] = vars['valuesFrom']
-            #vars['valuesFrom'] = temp
-            # Invert tween
-            vars['tween'] = vars['tween'].tween_func if getattr(i.tween, 'inverted', False) else Timeline.Tween.tween_invert(vars['tween'])
-            return Timeline.AnimationItem(**vars)
+            return i.copy_and_update(
+                timestamp=timeline.duration - i.timestamp - i.duration,
+                tween=i.tween.tween_func if getattr(i.tween, 'inverted', False) else Timeline.Tween.tween_invert(i.tween)
+            )
         timeline._animation_items = [
             reverse_item(i)
             for i in reversed(timeline._animation_items)
@@ -307,7 +339,7 @@ class Timeline(object):
                     normalized_pos = 1
                 else:
                     normalized_pos = (timecode - i.timestamp) / i.duration
-                self._render_item(i, normalized_pos)
+                i.render_item_func(i.tween(normalized_pos))
 
             # Expire passed animation items form _active
             while self._active and self._active[0].timestamp_end < timecode:
@@ -321,25 +353,9 @@ class Timeline(object):
             #    if self.onUpdate:
             #        self.onUpdate()
 
-        def _render_item(self, i, pos=1):
-            pos = min(max(pos, 0), 1)
-            self._derive_missing_from_to_values(i)  # done at the absolute final moment before the item is animated
-            for field in i.valuesTo.keys():
-                value = i.valuesFrom[field] + (i.tween(pos) * (i.valuesTo[field] - i.valuesFrom[field]))
-                set_attr_or_item(i.element, field, value)
-
         @property
         def _next_item(self):
             return self._items[self._next_item_index]
-
-        @staticmethod
-        def _derive_missing_from_to_values(item):
-            if bool(item.valuesFrom) ^ bool(item.valuesTo):
-                source = item.valuesFrom or item.valuesTo
-                destination = item.valuesFrom if not item.valuesFrom else item.valuesTo
-                for field in source.keys():
-                    destination[field] = copy(get_attr_or_item(item.element, field))
-            assert item.valuesFrom.keys() == item.valuesTo.keys(), 'from/to animations should be symmetrical'  # Temp assertion for development
 
 
     # Tweens ---------------------------------------------------------------
