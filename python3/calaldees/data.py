@@ -1,6 +1,23 @@
 import collections
-from functools import reduce
+from functools import reduce, partial
 from itertools import tee, zip_longest, cycle
+
+
+def get_keys(obj):
+    if hasattr(obj, 'keys'):
+        return obj.keys()
+    else:
+        return vars(obj).keys()
+def get_attr_or_item(obj, field):
+    try:
+        return obj[field]
+    except:
+        return getattr(obj, field)
+def set_attr_or_item(obj, field, value):
+    try:
+        obj[field] = value
+    except TypeError:
+        setattr(obj, field, value)
 
 
 def subdict(d, keys):
@@ -62,6 +79,35 @@ def cycle_offset(iterator, offset=0, yield_values=1, num_yields=None):
             yield next(iterators[0])
         else:
             yield tuple(next(_iterator) for _iterator in iterators)
+
+
+def _blend_mix_func(a, b, blend=0.5):
+    assert 0 <= blend <= 1
+    return (a * blend) + (b * (1 - blend))
+def blend(a, b, target=None, blend=0.5):
+    """
+    Blends two objects or dicts
+
+    Dict order is not predicatble for doctest - so I have use '=='
+
+    >>> color_1 = {'red': 1.0, 'green': 0.5, 'blue': 1.0}
+    >>> color_2 = {'red': 0.0, 'green': 0.5, 'blue': 0.5}
+    >>> blend(color_1, color_2, blend=0.5) == {'red': 0.5, 'green': 0.5, 'blue': 0.75}
+    True
+    >>> blend(color_1, color_2, blend=0.0) == {'red': 0.0, 'green': 0.5, 'blue': 0.5}
+    True
+    >>> blend(color_1, color_2, blend=1.0) == {'red': 1.0, 'green': 0.5, 'blue': 1.0}
+    True
+    """
+    return mix(a, b, target=target, mix_func=partial(_blend_mix_func, blend=blend))
+def mix(a, b, *, target=None, mix_func=None):
+    """
+    """
+    assert callable(mix_func)
+    target = target or {}
+    for field in get_keys(a) & get_keys(b):
+        set_attr_or_item(target, field, mix_func(get_attr_or_item(a, field), get_attr_or_item(b, field)))
+    return target
 
 
 def get_index_float(index, array):
