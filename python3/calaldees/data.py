@@ -83,20 +83,30 @@ def cycle_offset(iterator, offset=0, yield_values=1, num_yields=None):
 
 def _blend_mix_func(a, b, blend=0.5):
     assert 0 <= blend <= 1
-    return (a * blend) + (b * (1 - blend))
+    return (a * (1-blend)) + (b * (blend))
 def blend(a, b, target=None, blend=0.5):
     """
     Blends two objects or dicts
 
     Dict order is not predicatble for doctest - so I have use '=='
 
+    >>> blend({'a': 50}, {'a': 100}, blend=0)
+    {'a': 50}
+    >>> blend({'a': 50}, {'a': 100}, blend=0.5)
+    {'a': 75.0}
+    >>> class TestObj():
+    ...    def __init__(self, a=0):
+    ...        self.a = a
+    >>> test_obj = TestObj()
+    >>> blend({'a': 50}, {'a': 100}, target=test_obj, blend=0.25).a
+    62.5
     >>> color_1 = {'red': 1.0, 'green': 0.5, 'blue': 1.0}
     >>> color_2 = {'red': 0.0, 'green': 0.5, 'blue': 0.5}
     >>> blend(color_1, color_2, blend=0.5) == {'red': 0.5, 'green': 0.5, 'blue': 0.75}
     True
-    >>> blend(color_1, color_2, blend=0.0) == {'red': 0.0, 'green': 0.5, 'blue': 0.5}
+    >>> blend(color_1, color_2, blend=0.0) == {'red': 1.0, 'green': 0.5, 'blue': 1.0}
     True
-    >>> blend(color_1, color_2, blend=1.0) == {'red': 1.0, 'green': 0.5, 'blue': 1.0}
+    >>> blend(color_1, color_2, blend=1.0) == {'red': 0.0, 'green': 0.5, 'blue': 0.5}
     True
     """
     return mix(a, b, target=target, mix_func=partial(_blend_mix_func, blend=blend))

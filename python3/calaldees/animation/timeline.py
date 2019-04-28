@@ -3,20 +3,10 @@ from functools import reduce
 from numbers import Number
 from copy import copy
 
+from ..data import blend, get_attr_or_item
+
 import logging
 log = logging.getLogger(__name__)
-
-
-def get_attr_or_item(obj, field):
-    try:
-        return obj[field]
-    except:
-        return getattr(obj, field)
-def set_attr_or_item(obj, field, value):
-    try:
-        obj[field] = value
-    except TypeError:
-        setattr(obj, field, value)
 
 
 class Timeline(object):
@@ -101,11 +91,8 @@ class Timeline(object):
             assert valuesFrom.keys() == valuesTo.keys(), 'from/to animations should be symmetrical'  # Temp assertion for development
 
         def _render_item(tween_pos):
-            pos = min(max(tween_pos, 0), 1)
             _derive_missing_from_to_values()  # done at the absolute final moment before the item is animated
-            for field in valuesTo.keys():
-                value = valuesFrom[field] + (tween_pos * (valuesTo[field] - valuesFrom[field]))
-                set_attr_or_item(element, field, value)
+            blend(valuesFrom, valuesTo, target=element, blend=min(max(tween_pos, 0), 1))
 
         _render_item._element = element  # for debugging the function
         _render_item._valuesFrom = valuesFrom
