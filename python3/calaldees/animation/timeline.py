@@ -4,6 +4,7 @@ from numbers import Number
 from copy import copy
 
 from ..data import blend, get_attr_or_item
+from ..limit import limit
 
 import logging
 log = logging.getLogger(__name__)
@@ -29,6 +30,15 @@ class Timeline(object):
 
         def __repr__(self):
             return f'<AnimationItem timestamp={self.timestamp} duration={self.duration} tween={self.tween} render_item_func={vars(self.render_item_func)}>'
+
+        @property
+        def element(self):
+            """
+            For backwards compatability with triggerline
+            May need to think about a different implementation?
+            """
+            # TODO: maybe add 'try' and return None if render_item_func does not support the default interface?
+            return self.render_item_func._element
 
         @property
         def timestamp_end(self):
@@ -325,7 +335,7 @@ class Timeline(object):
                 if i.duration == 0 or i.timestamp_end < timecode:
                     normalized_pos = 1
                 else:
-                    normalized_pos = (timecode - i.timestamp) / i.duration
+                    normalized_pos = limit((timecode - i.timestamp) / i.duration)  # Little unsure of using `limit` here. We should never get values > 1. Could be a rounding error. Maybe this will hide future problems?
                 i.render_item_func(i.tween(normalized_pos))
 
             # Expire passed animation items form _active
