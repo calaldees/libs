@@ -6,8 +6,9 @@ from itertools import tee, zip_longest, cycle
 def get_keys(obj):
     if hasattr(obj, 'keys'):
         return obj.keys()
-    else:
+    elif hasattr(obj, '__dict__'):
         return vars(obj).keys()
+    return set()
 def get_attr_or_item(obj, field):
     try:
         return obj[field]
@@ -18,7 +19,9 @@ def set_attr_or_item(obj, field, value):
         obj[field] = value
     except TypeError:
         setattr(obj, field, value)
-
+def set_attr_or_item_all(source, target):
+    for field in get_keys(source):
+        set_attr_or_item(target, field, get_attr_or_item(source, field))
 
 def subdict(d, keys):
     return {k: v for k, v in d.items() if k in keys}
@@ -108,6 +111,8 @@ def blend(a, b, target=None, blend=0.5):
     True
     >>> blend(color_1, color_2, blend=1.0) == {'red': 0.0, 'green': 0.5, 'blue': 0.5}
     True
+    >>> blend(1, 2, 0.5)
+    1.5
     """
     return mix(a, b, target=target, mix_func=partial(_blend_mix_func, blend=blend))
 def mix(a, b, *, target=None, mix_func=None):
@@ -115,9 +120,14 @@ def mix(a, b, *, target=None, mix_func=None):
     """
     assert callable(mix_func)
     target = target or {}
-    for field in get_keys(a) & get_keys(b):
-        set_attr_or_item(target, field, mix_func(get_attr_or_item(a, field), get_attr_or_item(b, field)))
-    return target
+    fields = get_keys(a) & get_keys(b)
+    if fields:
+        for field in fields:
+            value = mix_func(get_attr_or_item(a, field), get_attr_or_item(b, field))
+            set_attr_or_item(target, field, value)
+        return target
+    return mix_func(a, b)
+
 
 
 def get_index_float(index, array):
@@ -140,6 +150,21 @@ def get_index_float(index, array):
     """
     assert 0 <= index <= 1
     return array[min(len(array)-1, int(index * len(array)))]
+
+
+def get_index_float_blend(index_float, array):
+    """
+    >>> get_index_float_blend(1.5, (1,2,3))
+    2.5
+    >>> get_index_float_blend(3.5, (1,2,3))
+    1.5
+    >>> get_index_float_blend(0.5, ({'a': 1},{'a': 2},{'a': 3}))
+    {'a': 1.5}
+    """
+    index = int(index_float)
+    a = array[(index) % len(array)]
+    b = array[(index+1) % len(array)]
+    return blend(a, b, blend=index_float % 1)
 
 
 def first(iterable):
