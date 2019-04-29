@@ -130,9 +130,21 @@ def get_args():
     args = parser.parse_args()
     return vars(args)
 
+def init_sigterm_handler():
+    """
+    Docker Terminate
+    https://lemanchet.fr/articles/gracefully-stop-python-docker-container.html
+    """
+    import signal
+    def handle_sigterm(*args):
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
 if __name__ == "__main__":
     options = get_args()
     logging.basicConfig(level=options['log_level'])
+    init_sigterm_handler()
+
     manager = SubscriptionEchoServerManager(**options)
     import time
     try:

@@ -64,10 +64,23 @@ def get_args():
     return kwargs
 
 
+def init_sigterm_handler():
+    """
+    Docker Terminate
+    https://lemanchet.fr/articles/gracefully-stop-python-docker-container.html
+    """
+    import signal
+    def handle_sigterm(*args):
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
+
+
 # Main ------------------------------------------------------------------------
 
 if __name__ == '__main__':
     kwargs = get_args()
+    init_sigterm_handler()
 
     from wsgiref import simple_server
     httpd = simple_server.make_server(kwargs['host'], kwargs['port'], create_wsgi_app(**kwargs))
