@@ -83,7 +83,7 @@ class Timeline(object):
     def add_label(self, name, timestamp):
         self._label_timestamps[name] = timestamp
 
-    def animation_item(self, timestamp, duration, render_item_func, tween, offset=0):
+    def animation_item(self, timestamp, duration, render_item_func, tween=None, offset=0):
         """
         render_item_func takes a value between 0 and 1 and sets the values on element
         """
