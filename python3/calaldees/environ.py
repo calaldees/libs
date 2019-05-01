@@ -29,9 +29,7 @@ def get_env(key, _environ=environ, _environ_templates={}, _post_render_funcs={},
     ...     _environ_templates={},
     ... )
     Traceback (most recent call last):
-        ...
     AssertionError: unknown environ key: IMAGE_API
-    assert 'IMAGE_API' in {}
 
     >>> get_env(
     ...     'IMAGE_API', 

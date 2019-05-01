@@ -17,7 +17,6 @@ def parse_env(filehandle):
     >>> input = StringIO()
     >>> _ = input.write('#comment1  \\na=1\\nb=2\\n #comment2\\n')
     >>> _ = input.seek(0)
-    0
     >>> parse_env(input)
     {'a': '1', 'b': '2'}
     """
