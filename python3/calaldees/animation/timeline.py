@@ -83,6 +83,17 @@ class Timeline(object):
     def add_label(self, name, timestamp):
         self._label_timestamps[name] = timestamp
 
+    def animation_item(self, timestamp, duration, render_item_func, tween, offset=0):
+        """
+        render_item_func takes a value between 0 and 1 and sets the values on element
+        """
+        self._animation_items.append(
+            self.AnimationItem(self._resolve_timestamp(timestamp, offset), duration, render_item_func, tween)
+        )
+        self._invalidate_timeline_cache()
+        return self
+
+    # FromTo Layer -------------------------------------------------------------
 
     @staticmethod
     def _get_default_render_item_func(element, valuesFrom={}, valuesTo={}):
@@ -109,16 +120,6 @@ class Timeline(object):
         _render_item._valuesTo = valuesTo
 
         return _render_item
-
-    def animation_item(self, timestamp, duration, render_item_func, tween, offset=0):
-        """
-        render_item_func takes a value between 0 and 1 and sets the values on element
-        """
-        self._animation_items.append(
-            self.AnimationItem(self._resolve_timestamp(timestamp, offset), duration, render_item_func, tween)
-        )
-        self._invalidate_timeline_cache()
-        return self
 
     def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, tween=None, timestamp=None, offset=0):
         assert elements, 'No elements to animate'
@@ -149,6 +150,8 @@ class Timeline(object):
         for index, element in enumerate(elements):
             self.to(element, duration, valuesTo=valuesTo, tween=tween, timestamp=timestamp + (index * item_delay))
         return self
+
+    # Split --------------------------------------------------------------------
 
     def split(self, *timestamps):
         """
@@ -193,16 +196,6 @@ class Timeline(object):
                 t._animation_items.append(Timeline.AnimationItem(**_i))
             t._label_timestamps = {label: timestamp - timestamp_start for label, timestamp in self._label_timestamps.items() if _in(timestamp)}
             yield t
-
-
-    # Control ------------------------------------------------------------------
-
-    def get_renderer(self, *args, **kwargs):
-        """
-        Return a new renderer to modify the animation items
-        The returned rendering caches the animation progress state
-        """
-        return Timeline.Renderer(self, *args, **kwargs)
 
     # Operators ----------------------------------------------------------------
 
@@ -301,6 +294,13 @@ class Timeline(object):
         return self.__invert__()
 
     # Renderer -----------------------------------------------------------------
+
+    def get_renderer(self, *args, **kwargs):
+        """
+        Return a new renderer to modify the animation items
+        The returned rendering caches the animation progress state
+        """
+        return Timeline.Renderer(self, *args, **kwargs)
 
     class Renderer(object):
         def __init__(self, parent_timeline, delay=0, repeat=0, repeatDelay=0, onUpdate=None, onRepeat=None, onComplete=None):
