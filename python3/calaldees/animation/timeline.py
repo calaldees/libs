@@ -98,6 +98,8 @@ class Timeline(object):
     @staticmethod
     def _get_default_render_item_func(element, valuesFrom={}, valuesTo={}):
         assert valuesFrom or valuesTo, 'No animation values provided'
+        assert isinstance(valuesFrom, dict)
+        assert isinstance(valuesTo, dict)
         if valuesFrom and valuesTo:
             assert valuesFrom.keys() == valuesTo.keys(), 'from/to keys should be symmetrical'
         valuesFrom = copy(valuesFrom)
