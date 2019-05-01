@@ -12,17 +12,6 @@ except ImportError:
     log.error('python docker package not present')
 
 
-def init_sigterm_handler():
-    """
-    Docker Terminate
-    https://lemanchet.fr/articles/gracefully-stop-python-docker-container.html
-    """
-    import signal
-    def handle_sigterm(*args):
-        raise KeyboardInterrupt()
-    signal.signal(signal.SIGTERM, handle_sigterm)
-
-
 def convert_docker_absolute_windows_path(path):
     """
     >>> convert_docker_absolute_windows_path('/path/linux')
