@@ -3,7 +3,7 @@ from functools import reduce
 from numbers import Number
 from copy import copy
 
-from ..data import blend, get_attr_or_item
+from ..data import blend, get_attr_or_item, set_attr_or_item_all
 from ..limit import limit
 
 import logging
@@ -93,7 +93,21 @@ class Timeline(object):
         self._invalidate_timeline_cache()
         return self
 
+    def set_(self, elements, values, timestamp=None):
+        elements = self._normalize_elements(elements)
+        def _render_item(tween_pos):
+            for element in elements:
+                set_attr_or_item_all(source=values, target=element)
+        return self.animation_item(timestamp, 0, _render_item)
+
     # FromTo Layer -------------------------------------------------------------
+
+    @staticmethod
+    def _normalize_elements(elements):
+        assert elements, 'No elements to animate'
+        if not hasattr(elements, '__iter__') or isinstance(elements, dict):
+            return (elements, )
+        return elements
 
     @staticmethod
     def _get_default_render_item_func(element, valuesFrom={}, valuesTo={}):
@@ -124,10 +138,7 @@ class Timeline(object):
         return _render_item
 
     def from_to(self, elements, duration, valuesFrom={}, valuesTo={}, tween=None, timestamp=None, offset=0):
-        assert elements, 'No elements to animate'
-        if not hasattr(elements, '__iter__') or isinstance(elements, dict):  # TODO: why is isinstance(dict) here? remove?
-            elements = (elements, )
-
+        elements = self._normalize_elements(elements)
         timestamp = self._resolve_timestamp(timestamp, offset)
         for element in elements:
             self.animation_item(timestamp, duration, self._get_default_render_item_func(element, valuesFrom, valuesTo), tween)
@@ -138,9 +149,6 @@ class Timeline(object):
 
     def from_(self, elements, duration, values, tween=None, timestamp=None):
         return self.from_to(elements, duration, valuesFrom=values, tween=tween, timestamp=timestamp)
-
-    def set_(self, elements, values, timestamp=None):
-        return self.to(elements, 0, valuesTo=values, timestamp=timestamp)
 
     def staggerTo(self, elements, duration, valuesTo, item_delay, tween=None, timestamp=None):
         """
