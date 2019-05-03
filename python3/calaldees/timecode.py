@@ -157,7 +157,13 @@ def seconds_to_timecode(seconds, bpm, timesignature=parse_timesignature('4:4')):
 
 
 def next_frame_from_timestamp(timestamp, frame_rate, frame_offset=0):
-    return math.ceil(timestamp * frame_rate) + frame_offset
+    """
+    >>> next_frame_from_timestamp(8.366666666666667, frame_rate=30, frame_offset=-1)
+    250
+    >>> next_frame_from_timestamp(8.333333333333334, frame_rate=30, frame_offset=-1)
+    249
+    """
+    return math.ceil((timestamp - 0.000000000000001) * frame_rate) + frame_offset
 
 
 def nearest_timecode_to_next_frame(timestamp, frame_rate):
