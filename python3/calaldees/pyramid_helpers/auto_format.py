@@ -15,7 +15,6 @@ import pyramid.response
 import logging
 log = logging.getLogger(__name__)
 
-from ..json import json_object_handler
 from . import request_from_args
 
 #-------------------------------------------------------------------------------
@@ -242,10 +241,9 @@ def render_template(request, result, format, template_data_param='d'):
 register_formater('python', lambda result:result)
 
 # JSON -----------------------------
-import json
-import datetime
+from ..json import json_string
 def format_json(request, result):
-    request.response.text = json.dumps(result, default=json_object_handler)
+    request.response.text = json_string(result)
     request.response.content_type = "application/json; charset=utf-8"
     return request.response
 register_formater('json', format_json)

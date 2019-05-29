@@ -1,5 +1,3 @@
-import json
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -14,7 +12,7 @@ except ImportError:
 import pyramid.request
 import pyramid.threadlocal
 
-from ..json import json_object_handler
+from ..json import json_string
 
 
 def request_from_args(args):
@@ -125,6 +123,6 @@ def set_cookie(request, name, data, path='/'):
         'Set-Cookie', '{name}={json_string}; Path={path}'.format(
             name=name,
             path=path,
-            json_string=json.dumps(data, default=json_object_handler),
+            json_string=json_string(data),
         )
     ))

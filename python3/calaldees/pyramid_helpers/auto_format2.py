@@ -14,8 +14,6 @@ import pyramid.decorator
 import logging
 log = logging.getLogger(__name__)
 
-from ..json import json_object_handler
-
 
 #-------------------------------------------------------------------------------
 # Class's
@@ -265,10 +263,10 @@ def format_html_template(request, data):
     return render_template(request, data, format_path='html')
 
 
-import json
+from ..json import json_string
 @format_manager.register_format_decorator('json', content_type='application/json')
 def format_json(request, data):
-    request.response.text = json.dumps(data, default=json_object_handler)
+    request.response.text = json_string(data)
     return request.response
     #charset='utf-8',
 
