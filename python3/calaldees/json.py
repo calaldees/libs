@@ -11,18 +11,7 @@ class JSONObjectEncoder(json.JSONEncoder):
         """
         Used with json lib to serialize json output
         e.g
-        text = json.dumps(result, default=json_object_handler)
-
-        >>> json_object_handler = JSONObjectEncoder().default
-        >>> json_object_handler(datetime.datetime(year=2000, month=1, day=1))
-        '2000-01-01T00:00:00'
-        >>> json_object_handler(datetime.timedelta(days=1, seconds=1))
-        86401.0
-        >>> TestEnum = enum.Enum('TestEnum', ('a', 'b'))
-        >>> json_object_handler(TestEnum.b)
-        '__enum__.TestEnum.b.2'
-        >>> sorted(json_object_handler({'a','b','c'}))
-        ['a', 'b', 'c']
+        text = json.dumps(result, cls=JSONObjectEncoder)
         """
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
@@ -33,7 +22,29 @@ class JSONObjectEncoder(json.JSONEncoder):
         if isinstance(obj, enum.Enum):
             return '__enum__.{type}.{name}.{value}'.format(type=type(obj).__name__, name=obj.name, value=obj.value)
         # Let the base class default method raise the TypeError
-        return super().default(self, obj)
+        return super().default(obj)
+
+_json_object_handler = JSONObjectEncoder().default
+def json_object_handler(obj):
+    """
+    >>> json_object_handler(datetime.datetime(year=2000, month=1, day=1))
+    '2000-01-01T00:00:00'
+    >>> json_object_handler(datetime.timedelta(days=1, seconds=1))
+    86401.0
+    >>> TestEnum = enum.Enum('TestEnum', ('a', 'b'))
+    >>> json_object_handler(TestEnum.b)
+    '__enum__.TestEnum.b.2'
+    >>> sorted(json_object_handler({'a','b','c'}))
+    ['a', 'b', 'c']
+    >>> json_object_handler({'a': 23})
+    {'a': 23}
+    >>> json_object_handler(23)
+    23
+    """
+    try:
+        return _json_object_handler(obj)
+    except TypeError:
+        return obj
 
 
 def json_object_handler_inverse(obj):
@@ -58,8 +69,8 @@ def json_object_handler_inverse(obj):
 def json_string(data):
     """
     >>> import datetime
-    >>> json_string({'a': datetime.datetime(day=1, month=1, year=1980), 'b': {1,2,3}})
-    '{"a": "1980-01-01T00:00:00", "b": [1, 2, 3]}'
+    >>> json_string({'a': {'b': datetime.datetime(day=1, month=1, year=1980), 'c': {1,2,3}, 'd': 23}})
+    '{"a": {"b": "1980-01-01T00:00:00", "c": [1, 2, 3], "d": 23}}'
     """
     return json.dumps(data, cls=JSONObjectEncoder)
 
