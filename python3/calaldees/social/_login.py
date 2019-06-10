@@ -350,6 +350,6 @@ class GoogleLogin(ILoginProvider):
                     return item
         return {
             'username': get_primary(provider_token.response, 'names')['displayName'],
-            'email': get_primary(provider_token.response, 'emailsAddresses')['value'],
+            'email': get_primary(provider_token.response, 'emailAddresses')['value'],
             'avatar_url': get_primary(provider_token.response, 'photos')['url'],
         }
