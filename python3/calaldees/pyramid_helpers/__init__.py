@@ -101,14 +101,24 @@ def max_age(gen_max_age_seconds=_generate_max_age_seconds_default, **options):
 # Predicates
 #-------------------------------------------------------------------------------
 
-def method_delete_router(info, request):
-    if request.method.upper() == 'DELETE' or request.params.get('method', 'GET').upper() == 'DELETE':
-        return True
+class MethodRouterPredicate(object):
+    def __init__(self, request_method, config):
+        """
+        Allow a query_string `method=DELETE` to allow a delete request to be faked with a GET
+        """
+        self.request_method = request_method.upper()
+        assert self.request_method in {'DELETE', 'PUT'}
 
+    def text(self):
+        return f'upgrade_get_with_param_to = {self.request_method}'
 
-def method_put_router(info, request):
-    if request.method == 'PUT' or request.params.get('method', 'GET').upper() == 'PUT':
-        return True
+    phash = text
+
+    def __call__(self, context_or_info, request):
+        return self.request_method in (
+            request.method.upper(),
+            request.params.get('method', 'GET').upper()
+        )
 
 
 #-------------------------------------------------------------------------------
