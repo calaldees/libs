@@ -121,6 +121,19 @@ class MethodRouterPredicate(object):
         )
 
 
+class RequiresParamPredicate(object):
+    def __init__(self, val, config):
+        self.param_name = val
+
+    def text(self):
+        return f'requires_param = {self.param_name}'
+
+    phash = text
+
+    def __call__(self, context_or_info, request):
+        return request.params.get(self.param_name)
+
+
 #-------------------------------------------------------------------------------
 # Headers
 #-------------------------------------------------------------------------------
