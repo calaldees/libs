@@ -207,9 +207,14 @@ def duplicates(list_with_duplicates):
     return [item for item in list_with_duplicates if not set_without_duplicates.pop(item)]
 
 
-# https://stackoverflow.com/a/434411/3356840
 from itertools import zip_longest
 def grouper(iterable, n, fillvalue=None):
+    """
+    https://stackoverflow.com/a/434411/3356840
+
+    >>> tuple(grouper('ABCDEFG', 3, 'x'))
+    (('A', 'B', 'C'), ('D', 'E', 'F'), ('G', 'x', 'x'))
+    """
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 

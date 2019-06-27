@@ -51,13 +51,13 @@ def parse_timedelta(text):
     ##datetime.timedelta(0, 60, 1)
 
     >>> parse_timedelta('00:00:01.00')
-    datetime.timedelta(0, 1)
+    datetime.timedelta(seconds=1)
     >>> parse_timedelta('01:00:00')
-    datetime.timedelta(0, 3600)
+    datetime.timedelta(seconds=3600)
     >>> parse_timedelta('5')
-    datetime.timedelta(0, 5)
+    datetime.timedelta(seconds=5)
     >>> parse_timedelta('1:01')
-    datetime.timedelta(0, 3660)
+    datetime.timedelta(seconds=3660)
     """
     hours = "0"
     minutes = "0"

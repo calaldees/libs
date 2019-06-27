@@ -34,8 +34,8 @@ def test_timeline_creation(tl):
 InvalidArguemnts = namedtuple('InvalidArguments', ('args', 'kwargs'))
 @pytest.mark.parametrize(('argsX', 'kwargsX'), (
     InvalidArguemnts(args=(), kwargs=dict()),
-    InvalidArguemnts(args=(o1(), -1), kwargs=dict(valuesFrom={'a': 1})),
-    InvalidArguemnts(args=(o1(), 0), kwargs=dict()),
+    InvalidArguemnts(args=(o1, -1), kwargs=dict(valuesFrom={'a': 1})),
+    InvalidArguemnts(args=(o1, 0), kwargs=dict()),
 ))
 def test_timeline_from_to_invalid(tl, argsX, kwargsX):
     with pytest.raises((AssertionError, TypeError)) as exc:

@@ -21,7 +21,7 @@ def convert_str_with_type(value_string, value_split='->', fallback_type=None):
     >>> convert_str_with_type("5 -> int")
     5
     >>> convert_str_with_type("00:00:01 -> timedelta")
-    datetime.timedelta(0, 1)
+    datetime.timedelta(seconds=1)
     >>> convert_str_with_type("[]")
     []
     >>> convert_str_with_type('', fallback_type=list)
@@ -70,7 +70,7 @@ def convert_str(value, return_type):
     >>> convert_str('{"a":1}', None)
     {'a': 1}
     >>> convert_str('0:00:01', 'timedelta')
-    datetime.timedelta(0, 1)
+    datetime.timedelta(seconds=1)
 
     #>>> convert_str('2000-01-01', 'datetime')
     #datetime.datetime(2000, 1, 1, 0, 0)
