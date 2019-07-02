@@ -170,6 +170,10 @@ def frame_to_timecode(frame, framerate):
 
 def next_frame_from_timestamp(timestamp, frame_rate, frame_offset=0):
     """
+    >>> next_frame_from_timestamp(0.00, frame_rate=25)
+    0
+    >>> next_frame_from_timestamp(0.04, frame_rate=25)
+    1
     >>> next_frame_from_timestamp(8.366666666666667, frame_rate=30, frame_offset=-1)
     250
     >>> next_frame_from_timestamp(8.333333333333334, frame_rate=30, frame_offset=-1)

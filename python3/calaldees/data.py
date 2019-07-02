@@ -188,7 +188,7 @@ def flatten(l):
     [1, 2, 3, 4, 5, 6]
     """
     for el in l:
-        if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+        if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
             for sub in flatten(el):
                 yield sub
         else:
