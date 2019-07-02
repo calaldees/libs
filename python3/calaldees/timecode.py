@@ -156,6 +156,18 @@ def seconds_to_timecode(seconds, bpm, timesignature=parse_timesignature('4:4')):
     return beatcount_to_timecode(seconds / (60 / bpm) / (4 / timesignature.one_beat), timesignature)
 
 
+def frame_to_timecode(frame, framerate):
+    """
+    >>> frame_to_timecode(1, 25)
+    0.04
+    >>> frame_to_timecode(None, 25)
+    0
+    >>> frame_to_timecode(-1, 25)
+    0
+    """
+    return frame / framerate if frame and frame > 0 else 0
+
+
 def next_frame_from_timestamp(timestamp, frame_rate, frame_offset=0):
     """
     >>> next_frame_from_timestamp(8.366666666666667, frame_rate=30, frame_offset=-1)

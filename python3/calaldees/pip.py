@@ -2,8 +2,13 @@
 import re
 import io
 REGEX_COMMENT = re.compile(r'#(.*)')
-def load_pip_requires_file(filename, _open=io.open):
+def parse_requirements(filename, _open=io.open):
     """
+    https://stackoverflow.com/a/16624700/3356840
+    from pip.req import parse_requirements
+
+    This is a backwards compatable python2 re-implementation
+
     >>> def _mock_open(data):
     ...     class _mock_open_class():
     ...         def __init__(self, *args, **kwargs):
@@ -13,7 +18,7 @@ def load_pip_requires_file(filename, _open=io.open):
     ...         def __exit__(self, type, value, traceback):
     ...             pass
     ...     return _mock_open_class
-    >>> load_pip_requires_file('test.txt', _mock_open('''
+    >>> parse_requirements('test.txt', _mock_open('''
     ...     # unneeded==3.4.5  # comment
     ...     # other==1.2.3
     ...     testlib>=5.6.7
