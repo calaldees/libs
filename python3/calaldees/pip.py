@@ -24,8 +24,9 @@ def parse_requirements(filename, _open=io.open):
     ...     testlib>=5.6.7
     ...     
     ...     myApp # is great
+    ...     git+https://github.com/USERNAME/REPONAME.git@BRANCH#egg=USERNAME
     ... '''.splitlines()))
-    ('testlib>=5.6.7', 'myApp')
+    ('testlib>=5.6.7', 'myApp', '???')
     """
     with _open(filename, 'rt') as filehandle:
         return tuple(filter(None, (
