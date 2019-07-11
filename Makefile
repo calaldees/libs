@@ -1,0 +1,2 @@
+cloc:
+	cloc --vcs=git
