@@ -1,6 +1,6 @@
 import collections
 from functools import reduce, partial
-from itertools import tee, zip_longest, cycle
+from itertools import tee, zip_longest, cycle, chain
 
 
 def get_keys(obj):
@@ -51,6 +51,15 @@ def pairwise(iterable, fillvalue=None):
     a, b = tee(iterable)
     next(b, None)
     return zip_longest(a, b, fillvalue=fillvalue)
+
+def pairwise_inverse(iterable, fillvalue=None):
+    """
+    >>> tuple(pairwise_inverse((1,2,3)))
+    ((None, 1), (1, 2), (2, 3))
+    """
+    a, b = tee(iterable)
+    a = chain((fillvalue, ), a)
+    return zip(a, b)
 
 
 def cycle_offset(iterator, offset=0, yield_values=1, num_yields=None):

@@ -85,3 +85,11 @@ def hashfiles(*args, **kwargs):
         for filescan in fast_scan(*args, **kwargs)
     ))
     return hash_data(file_hashs)
+
+def hashfiles_list(path, files):
+    if isinstance(files, str):
+        files = (files, )
+    return hashfiles(
+        path,
+        search_filter=fast_scan_regex_filter(r'|'.join(files))
+    )
