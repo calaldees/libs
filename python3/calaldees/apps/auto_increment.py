@@ -27,7 +27,7 @@ def _write(filename, data):
     with open(filename, 'wt') as filehandle:
         return filehandle.write(data)
 
-def main(filename='', regex=DEFAULT_REGEX):
+def auto_increment_file(filename='', regex=DEFAULT_REGEX):
     _write(filename, auto_increment(_read(filename), regex))
 
 
@@ -50,4 +50,4 @@ def get_args():
 
 if __name__ == "__main__":
     kwargs = get_args()
-    main(**kwargs)
+    auto_increment_file(**kwargs)
