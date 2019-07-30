@@ -1,3 +1,5 @@
+// Consider reading http://es6-features.org
+
 // http://stackoverflow.com/a/10284006/3356840
 //export const zip = rows=>rows[0].map((_,c)=>rows.map(row=>row[c]));
 
@@ -87,11 +89,27 @@ assertEquals([
     [ `${[...previousValueIterator([1,2,3])]}`, `${[ [null,1], [1,2], [2,3]] }`],
 ]);
 
+
 export function buildMapFromObject(obj) {
     // https://stackoverflow.com/questions/36644438/how-to-convert-a-plain-object-into-an-es6-map
     // return Object.keys(obj).reduce((map, key) => map.set(key, obj[key]), new Map());
     return new Map(Object.entries(obj));
 }
+assertEquals([
+    [ `${buildMapFromObject({'a': 1, 'b': 2}).get('b')}`, `2` ],
+]);
+export function buildObjectFromMap(map) {
+    // https://gist.github.com/lukehorvat/133e2293ba6ae96a35ba
+    return [...map.entries()].reduce((obj, [key, value]) => (obj[key] = value, obj), {});
+    //const obj = {};
+    //for (let [key, value] of map) {
+    //    obj[key] = value;
+    //}
+    //return obj
+}
+assertEqualsObject([
+    [ buildObjectFromMap(new Map().set('a', 1).set('b', 2)), {'a': 1, 'b': 2} ],
+]);
 
 
 export function invertMap(map) {
@@ -125,5 +143,5 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 
 
 export default {
-    range, enumerate, all, zip, chain, previousValueIterator, buildMapFromObject, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
+    range, enumerate, all, zip, chain, previousValueIterator, buildMapFromObject, buildObjectFromMap, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
 }
