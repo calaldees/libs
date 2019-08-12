@@ -16,6 +16,9 @@ export function assertEqualsObject(comparison_tuples) {
     return assertEquals(comparison_tuples.map(v => v.map(JSON.stringify)))
 };
 
+export function isObject(obj) {
+    return obj != null && obj.constructor.name === "Object";
+}
 
 export function* range(target, start=0, step=1) {
     for (let i=start ; i<target ; i+=step) {yield i;}
@@ -142,6 +145,30 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 }());
 
 
+// https://gist.github.com/clohr/44d4aa6fb749b3abd4e7fcde82e03d29
+// https://stackoverflow.com/a/44827922/3356840
+export const setIntersect = (set1, set2) => [...set1].filter(num => set2.has(num))
+export const setDifference = (set1, set2) => [...set1].filter(num => !set2.has(num))
+export const setUnion = (set1, set2) => [...set1, ...set2]
+export const setIsEqual = (a, b) => a.size === b.size && [...a].every(value => b.has(value));
+
+
 export default {
-    range, enumerate, all, zip, chain, previousValueIterator, buildMapFromObject, buildObjectFromMap, invertMap, MapDefaultGet, assertEquals, assertEqualsObject
+    assertEquals,
+    assertEqualsObject,
+    isObject,
+    range,
+    enumerate,
+    all,
+    zip,
+    chain,
+    previousValueIterator,
+    buildMapFromObject,
+    buildObjectFromMap,
+    invertMap,
+    MapDefaultGet,
+    setIntersect,
+    setDifference,
+    setUnion,
+    setIsEqual,
 }
