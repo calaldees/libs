@@ -1,9 +1,4 @@
 #!/usr/bin/python
-
-DESCRIPTION="""
-Python util for checking if a port is currently open
-"""
-
 import sys
 import socket
 
@@ -12,10 +7,9 @@ import datetime
 
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 80
-DEFAULT_TIMEOUT = 30
+DEFAULT_TIMEOUT = 60
 
 
-# Copy/Paste from `wait_for.py`
 def wait_for(
         func_attempt,
         func_is_ok=lambda response: response,
@@ -55,12 +49,12 @@ def get_args():
 
     parser = argparse.ArgumentParser(
         prog=__name__,
-        description=DESCRIPTION,
+        description="""Check/wait for a port to open""",
     )
 
     parser.add_argument('--port', action='store', type=int, help='port to check', default=DEFAULT_PORT)
     parser.add_argument('--host', action='store', help='host to check', default=DEFAULT_HOST)
-    parser.add_argument('--timeout', action='store', type=int, help='timeout in seconds before failiure', default=DEFAULT_TIMEOUT)
+    parser.add_argument('--timeout', action='store', type=int, help='timeout in seconds before failure', default=DEFAULT_TIMEOUT)
 
     args = parser.parse_args()
     return vars(args)
@@ -68,8 +62,8 @@ def get_args():
 
 if __name__ == "__main__":
     kwargs = get_args()
-
     wait_for(
-        lambda: is_port_open(**kwargs),
+        func_attempt=lambda: is_port_open(**kwargs),
+        func_generate_exception=lambda response: Exception('wait_for_port failed {}'.format(kwargs)),
         **kwargs
     )
