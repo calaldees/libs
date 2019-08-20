@@ -150,7 +150,10 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 export const setIntersect = (set1, set2) => [...set1].filter(num => set2.has(num))
 export const setDifference = (set1, set2) => [...set1].filter(num => !set2.has(num))
 export const setUnion = (set1, set2) => [...set1, ...set2]
-export const setIsEqual = (a, b) => a.size === b.size && [...a].every(value => b.has(value));
+export const isSetEqual = (a, b) => a.size === b.size && [...a].every(value => b.has(value));
+
+// https://stackoverflow.com/a/44586654/3356840
+export const hasIterationProtocol = variable => variable !== null && Symbol.iterator in Object(variable);
 
 
 export default {
@@ -170,5 +173,6 @@ export default {
     setIntersect,
     setDifference,
     setUnion,
-    setIsEqual,
+    isSetEqual,
+    hasIterationProtocol,
 }
