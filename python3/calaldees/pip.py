@@ -1,7 +1,7 @@
 
 import re
 import io
-REGEX_COMMENT = re.compile(r'[\s^]#(.*)')
+REGEX_COMMENT = re.compile(r'(?:[\s^]#(.*))|(git\+.*)')
 def parse_requirements(filename, _open=io.open):
     """
     https://stackoverflow.com/a/16624700/3356840
@@ -26,7 +26,7 @@ def parse_requirements(filename, _open=io.open):
     ...     myApp # is great
     ...     git+https://github.com/USERNAME/REPONAME.git@BRANCH#egg=USERNAME
     ... '''.splitlines()))
-    ('testlib>=5.6.7', 'myApp', 'git+https://github.com/USERNAME/REPONAME.git@BRANCH#egg=USERNAME')
+    ('testlib>=5.6.7', 'myApp')
     """
     with _open(filename, 'rt') as filehandle:
         return tuple(filter(None, (
