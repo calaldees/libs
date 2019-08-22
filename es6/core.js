@@ -156,6 +156,13 @@ export const isSetEqual = (a, b) => a.size === b.size && [...a].every(value => b
 export const hasIterationProtocol = variable => variable !== null && Symbol.iterator in Object(variable);
 
 
+
+export const capitalize = (s) => {
+    if (typeof s !== 'string') {return '';}
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+
 export default {
     assertEquals,
     assertEqualsObject,
@@ -175,4 +182,5 @@ export default {
     setUnion,
     isSetEqual,
     hasIterationProtocol,
+    capitalize,
 }
