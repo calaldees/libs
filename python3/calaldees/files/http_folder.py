@@ -1,5 +1,6 @@
 import os.path
 import json
+import re
 import urllib.request
 import urllib.parse
 from datetime import datetime
@@ -10,9 +11,11 @@ from functools import lru_cache, partial
 
 class HTTPFolder():
     """
-    Wrapper to browse/walk remote files served via http
+    Wrapper to simulate `os.(walk, listdir, path.isfile)` functions with remote files served via http
     Designed to work with nginx json index format
-    See test_http_folder.pt for examples
+    See test_http_folder.py for examples of use
+
+    docker run --rm -it --name nginx-autoindex-test -v $(pwd)/folders_and_known_fileexts.conf:/etc/nginx/nginx.conf:ro -v $(pwd)/:/srv/root/:ro -p 80:80 nginx:alpine
     """
 
     class RemoteFile():
@@ -29,12 +32,16 @@ class HTTPFolder():
 
     def __init__(self, url):
         assert '?' not in url, 'TODO: handle query string'
-        self.url = self._normalize_directory(url)
+        self.url = self._append_path('', url=url)
 
-    @staticmethod
-    def _normalize_directory(path):
-        if not path.endswith('/'):
-            path = f'{path}/'
+    def _append_path(self, path, url=None, _enforce_folder=True):
+        url = url or self.url
+        path = urllib.parse.quote(os.path.normpath(path))
+        path = re.sub(r'^[./]*', '', path)
+        path = os.path.join(url, path)
+        if _enforce_folder:
+            if not path.endswith('/'):
+                path = f'{path}/'
         return path
 
     @staticmethod
@@ -43,30 +50,48 @@ class HTTPFolder():
         with urllib.request.urlopen(url) as f:
             return json.load(f)
 
-    def walk(self, relative_path='./', url=None):
+    def walk(self, path='.', url=None):
         """
-        Rough equivalent of os.walk - https://docs.python.org/3/library/os.html#os.walk
+        https://docs.python.org/3/library/os.html#os.walk
         """
         url = url or self.url
         items = defaultdict(list)
         for item in self._get_json(url):
             items[item['type']].append(item['name'])
-        yield (relative_path, items['directory'], items['file'])
+        yield (path, items['directory'], items['file'])
         for directory in items['directory']:
             yield from self.walk(
-                relative_path=os.path.join(relative_path, directory),
-                url=self._normalize_directory(os.path.join(url, urllib.parse.quote(directory))),
+                path=os.path.join(path, directory),
+                url=self._append_path(directory, url=url),
             )
+    def listdir(self, path='.'):
+        """
+        https://docs.python.org/3/library/os.html#os.listdir
+        Can also be context manager?
+        """
+        return (
+            item['name']
+            for item in self._get_json(self._append_path(path))
+        )
+    def scandir(self, *args, **kwargs):
+        """
+        https://docs.python.org/3/library/os.html#os.scandir
+        """
+        return self.listdir(*args, **kwargs)
+    def isfile(self, path):
+        raise NotImplementedError()
+    def isdir(self, path):
+        raise NotImplementedError()
 
     @contextmanager
     def open(self, path):
-        with urllib.request.urlopen(os.path.join(self.url, os.path.normpath(urllib.parse.quote(path)))) as f:
+        with urllib.request.urlopen(self._append_path(path, _enforce_folder=False)) as f:
             yield f
 
     @property
     def files(self):
         return (
-            self.RemoteFile(item=item, with_filehandle=partial(self.open, item['name']))
+            self.__class__.RemoteFile(item=item, with_filehandle=partial(self.open, item['name']))
             for item in self._get_json(self.url)
             if item['type'] == 'file'
         )
@@ -74,7 +99,7 @@ class HTTPFolder():
     @property
     def directorys(self):
         return (
-            HTTPFolder(os.path.join(self.url, urllib.parse.quote(item['name'])))
+            self.__class__(os.path.join(self.url, urllib.parse.quote(item['name'])))
             for item in self._get_json(self.url)
             if item['type'] == 'directory'
         )
