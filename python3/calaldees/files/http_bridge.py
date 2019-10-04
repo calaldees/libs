@@ -9,9 +9,6 @@ from functools import lru_cache, partial
 
 class RemoteFile():
     def __init__(self, item, with_filehandle):
-        """
-        { "name":"folders_and_known_fileexts.conf", "type":"file", "mtime":"Thu, 03 Oct 2019 13:08:39 GMT", "size":597 }
-        """
         assert isinstance(item, dict)
         assert item['type'] == 'file'
         self.name = item['name']
@@ -24,9 +21,13 @@ class RemoteFolder():
 
     def __init__(self, url):
         assert '?' not in url, 'TODO: handle query string'
-        if not url.endswith('/'):
-            url = f'{url}/'
-        self.url = url
+        self.url = self._normalize_directory(url)
+
+    @staticmethod
+    def _normalize_directory(path):
+        if not path.endswith('/'):
+            return f'{path}/'
+        return path
 
     @staticmethod
     @lru_cache()
@@ -36,35 +37,22 @@ class RemoteFolder():
 
     def walk(self, relative_path='./', url=None):
         """
-        Rough equivalent of os.walk
-        https://docs.python.org/3/library/os.html#os.walk
-
-        Walk output example
-        ('./src/deliveryapi/client', ['requirements'], ['client.py', '__init__.py', 'client.exports.sh'])
-
-        nginx json index example
-        [
-            {"name": "test", "type": "directory", "mtime": "Thu, 03 Oct 2019 15:52:39 GMT"},
-            {"name": "folders_and_known_fileexts.conf", "type": "file", "mtime": "Thu, 03 Oct 2019 13:08:39 GMT", "size": 597}
-        ]
+        Rough equivalent of os.walk - https://docs.python.org/3/library/os.html#os.walk
         """
         url = url or self.url
         items = defaultdict(list)
         for item in self._get_json(url):
-            items[item['type']] = item['name']
+            items[item['type']].append(item['name'])
         yield (relative_path, items['directory'], items['file'])
         for directory in items['directory']:
             yield from self.walk(
                 relative_path=os.path.join(relative_path, directory),
-                url=os.path.join(url, directory),
+                url=self._normalize_directory(os.path.join(url, directory)),
             )
 
     @contextmanager
     def open(self, path):
-        """
-        open files found with walk
-        """
-        with urllib.request.urlopen(os.path.join(self.url, path)) as f:
+        with urllib.request.urlopen(os.path.join(self.url, os.path.normpath(path))) as f:
             yield f
 
     @property
@@ -114,5 +102,17 @@ def test_RemoteFolder():
     remote_data_file = remote_test_files[0]
     assert remote_data_file.name == 'data.json'
     with remote_data_file.with_filehandle() as filehandle:
+        assert filehandle.read() == """[{"key": "value"}]"""
+    patcher.stop()
+def test_RemoteFolder_walk():
+    patcher = patch('urllib.request.urlopen', mock_server)
+    patcher.start()
+    rf = RemoteFolder('http://localhost/')
+    rf_walk = tuple(rf.walk())
+    assert rf_walk == (
+        ('./', ['test'], ['folders_and_known_fileexts.conf']),
+        ('./test', [], ['data.json']),
+    )
+    with rf.open(os.path.join('./test', 'data.json')) as filehandle:
         assert filehandle.read() == """[{"key": "value"}]"""
     patcher.stop()
