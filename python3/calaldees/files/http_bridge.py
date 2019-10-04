@@ -1,6 +1,7 @@
 import os.path
 import json
 import urllib.request
+import urllib.parse
 import dateparser
 from collections import defaultdict
 from contextlib import contextmanager
@@ -26,7 +27,7 @@ class RemoteFolder():
     @staticmethod
     def _normalize_directory(path):
         if not path.endswith('/'):
-            return f'{path}/'
+            path = f'{path}/'
         return path
 
     @staticmethod
@@ -47,12 +48,12 @@ class RemoteFolder():
         for directory in items['directory']:
             yield from self.walk(
                 relative_path=os.path.join(relative_path, directory),
-                url=self._normalize_directory(os.path.join(url, directory)),
+                url=self._normalize_directory(os.path.join(url, urllib.parse.quote(directory))),
             )
 
     @contextmanager
     def open(self, path):
-        with urllib.request.urlopen(os.path.join(self.url, os.path.normpath(path))) as f:
+        with urllib.request.urlopen(os.path.join(self.url, os.path.normpath(urllib.parse.quote(path)))) as f:
             yield f
 
     @property
@@ -66,7 +67,7 @@ class RemoteFolder():
     @property
     def directorys(self):
         return (
-            RemoteFolder(os.path.join(self.url, item['name']))
+            RemoteFolder(os.path.join(self.url, urllib.parse.quote(item['name'])))
             for item in self._get_json(self.url)
             if item['type'] == 'directory'
         )
@@ -75,13 +76,13 @@ class RemoteFolder():
 from unittest.mock import patch
 MOCK_SERVER = {
     'http://localhost/': """[
-        {"name": "test", "type": "directory", "mtime": "Thu, 03 Oct 2019 15:52:39 GMT"},
+        {"name": "test me", "type": "directory", "mtime": "Thu, 03 Oct 2019 15:52:39 GMT"},
         {"name": "folders_and_known_fileexts.conf", "type": "file", "mtime": "Thu, 03 Oct 2019 13:08:39 GMT", "size": 597}
     ]""",
-    'http://localhost/test/': """[
+    'http://localhost/test%20me/': """[
         { "name":"data.json", "type":"file", "mtime":"Fri, 04 Oct 2019 06:48:03 GMT", "size":19 }
     ]""",
-    'http://localhost/test/data.json': """[{"key": "value"}]"""
+    'http://localhost/test%20me/data.json': """[{"key": "value"}]"""
 }
 @contextmanager
 def mock_server(url):
@@ -96,7 +97,7 @@ def test_RemoteFolder():
     remote_root_directorys = tuple(rf.directorys)
     assert len(remote_root_directorys) == 1
     remote_root_directory = remote_root_directorys[0]
-    assert remote_root_directory.url == 'http://localhost/test/'
+    assert remote_root_directory.url == 'http://localhost/test%20me/'
     remote_test_files = tuple(remote_root_directorys[0].files)
     assert len(remote_test_files) == 1
     remote_data_file = remote_test_files[0]
@@ -110,9 +111,9 @@ def test_RemoteFolder_walk():
     rf = RemoteFolder('http://localhost/')
     rf_walk = tuple(rf.walk())
     assert rf_walk == (
-        ('./', ['test'], ['folders_and_known_fileexts.conf']),
-        ('./test', [], ['data.json']),
+        ('./', ['test me'], ['folders_and_known_fileexts.conf']),
+        ('./test me', [], ['data.json']),
     )
-    with rf.open(os.path.join('./test', 'data.json')) as filehandle:
+    with rf.open(os.path.join('./test me', 'data.json')) as filehandle:
         assert filehandle.read() == """[{"key": "value"}]"""
     patcher.stop()
