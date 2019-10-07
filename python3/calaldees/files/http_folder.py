@@ -7,6 +7,7 @@ from datetime import datetime
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import lru_cache, partial
+from itertools import chain
 
 
 class HTTPFolder():
@@ -29,6 +30,21 @@ class HTTPFolder():
         @property
         def mtime(self):
             return datetime.strptime(self._mtime, '%a, %d %b %Y %H:%M:%S %Z')
+        def stat(self):
+            """
+            https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat
+            """
+            raise NotImplementedError()
+        def read_text(self):
+            """
+            https://docs.python.org/3/library/pathlib.html#pathlib.Path.read_text
+            """
+            raise NotImplementedError()
+        def read_bytes(self):
+            """
+            https://docs.python.org/3/library/pathlib.html#pathlib.Path.read_bytes
+            """
+            raise NotImplementedError()
 
     def __init__(self, url):
         assert '?' not in url, 'TODO: handle query string'
@@ -49,6 +65,8 @@ class HTTPFolder():
     def _get_json(url):
         with urllib.request.urlopen(url) as f:
             return json.load(f)
+
+    # https://docs.python.org/3/library/os.html
 
     def walk(self, path='.', url=None):
         """
@@ -82,6 +100,14 @@ class HTTPFolder():
         raise NotImplementedError()
     def isdir(self, path):
         raise NotImplementedError()
+
+    # https://docs.python.org/3/library/pathlib.html
+
+    def iterdir(self):
+        """
+        https://docs.python.org/3/library/pathlib.html#pathlib.Path.iterdir
+        """
+        return chain(self.directorys, self.files)
 
     @contextmanager
     def open(self, path):

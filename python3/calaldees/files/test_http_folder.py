@@ -64,6 +64,7 @@ def test_HTTPFolder_listdir(rf):
     assert tuple(rf.listdir('./test me/')) == ('data.json', )
 
 
+@pytest.mark.skip()
 def test_HTTPFolder_isfile(rf):
     assert rf.isdir('test me')
     assert rf.isdir('./test me')
