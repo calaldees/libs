@@ -163,6 +163,32 @@ export const capitalize = (s) => {
 }
 
 
+export function objGet(cmd, obj, fallback_return) {
+    obj = obj || window;
+    if (!cmd) {return obj;}
+    if (typeof(cmd) == "string") {cmd = cmd.split(".");}
+    if (cmd.length == 1) {return obj[cmd.shift()] || fallback_return;}
+    if (cmd.length > 1) {
+        var next_cmd = cmd.shift();
+        var next_obj = obj[next_cmd];
+        if (typeof(next_obj) == "undefined") {
+            return fallback_return;
+        }
+        return objGet(cmd, next_obj, fallback_return);
+    }
+    return fallback_return;
+}
+export function objGetFunc(cmd, obj) {return objGet(cmd, obj, function(){})}
+export function objGetObj(cmd, obj) {return objGet(cmd, obj, {})}
+assertEqualsObject([
+    [objGet('', {a: 1}), {a: 1}],
+    [objGet('a.b.c', {a: {b: {c: 5}}}), 5],
+    [objGet('a.b.d', {a: {b: {c: 5}}}), undefined],
+    [objGetObj('a.b.d', {a: {b: {c: 5}}}), {}],
+]);
+
+
+
 export default {
     assertEquals,
     assertEqualsObject,
@@ -183,4 +209,7 @@ export default {
     isSetEqual,
     hasIterationProtocol,
     capitalize,
+    objGet,
+    objGetFunc,
+    objGetObj,
 }
