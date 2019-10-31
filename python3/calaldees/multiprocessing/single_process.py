@@ -2,8 +2,8 @@ import multiprocessing
 
 
 class SingleOutputStopableProcess():
-    def __init__(self, func):
-        self.queue = multiprocessing.Queue(1)
+    def __init__(self, func, queue_size=1):
+        self.queue = multiprocessing.Queue(queue_size)
         self.func = func
         self.close_event = None
         self.process = None
