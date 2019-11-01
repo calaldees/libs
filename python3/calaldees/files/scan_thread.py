@@ -6,12 +6,15 @@ from itertools import chain
 
 from .scan import fast_scan
 
+DEFAULT_RESCAN_INTERVAL = 2.0
 
-def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=2.0, **kwargs):
+def file_scan_diff_thread(paths, onchange_function=None, rescan_interval=DEFAULT_RESCAN_INTERVAL, **kwargs):
     """
     Used in a separate thread to indicate if a file has changed
     Use onchange_function if working in a single thread mode
     """
+    rescan_interval = rescan_interval or DEFAULT_RESCAN_INTERVAL
+    assert rescan_interval > 0
 
     if isinstance(paths, str):
         paths = paths.split(',')
