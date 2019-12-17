@@ -13,7 +13,7 @@ def multiprocessing_process_event_queue(queue_event_processors, is_running=True)
         })
     """
     for queue, func in queue_event_processors.items():
-        assert isinstance(queue, multiprocessing.queues.Queue)
+        assert hasattr(queue, '_reader')
         assert hasattr(func, '__call__')
     _is_running = is_running if hasattr(is_running, '__call__') else lambda: is_running
     def wait_for_queue_to_be_ready(queues):
