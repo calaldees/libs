@@ -148,6 +148,7 @@ def substring_in(substrings, string_list, ignore_case=True):
         return False
     if isinstance(substrings, str):
         substrings = [substrings]
+    # todo? from typing import Iterable ; if isinstance(my_item, Iterable):  or collections.Iterable
     if not hasattr(string_list, '__iter__') or not hasattr(substrings, '__iter__'):
         raise TypeError('params mustbe iterable')
     for s in string_list:
