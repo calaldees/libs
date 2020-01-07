@@ -189,18 +189,36 @@ def first(iterable):
             return i
 
 
-def flatten(iterable):
+def isiterable(iterable):
+    """
+    https://stackoverflow.com/a/36407550/3356840
+    """
+    if isinstance(iterable, (str, bytes)):
+        return False
+    try:
+        _ = iter(iterable)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
+def flatten(*args):
     """
     http://stackoverflow.com/questions/2158395/flatten-an-irregular-list-of-lists-in-python
 
-    >>> tuple(flatten([[[1, 2, 3], ['4', 5]], 6]))
-    (1, 2, 3, '4', 5, 6)
+    >>> tuple(flatten([[[1, 2, 3], ['4', 5]], 6], 7, '8'))
+    (1, 2, 3, '4', 5, 6, 7, '8')
     """
-    for item in iterable:
-        if isinstance(item, collections.abc.Iterable) and not isinstance(item, str):
-            yield from flatten(item)
+    for iterable in args:
+        if isiterable(iterable):
+            for item in iterable:
+                if isinstance(item, collections.abc.Iterable) and not isinstance(item, str):
+                    yield from flatten(item)
+                else:
+                    yield item
         else:
-            yield item
+            yield iterable
 
 
 def duplicates(list_with_duplicates):
