@@ -23,9 +23,9 @@ def set_attr_or_item_all(source, target):
     for field in get_keys(source):
         set_attr_or_item(target, field, get_attr_or_item(source, field))
 
+# Depricate in preference to DictSet?
 def subdict(d, keys):
     return {k: v for k, v in d.items() if k in keys}
-
 
 def list_neighbor_generator(_list, out_of_bounds_type=dict):
     """
