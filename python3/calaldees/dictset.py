@@ -46,12 +46,17 @@ class DictSetOperationsMixin():
     def __ge__(self, other):
         """
         >>> DictSetOperationsMixin.__ge__(
-        ...    {'gfg' : 1, 'is' : 2, 'best' : 3, 'for' : 4, 'CS' : 5},
-        ...    {'gfg' : 1, 'is' : 2, 'best' : 3},
+        ...    {'a': None},
+        ...    {'b': None},
+        ... )
+        False
+        >>> DictSetOperationsMixin.__ge__(
+        ...    {'a' : 1, 'b' : 2, 'c' : 3, 'd' : 4, 'e' : 5},
+        ...    {'a' : 1, 'b' : 2, 'c' : 3},
         ... )
         True
         """
-        return all(self.get(k, None) == v for k, v in other.items())
+        return all(k in self and self[k] == v for k, v in other.items())
     def __gt__(self, other):
         """
         >>> aa = DictSet({'a': 1, 'b': 2, 'c': 3})
