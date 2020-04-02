@@ -20,6 +20,13 @@ export function isObject(obj) {
     return obj != null && obj.constructor.name === "Object";
 }
 
+// https://stackoverflow.com/a/40953718/3356840
+export function clearObject(obj) {
+    for (let key in obj) {
+        delete obj[key];
+    }
+}
+
 export function* range(target, start=0, step=1) {
     for (let i=start ; i<target ; i+=step) {yield i;}
 }

@@ -83,3 +83,27 @@ def lookup_tags(_lookup, *args):
     #'default'
     """
     return _lookup[frozenset(args)]
+
+
+def items_pipeline(items, *funcs):
+    """
+    For each item - apply the function transforms in order
+    Items are individual and atomic and could be done in parallel
+    """
+    for item in items:
+        for func in funcs:
+            item = func(item)
+        yield item
+
+# ---
+
+def func_get_items(url):
+    #data = requests.get(url, headers={'content-type': 'application/json'}).json()
+    return None
+def func_get_item(item):
+    return item
+def func_identify_tags(item):
+    return item
+def func_categorise_item(item):
+    return item
+

@@ -1,7 +1,7 @@
 
 import re
 import io
-REGEX_COMMENT = re.compile(r'(?:[\s^]#(.*))|(git\+.*)')
+REGEX_COMMENT = re.compile(r'(?:\s*#(.*))|(git\+.*)')
 def parse_requirements(filename, _open=io.open):
     """
     https://stackoverflow.com/a/16624700/3356840
@@ -18,7 +18,7 @@ def parse_requirements(filename, _open=io.open):
     ...         def __exit__(self, type, value, traceback):
     ...             pass
     ...     return _mock_open_class
-    >>> parse_requirements('test.txt', _mock_open('''
+    >>> parse_requirements('test.txt', _mock_open('''#NOT A PACKAGE
     ...     # unneeded==3.4.5  # comment
     ...     # other==1.2.3
     ...     testlib>=5.6.7

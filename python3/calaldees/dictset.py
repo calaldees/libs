@@ -2,6 +2,9 @@
 def subdict(d, keys):
     return {k: v for k, v in d.items() if k in keys}
 
+# consider https://docs.python.org/3/library/functools.html#functools.total_ordering
+# just __eq__ and __lt__
+#@total_ordering
 class DictSetOperationsMixin():
     """
     I was disappointed with pythons builtin support for set operations with dicts
