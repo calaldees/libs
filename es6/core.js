@@ -100,6 +100,24 @@ assertEquals([
 ]);
 
 
+// https://stackoverflow.com/a/37319954/3356840
+export function filterInPlace(a, condition, thisArg) {
+    let j = 0;
+    a.forEach((e, i) => {
+        if (condition.call(thisArg, e, i, a)) {
+            if (i!==j) a[j] = e;
+            j++;
+        }
+    });
+    a.length = j;
+    return a;
+}
+assertEqualsObject([
+    [ filterInPlace([1,2,3,4,5], (i)=>i%2), [1,3,5] ],
+]);
+
+
+
 export function buildMapFromObject(obj) {
     // https://stackoverflow.com/questions/36644438/how-to-convert-a-plain-object-into-an-es6-map
     // return Object.keys(obj).reduce((map, key) => map.set(key, obj[key]), new Map());
@@ -200,12 +218,14 @@ export default {
     assertEquals,
     assertEqualsObject,
     isObject,
+    clearObject,
     range,
     enumerate,
     all,
     zip,
     chain,
     previousValueIterator,
+    filterInPlace,
     buildMapFromObject,
     buildObjectFromMap,
     invertMap,
