@@ -1,4 +1,4 @@
-
+import os
 import re
 import io
 REGEX_COMMENT = re.compile(r'(?:\s*#(.*))|(git\+.*)')
@@ -8,6 +8,9 @@ def parse_requirements(filename, _open=io.open):
     from pip.req import parse_requirements
 
     This is a backwards compatable python2 re-implementation
+
+    This interpretation of `requirements.txt` is incomplete compared to the spec
+    https://pip.pypa.io/en/stable/reference/pip_install/#example-requirements-file
 
     >>> def _mock_open(data):
     ...     class _mock_open_class():
@@ -28,8 +31,17 @@ def parse_requirements(filename, _open=io.open):
     ... '''.splitlines()))
     ('testlib>=5.6.7', 'myApp')
     """
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
     with _open(filename, 'rt') as filehandle:
         return tuple(filter(None, (
             REGEX_COMMENT.sub('', line).strip()
             for line in filehandle
         )))
+
+def parse_requirements_filter(filename, filter_packages=tuple()):
+    return tuple(
+        package
+        for package in parse_requirements(filename)
+        for filter_package in filter_packages
+        if filter_package in package
+    )

@@ -1,7 +1,7 @@
 from urllib.parse import urlunparse, urlparse, urlencode
 
 
-def build_url(baseurl='', path='', query_string_dict={}, scheme='', netloc='', host='', port=0, parameters='', fragment=''):
+def build_url(baseurl='', path='', query_string_dict=None, scheme='', netloc='', host='', port=0, parameters='', fragment=''):
     """
     For url_part index's - refer to https://docs.python.org/2/library/urlparse.html#urlparse.urlparse
     scheme://netloc/path;parameters?query#fragment
@@ -27,7 +27,7 @@ def build_url(baseurl='', path='', query_string_dict={}, scheme='', netloc='', h
                 netloc if netloc else host + (':{}'.format(int(port)) if port else ''),
                 path,
                 parameters,
-                urlencode(query_string_dict),
+                urlencode(query_string_dict or {}),
                 fragment
             ),
             urlparse(baseurl),

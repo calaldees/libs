@@ -1,4 +1,5 @@
 // Consider reading http://es6-features.org
+// https://lodash.com/ es modules
 
 // http://stackoverflow.com/a/10284006/3356840
 //export const zip = rows=>rows[0].map((_,c)=>rows.map(row=>row[c]));
@@ -214,6 +215,42 @@ assertEqualsObject([
 
 
 
+// https://medium.com/@TCAS3/debounce-deep-dive-javascript-es6-e6f8d983b7a1
+// https://chrisboakes.com/how-a-javascript-debounce-function-works/
+export function debounce(fn, time) {
+    let timeout;
+    return function() {
+        const functionCall = () => fn.apply(this, arguments);
+        clearTimeout(timeout);
+        timeout = setTimeout(functionCall, time);
+    }
+}
+
+
+export function* diffStrIndexs(aa, bb) {
+    for (let [i, [a,b]] of enumerate(zip(aa,bb))) {
+        if (a != b) {
+            yield i;
+        }
+    }
+}
+assertEquals([
+    [`${[...diffStrIndexs('abcde', 'aBcdE')]}`, '1,4'],
+]);
+
+// https://stackoverflow.com/a/1431113/3356840
+export function replaceAt(string, index, replacement) {
+    return string.substr(0, index) + replacement + string.substr(index + replacement.length);
+}
+
+
+// https://stackoverflow.com/a/53389398/3356840
+export function randomString(length) {
+    return ((Math.random()+3*Number.MIN_VALUE)/Math.PI).toString(36).slice(-length)
+}
+
+
+
 export default {
     assertEquals,
     assertEqualsObject,
@@ -239,4 +276,5 @@ export default {
     objGet,
     objGetFunc,
     objGetObj,
+    debounce,
 }

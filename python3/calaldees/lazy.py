@@ -1,4 +1,5 @@
-
+# This could be depricated as it could be replaced by `functools.cached_property`
+# https://docs.python.org/3/library/functools.html#functools.cached_property
 
 class LazyString(object):
     def __init__(self, generate_function):

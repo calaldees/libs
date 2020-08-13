@@ -14,6 +14,7 @@ class Timeline(object):
     """
     A generalized animation framework for tweening python attributes.
     Inspired by:
+      * [Declarative animations](https://bollu.github.io/mathemagic/declarative/index.html)
       * GSAP (GreenSock Animation Platform) - http://greensock.com/
       * Kivy - https://kivy.org/docs/api-kivy.animation.html
     Recommended that this is used with `pytweening`'s tween functions
