@@ -53,6 +53,11 @@ def baseconvert(number, fromdigits, todigits):
     >>> baseconvert('1101', baseconvert.BASE2, ('Zero','One'))
     'OneOneZeroOne'
 
+    base64 is an actual format
+    https://stackabuse.com/encoding-and-decoding-base64-strings-in-python/
+    >>> baseconvert('A', baseconvert.BASE64, baseconvert.BASE10)
+    '0'
+
     """
 
     if str(number)[0] == '-':
@@ -85,6 +90,7 @@ baseconvert.BASE10 = "0123456789"
 baseconvert.BASE16 = "0123456789ABCDEF"
 baseconvert.BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz"
 baseconvert.BASE62 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz"
+baseconvert.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 
 TextOverlap = namedtuple('TextOverlap', ('index', 'text'))
