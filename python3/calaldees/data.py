@@ -61,6 +61,18 @@ def pairwise_inverse(iterable, fillvalue=None):
     a = chain((fillvalue, ), a)
     return zip(a, b)
 
+def is_last(iterable):
+    """
+    >>> tuple(is_last('123'))
+    (('1', False), ('2', False), ('3', True))
+    """
+    return ((a, True if b is None else False) for a, b in pairwise(iterable))
+def is_first(iterable):
+    """
+    >>> tuple(is_first('123'))
+    (('1', True), ('2', False), ('3', False))
+    """
+    return ((b, True if a is None else False) for a, b in pairwise_inverse(iterable))
 
 def cycle_offset(iterator, offset=0, yield_values=1, num_yields=None):
     """
@@ -233,7 +245,6 @@ def duplicates(list_with_duplicates):
     return [item for item in list_with_duplicates if not set_without_duplicates.pop(item)]
 
 
-from itertools import zip_longest
 def grouper(iterable, n, fillvalue=None):
     """
     https://stackoverflow.com/a/434411/3356840
@@ -264,6 +275,8 @@ def extract_subkeys(data, subkey):
     return {k.replace(subkey, ''): v for k, v in data.items() if k.startswith(subkey)}
 
 
+# python 3.9 now supports `+=` for dicts
+# Remove this?
 def update_dict(dict_a, dict_b):
     """
     Because dict.update(d) does not return the new dict
