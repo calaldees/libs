@@ -1,7 +1,7 @@
 """ Music Note Utils """
 
 import re
-
+from types import MappingProxyType
 
 # Human readable input/output --------------------------------------------------
 
@@ -82,38 +82,48 @@ class Scale(object):
     def scale_note(self, scale_index):
         """
         Calculate the distance in semitones from the scale's root
+
+        >>> s = Scale((0, 2, 4, 7, 9))
+        >>> s.scale_note(0)
+        0
+        >>> s.scale_note(1)
+        2
+        >>> s.scale_note(2)
+        4
+        >>> s.scale_note(5)
+        12
+        >>> s.scale_note(9)
+        21
         """
         index = scale_index % self.len
         octave = scale_index // self.len
         return self.scale[index] + (octave * NUM_NOTES_IN_OCTAVE)
 
 
-SCALES = {
+SCALES = MappingProxyType({
     # Full scales
-    'ionian': Scale([0, 2, 4, 5, 7, 9, 11]),  # major scale
-    'dorian': Scale([0, 2, 3, 5, 7, 9, 10]),
-    'phrygian': Scale([0, 1, 3, 5, 7, 8, 10]),
-    'lydian': Scale([0, 2, 4, 6, 7, 9, 11]),
-    'mixolidian': Scale([0, 2, 4, 5, 7, 9, 10]),
-    'aeolian': Scale([0, 2, 3, 5, 7, 8, 10]),  # relative minor
-    'locrian': Scale([0, 1, 3, 5, 6, 8, 10]),
+    'ionian': Scale((0, 2, 4, 5, 7, 9, 11)),  # major scale
+    'dorian': Scale((0, 2, 3, 5, 7, 9, 10)),
+    'phrygian': Scale((0, 1, 3, 5, 7, 8, 10)),
+    'lydian': Scale((0, 2, 4, 6, 7, 9, 11)),
+    'mixolidian': Scale((0, 2, 4, 5, 7, 9, 10)),
+    'aeolian': Scale((0, 2, 3, 5, 7, 8, 10)),  # relative minor
+    'locrian': Scale((0, 1, 3, 5, 6, 8, 10)),
 
     # 5 note scales
-    'pentatonic_major': Scale([0, 2, 4, 7, 9]),
-    'pentatonic_minor': Scale([0, 3, 5, 7, 10]),
-    'pentatonic_blues': Scale([0, 3, 5, 6, 7, 10]),
-    'pentatonic_neutral': Scale([0, 2, 5, 7, 10]),
+    'pentatonic_major': Scale((0, 2, 4, 7, 9)),
+    'pentatonic_minor': Scale((0, 3, 5, 7, 10)),
+    'pentatonic_blues': Scale((0, 3, 5, 6, 7, 10)),
+    'pentatonic_neutral': Scale((0, 2, 5, 7, 10)),
 
-    'diatonic': Scale([0, 2, 4, 7, 9]),  # same as pentatonic major
+    'diatonic': Scale((0, 2, 4, 7, 9)),  # same as pentatonic major
 
-    'balinese': Scale([0, 1, 3, 7, 8]),
-    'chinese': Scale([0, 4, 6, 7, 11]),
-    'egyptian': Scale([0, 2, 5, 7, 10]),
-    'hirajoshi': Scale([0, 2, 3, 7, 8]),
-    'japanise_a': Scale([0, 1, 5, 7, 8]),
-    'japanise_b': Scale([0, 2, 5, 7, 8]),
-    'kumoi': Scale([0, 2, 3, 7, 9]),
-    'pelong': Scale([0, 1, 3, 7, 8]),
-}
-
-
+    'balinese': Scale((0, 1, 3, 7, 8)),
+    'chinese': Scale((0, 4, 6, 7, 11)),
+    'egyptian': Scale((0, 2, 5, 7, 10)),
+    'hirajoshi': Scale((0, 2, 3, 7, 8)),
+    'japanise_a': Scale((0, 1, 5, 7, 8)),
+    'japanise_b': Scale((0, 2, 5, 7, 8)),
+    'kumoi': Scale((0, 2, 3, 7, 9)),
+    'pelong': Scale((0, 1, 3, 7, 8)),
+})
