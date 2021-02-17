@@ -168,6 +168,8 @@ class GF():
         >>> gf = GF(w=4, n=3, m=3)
         >>> gf.C(D=[3, 13, 9])
         [7, 2, 9]
+        >>> gf.C(D=[3, 1, 9])
+        [11, 9, 12]
         """
         return self.dot_product(self.F, D)
 
@@ -227,18 +229,19 @@ class GF():
         return A
         #raise NotImplemented()
 
-    def recover(self, E):
+    def recoverD(self, E):
         """
         >>> gf = GF(w=4, n=3, m=3)
         >>> E = [3, None, None, 11, 9, None]
-        >>> gf.recover(E)
+        >>> gf.recoverD(E)
+        [3, 1, 9]
+        >>> gf.E([3, 1, 9])
         [3, 1, 9, 11, 9, 12]
         """
         A_ = self.invert([
             self.A[i]
             for i, e in enumerate(E)
-            if e
+            if e != None
         ])
-        DC_ = [e for e in E if e]
-        D = self.dot_product(A_, DC_)
-        return self.E(D)
+        DC_ = [e for e in E if e != None]
+        return self.dot_product(A_, DC_)
