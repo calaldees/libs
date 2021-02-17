@@ -1,23 +1,34 @@
 import operator
 from functools import reduce
 from collections import namedtuple
+from copy import deepcopy
 #import numpy
 
-# http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.pdf
-# http://web.eecs.utk.edu/~jplank/plank/papers/CS-03-504.pdf
-
+# http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.html
+#   http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.pdf
+#   http://web.eecs.utk.edu/~jplank/plank/papers/CS-03-504.pdf
+# https://www.cs.rutgers.edu/~venugopa/parallel_summer2012/ge.htmlg
 
 # FD=C
 # AD=E
 
 class GF():
 
-    def __init__(self, w):
+    def __init__(self, w=4, n=0, m=0):
+        self.gflog, self.gfilog = self.setup_tables(w)
+        self.NW = (1 << w) - 1
+        self.n = n
+        self.m = m
+        self.F = self.setup_F()
+        self.A = self.setup_A()
+
+    @staticmethod
+    def setup_tables(w):
         """
-        >>> gf = GF(4)
-        >>> gf.gflog
+        >>> gflog, gfilog = GF.setup_tables(4)
+        >>> gflog
         [None, 0, 1, 4, 2, 8, 5, 10, 3, 14, 9, 7, 6, 13, 11, 12]
-        >>> gf.gfilog
+        >>> gfilog
         [1, 2, 4, 8, 3, 6, 12, 11, 5, 10, 7, 14, 15, 13, 9, None]
         """
         prim_poly = {
@@ -27,22 +38,22 @@ class GF():
         }[w]
 
         x_to_w = 1 << w  # 4->16 8->255 16->65536
-        self.NW = x_to_w - 1
 
-        self.gflog = [None]*x_to_w
-        self.gfilog = [None]*x_to_w
+        gflog = [None]*x_to_w
+        gfilog = [None]*x_to_w
 
         b = 1
         for log in range(x_to_w - 1):
-            self.gflog[b] = log
-            self.gfilog[log] = b
+            gflog[b] = log
+            gfilog[log] = b
             b = b << 1
             if (b & x_to_w):
                 b = b ^ prim_poly
+        return (gflog, gfilog)
 
     def mult(self, *args):
         """
-        >>> gf = GF(4)
+        >>> gf = GF(w=4)
         >>> gf.mult(3, 7)
         9
         >>> gf.mult(13, 10)
@@ -62,7 +73,7 @@ class GF():
 
     def div(self, a, b):
         """
-        >>> gf = GF(4)
+        >>> gf = GF(w=4)
         >>> gf.div(13, 10)
         3
         
@@ -81,7 +92,7 @@ class GF():
     
     def pow(self, i, p):
         """
-        >>> gf = GF(4)
+        >>> gf = GF(w=4)
         >>> gf.pow(3,2)
         5
         >>> gf.pow(2,1)
@@ -91,9 +102,9 @@ class GF():
         """
         return self.mult(*(i,)*p) or 1
 
-    def F(self, m, n):
+    def setup_F(self):
         """
-        vandermonde matrix
+        generate vandermonde matrix
         m = recovery points
         n = data points
 
@@ -101,37 +112,89 @@ class GF():
         1^1 2^1 3^1 = 1 2 3
         1^2 2^2 3^2   1 4 5
 
-        >>> gf = GF(4)
-        >>> gf.F(3, 3)
+        >>> gf = GF(w=4, n=3, m=3)
+        >>> gf.F
         [[1, 1, 1], [1, 2, 3], [1, 4, 5]]
 
         This test is a guess based on my current understanding
         [1, 8, 15, 12] seem pauseable
-        >>> gf.F(4, 4)
+        >>> gf = GF(w=4, n=4, m=4)
+        >>> gf.F
         [[1, 1, 1, 1], [1, 2, 3, 4], [1, 4, 5, 3], [1, 8, 15, 12]]
         """
         return [
-            [self.pow(_n,_m) for _n in range(1,n+1)]
-            for _m in range(0, m)
+            [self.pow(_n,_m) for _n in range(1,self.n+1)]
+            for _m in range(0, self.m)
         ]
+    def setup_A(self):
+        """
+        A = I(dentify matrix) on_top_of F(vandermod matrix)
+        >>> gf = GF(w=4, n=3, m=2)
+        >>> gf.A
+        [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 2, 3]]
+        """
+        return [  # Create the identity matrix
+            [1 if n1 == n2 else 0 for n1 in range(self.n)]
+            for n2 in range(self.n)
+        ] + self.F
 
-    def C(self, D, m):
+    def dot_product(self, matrixA, matrixB):
         """
-        >>> gf = GF(4)
-        >>> gf.C(D=[3, 13, 9], m=3)
-        [7, 2, 9]
         """
-        n = len(D)
-        F = self.F(m, n)
+        assert len(matrixB) == self.n
+        #assert len(matrixA) == self.n  #???
+        #assert len(matrixA[0]) == self.m  #??
         return [
-            #"+".join([   # used this for testing visually
-            #f'{F[_n][_m]}x{D[_m]}'
-            reduce(
-                operator.xor, 
+            reduce(operator.xor, #"+".join(   # used this for testing visually
                 (
-                    self.mult(F[_n][_m], D[_m])
-                    for _m in range(0, m)
+                    self.mult(matrixA[_n][_m], matrixB[_m])  #f'{matrixA[_n][_m]}x{matrixB[_m]}'
+                    for _m in range(0, self.m)
                 )
             )
-            for _n in range(0, n)
+            for _n in range(0, self.n)
         ]
+
+    def C(self, D):
+        """
+        C(hecksum)
+        >>> gf = GF(w=4, n=3, m=3)
+        >>> gf.C(D=[3, 13, 9])
+        [7, 2, 9]
+        """
+        return self.dot_product(self.F, D)
+
+    def E(self, D):
+        """
+        E = D(ata) on_top_of C(ecksum)
+        >>> gf = GF(w=4, n=3, m=3)
+        >>> gf.E(D=[3, 13, 9])
+        [3, 13, 9, 7, 2, 9]
+        >>> gf.E(D=[3, 1, 9])
+        [3, 1, 9, 11, 9, 12]
+        """
+        return D + self.C(D)
+    
+    def invert(self, A):
+        """
+        >>> gf = GF(w=4)
+        >>> gf.invert([[1, 0, 0], [1, 1, 1], [1, 2, 3]])
+        [[1, 0, 0], [2, 3, 1], [3, 2, 1]]
+        """
+        return [[1, 0, 0], [2, 3, 1], [3, 2, 1]]
+        raise NotImplemented()
+
+    def recover(self, E):
+        """
+        >>> gf = GF(w=4, n=3, m=3)
+        >>> E = [3, None, None, 11, 9, None]
+        >>> gf.recover(E)
+        [3, 1, 9, 11, 9, 12]
+        """
+        A_ = self.invert([
+            self.A[i]
+            for i, e in enumerate(E)
+            if e
+        ])
+        DC_ = [e for e in E if e]
+        D = self.dot_product(A_, DC_)
+        return self.E(D)
