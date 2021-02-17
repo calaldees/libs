@@ -1,13 +1,21 @@
+"""
+This module is a reference example following the following paper:
+
+A Tutorial on Reed-Solomon Coding for Fault-Tolerance in RAID-like Systems
+http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.html
+  http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.pdf
+  (and at a later date)
+  http://web.eecs.utk.edu/~jplank/plank/papers/CS-03-504.pdf
+
+All of the doctests follow the examples expressed in the paper above.
+
+I created this as a learning activity to understand the Reed-Solomon process.
+"""
+
 import operator
 from functools import reduce
 from collections import namedtuple
 from copy import deepcopy
-#import numpy
-
-# http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.html
-#   http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.pdf
-#   http://web.eecs.utk.edu/~jplank/plank/papers/CS-03-504.pdf
-# https://www.cs.rutgers.edu/~venugopa/parallel_summer2012/ge.htmlg
 
 # FD=C
 # AD=E
@@ -176,12 +184,48 @@ class GF():
     
     def invert(self, A):
         """
+        Invert the matrix A
+
         >>> gf = GF(w=4)
         >>> gf.invert([[1, 0, 0], [1, 1, 1], [1, 2, 3]])
         [[1, 0, 0], [2, 3, 1], [3, 2, 1]]
+
+        http://web.eecs.utk.edu/~jplank/plank/papers/CS-96-332.pdf
+        > Arithmetic over Galois Fields  (pg 6)
+            requires that add/sub mult/div operations are substituted
+        > By applying Gaussian elimination, we can invert A'  (pg 10)
+        (This is the equivalent to 'step 2' in the underpants gnomes. https://www.youtube.com/watch?v=a5ih_TQWqCA )
+
+        My research references
+        https://en.wikipedia.org/wiki/Gaussian_elimination
+        https://mathworld.wolfram.com/GaussianElimination.html
+        https://www.cs.rutgers.edu/~venugopa/parallel_summer2012/ge.html
+
+        https://www.google.com/search?client=firefox-b-d&sxsrf=ALeKk011Rkt_BzdvanwtFP8T0l5TQdGw9Q%3A1613586787451&ei=Y2EtYLiLG5WV8gL7mb3gDQ&q=invert+matrix+Gaussian+Elimination+Galois+Field&oq=invert+matrix+Gaussian+Elimination+Galois+Field&gs_lcp=Cgdnd3Mtd2l6EAM6BwgAEEcQsAM6BwgjELACECc6BAghEApQl6YlWKbPJWCkhyZoAnACeAGAAb0CiAHtEpIBCDQuMTIuMS4xmAEAoAEBqgEHZ3dzLXdpesgBAsABAQ&sclient=gws-wiz&ved=0ahUKEwj4yJ6ax_HuAhWVilwKHftMD9wQ4dUDCAw&uact=5
+
+        https://core.ac.uk/download/pdf/84600858.pdf
+        https://math.stackexchange.com/questions/2396425/finite-fields-compute-the-inverse-of-a-matrix
+        https://stackoverflow.com/questions/32114054/matrix-inversion-without-numpy
+        https://stackoverflow.com/questions/45726670/finite-fields-compute-the-inverse-of-a-matrix
+        https://github.com/foool/nclib/blob/e24b5f77251a6fb49af61070cb01d329c08113b6/gmatrixu8.cc#L305
+        https://npdeep.github.io/matrix-inversion-gf2.html
+
         """
-        return [[1, 0, 0], [2, 3, 1], [3, 2, 1]]
-        raise NotImplemented()
+        #b = [0,] * self.n  # uneeded?
+        #for (int i = 0; i < N-1; i++) {
+        for i in range(self.n - 1):
+            #for (int j = i; j < N; j++) {
+            for j in range(i, self.n):
+                #double ratio = A[j][i]/A[i][i];
+                ratio = self.div(A[j][i], A[i][j])
+                #for (int k = i; k < N; k++) {
+                for k in range(i, self.n):
+                    #A[j][k] -= (ratio*A[i][k]);
+                    A[j][k] ^= self.mult(ratio, A[i][k])
+                    #b[j] -= (ratio*b[i]);
+                    #b[j] ^= self.mult(ratio, b[i])  # Uneeded?
+        return A
+        #raise NotImplemented()
 
     def recover(self, E):
         """
