@@ -17,6 +17,11 @@ class Dimension(NamedTuple):
     def normalise_position(self, position):
         """
         Wrap co-ordinates that are out of bounds to inbounds
+
+        >>> Dimension(3, 3, 3).normalise_position(Position(0, 0, 0))
+        Position(x=0, y=0, z=0)
+        >>> Dimension(3, 3, 3).normalise_position(Position(-1, -1, -1))
+        Position(x=2, y=2, z=2)
         """
         return Position(
             position.x % self.width,
@@ -54,7 +59,7 @@ class Dimension(NamedTuple):
         inverse of `position_to_index`
 
         >>> Dimension(8, 8, 3).position_to_index(Position(0, 0, 0))
-h        0
+        0
         >>> Dimension(8, 8, 3).position_to_index(Position(7, 0, 0))
         7
         >>> Dimension(8, 8, 3).position_to_index(Position(0, 1, 0))
