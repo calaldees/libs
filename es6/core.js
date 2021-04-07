@@ -227,7 +227,7 @@ export function debounce(fn, time) {
 }
 
 
-export function* diffStrIndexs(aa, bb) {
+export function* diffStrIndexes(aa, bb) {
     for (let [i, [a,b]] of enumerate(zip(aa,bb))) {
         if (a != b) {
             yield i;
@@ -235,7 +235,7 @@ export function* diffStrIndexs(aa, bb) {
     }
 }
 assertEquals([
-    [`${[...diffStrIndexs('abcde', 'aBcdE')]}`, '1,4'],
+    [`${[...diffStrIndexes('abcde', 'aBcdE')]}`, '1,4'],
 ]);
 
 // https://stackoverflow.com/a/1431113/3356840
@@ -249,6 +249,24 @@ export function randomString(length) {
     return ((Math.random()+3*Number.MIN_VALUE)/Math.PI).toString(36).slice(-length)
 }
 
+
+export function randomSegment(segments, _func_random=Math.random) {
+    console.assert(Array.isArray(segments),"segments must be an array");
+    const weights = segments.map((a)=>a[1]-a[0]);
+    const sum = weights.reduce((sum,i)=>sum+=i, 0);
+    let r = Math.floor(_func_random()*sum);
+    for (let i=0 ; i<segments.length ; i++) {
+        const weight = weights[i];
+        if (r - weight < 0) {
+            return segments[i][0] + r;
+        }
+        r += -weight;
+    }
+}
+assertEquals([
+    [randomSegment([[0,10],[20,30]], ()=>0.25 ),  5],
+    [randomSegment([[0,10],[20,30]], ()=>0.75 ), 25],
+]);
 
 
 // correct modulo operator
@@ -361,6 +379,9 @@ export default {
     objGetFunc,
     objGetObj,
     debounce,
+    diffStrIndexes,
+    randomString,
+    randomSegment,
     mod,
     Dimension,
 }
