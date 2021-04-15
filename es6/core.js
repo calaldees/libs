@@ -353,6 +353,30 @@ assertEqualsObject([
 
 
 
+export function swapEndianness(bits, value) {
+    return [...enumerate([...range(bits)].map(x=>2**x).map(x=>value&x))].map(([bit, x])=>[(bit+1-(bits/2))*2-1, x]).map(([shift, x])=> shift<=0 ? x << Math.abs(shift) : x >> Math.abs(shift)).reduce((acc, x)=>acc+=x, 0);
+}
+assertEquals([
+    [swapEndianness(8,   0),   0],
+    [swapEndianness(8, 255), 255],
+    [swapEndianness(8,   1), 128],
+    [swapEndianness(8,   2),  64],
+    [swapEndianness(8,   4),  32],
+    [swapEndianness(8,   8),  16],
+    [swapEndianness(8,  16),   8],
+    [swapEndianness(8,  32),   4],
+    [swapEndianness(8,  64),   2],
+    [swapEndianness(8, 128),   1],
+    [swapEndianness(8, 129), 129],
+    [swapEndianness(8, 130),  65],
+    [swapEndianness(4,   4),   2],
+    [swapEndianness(4,   2),   4],
+    [swapEndianness(16, 512), 64],
+    [swapEndianness(16,   1), 32768],
+]);
+
+
+
 export default {
     assertEquals,
     assertEqualsObject,
@@ -384,4 +408,5 @@ export default {
     randomSegment,
     mod,
     Dimension,
+    swapEndianness,
 }
