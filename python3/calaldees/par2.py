@@ -198,6 +198,9 @@ class GF():
         > By applying Gaussian elimination, we can invert A'  (pg 10)
         (This is the equivalent to 'step 2' in the underpants gnomes. https://www.youtube.com/watch?v=a5ih_TQWqCA )
 
+        https://people.cs.clemson.edu/~jmarty/papers/IntroToGaloisFieldsAndRSCoding.pdf
+        https://content.sakai.rutgers.edu/access/content/user/ak892/Digital%20Communication%20Systems
+
         My research references
         https://en.wikipedia.org/wiki/Gaussian_elimination
         https://mathworld.wolfram.com/GaussianElimination.html
