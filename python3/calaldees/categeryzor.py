@@ -77,7 +77,7 @@ def lookup_tags(_lookup, *args):
     'default'
     >>> lookup_tags('a', 'c')
     Traceback (most recent call last):
-    KeyError: frozenset({'a', 'c'})
+    KeyError: frozenset(...)
 
     #>>> lookup_tags('unknown')
     #'default'

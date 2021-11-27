@@ -62,7 +62,10 @@ def get_html_data(url, cached_filename=None, cache_path=DEFAULT_CACHE_PATH, head
             html_data = ''
     return html_data
 
-from bs4 import BeautifulSoup
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    log.error('no bs4')
 def get_html_soup(url, cached_filename, **kwargs):
     return BeautifulSoup(get_html_data(url, cached_filename, **kwargs))
     
