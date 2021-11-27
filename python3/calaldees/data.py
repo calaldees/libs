@@ -204,6 +204,9 @@ def first(iterable):
 def isiterable(iterable):
     """
     https://stackoverflow.com/a/36407550/3356840
+
+    Alternate:
+    if isinstance(item, collections.abc.Iterable) and not isinstance(item, str):
     """
     if isinstance(iterable, (str, bytes)):
         return False
@@ -215,18 +218,25 @@ def isiterable(iterable):
         return True
 
 
-def flatten(*args):
+def flatten(*args, dict_values=True):
     """
     http://stackoverflow.com/questions/2158395/flatten-an-irregular-list-of-lists-in-python
 
     >>> tuple(flatten([[[1, 2, 3], ['4', 5]], 6], 7, '8'))
     (1, 2, 3, '4', 5, 6, 7, '8')
+    >>> tuple(flatten((1, {'b':2, 'c': 3})))
+    (1, 2, 3)
+    >>> tuple(flatten((1, {'b':2, 'c': 3}), dict_values=False))
+    (1, 'b', 'c')
     """
     for iterable in args:
         if isiterable(iterable):
             for item in iterable:
-                if isinstance(item, collections.abc.Iterable) and not isinstance(item, str):
-                    yield from flatten(item)
+                if isiterable(item):
+                    if dict_values and isinstance(item, collections.abc.Mapping):
+                        yield from item.values()
+                    else:
+                        yield from flatten(item)
                 else:
                     yield item
         else:
