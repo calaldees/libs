@@ -2,6 +2,7 @@ import os.path
 import json
 from collections import namedtuple
 import hashlib
+import tempfile
 
 import requests
 import httplib2
@@ -282,13 +283,16 @@ class GoogleLogin(ILoginProvider):
     """
     name = 'google'
 
-    def __init__(self, client_secret_file):
+    def __init__(self, json_string):
         super().__init__()
-        assert os.path.isfile(client_secret_file)
-        with open(client_secret_file, 'rt') as client_secret_filehandle:
-            self.client_secret_file_data = json.load(client_secret_filehandle)
+        self.client_secret_file_data = json.loads(json_string)
+        assert self.client_secret_file_data['web']['client_id']  # TODO: assert json schema?
+
+        client_secret_file = tempfile.NamedTemporaryFile(mode="w+")
+        client_secret_file.write(json_string)
+        client_secret_file.flush()
         self.client_secret_file = client_secret_file
-        assert self.client_secret_file_data, 'google client_secret_file {client_secret_file} should parse json'.format(client_secret_file=client_secret_file)    # TODO: replace with formatstring
+
 
     @property
     def html_include(self):
@@ -328,8 +332,9 @@ class GoogleLogin(ILoginProvider):
         if not request.headers.get('X-Requested-With'):
             raise LoginProviderException('X-Requested-With required for google login')
 
+        assert os.path.isfile(self.client_secret_file.name), f"{self.client_secret_file.name=} does not exist - this is odd because it existed at __init__. Maybe this was a tempfile and it has been removed?"
         credentials = client.credentials_from_clientsecrets_and_code(
-            self.client_secret_file,
+            self.client_secret_file.name,
             ['profile', 'email'],
             request.params.get('code'),
         )
