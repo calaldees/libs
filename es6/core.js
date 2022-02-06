@@ -376,6 +376,21 @@ assertEquals([
 ]);
 
 
+export function reframe_value(n, min=0, max=1) {
+    return min + ((max - min) * n)
+}
+assertEquals([
+    [reframe_value(0, min=0.5, max=1.0),   0.50],
+    [reframe_value(0.5, min=0.5, max=1.0), 0.75],
+]);
+
+
+// TODO: export
+function randomElement(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+
 
 export default {
     assertEquals,
@@ -409,4 +424,5 @@ export default {
     mod,
     Dimension,
     swapEndianness,
+    reframe_value,
 }
