@@ -258,7 +258,8 @@ def duplicates(list_with_duplicates):
 
 def grouper(iterable, n, fillvalue=None):
     """
-    https://stackoverflow.com/a/434411/3356840
+    An enhanced version of this is available at
+    https://docs.python.org/3/library/itertools.html#itertools-recipes
 
     >>> tuple(grouper('ABCDEFG', 3, 'x'))
     (('A', 'B', 'C'), ('D', 'E', 'F'), ('G', 'x', 'x'))
