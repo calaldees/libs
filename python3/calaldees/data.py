@@ -42,6 +42,7 @@ def list_neighbor_generator(_list, out_of_bounds_type=dict):
 
 def pairwise(iterable, fillvalue=None):
     """
+    now part of standard lib itertools.pairwise
     https://stackoverflow.com/a/5434936/3356840
     s -> (s0,s1), (s1,s2), (s2, s3), ...
 
@@ -262,8 +263,7 @@ def grouper(iterable, n, fillvalue=None):
     >>> tuple(grouper('ABCDEFG', 3, 'x'))
     (('A', 'B', 'C'), ('D', 'E', 'F'), ('G', 'x', 'x'))
     """
-    args = [iter(iterable)] * n
-    return zip_longest(*args, fillvalue=fillvalue)
+    return zip_longest(*((iter(iterable),) * n), fillvalue=fillvalue)
 
 
 def freeze(items):
