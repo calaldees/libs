@@ -390,6 +390,11 @@ function randomElement(array) {
     return array[Math.floor(Math.random() * array.length)];
 }
 
+// https://stackoverflow.com/a/19746771/3356840
+export function arrayEquals(a,b) {
+    return a.length === b.length && a.every((v, i) => v === b[i])
+}
+// TODO: test
 
 
 export default {

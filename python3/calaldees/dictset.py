@@ -25,6 +25,7 @@ class DictSetOperationsMixin():
     def __ior__(self, other):
         return DictSetOperationsMixin.__iadd__(self, other)
 
+    # TODO: was this added in python3.9 as `|` ??
     def __add__(a, b):
         return {**a, **b}  # TODO return DictSet?
     def __iadd__(self, other):
