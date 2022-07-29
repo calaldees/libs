@@ -1,6 +1,7 @@
 import collections
 from functools import reduce, partial
 from itertools import tee, zip_longest, cycle, chain
+from types import MappingProxyType
 
 
 def get_keys(obj):
@@ -41,6 +42,15 @@ def list_neighbor_generator(_list, out_of_bounds_type=dict):
 
 
 
+def pairwise(iterable, fillvalue=None):
+    """
+    >>> tuple(pairwise((1,2,3)))
+    ((1, 2), (2, 3), (3, None))
+    """
+    a, b = tee(iterable)
+    next(b)
+    b = chain(b, (fillvalue, ))
+    return zip(a, b)
 def pairwise_inverse(iterable, fillvalue=None):
     """
     >>> tuple(pairwise_inverse((1,2,3)))
@@ -49,7 +59,6 @@ def pairwise_inverse(iterable, fillvalue=None):
     a, b = tee(iterable)
     a = chain((fillvalue, ), a)
     return zip(a, b)
-
 def is_last(iterable):
     """
     >>> tuple(is_last('123'))
@@ -264,6 +273,27 @@ def freeze(items):
     if not isinstance(items, str) and hasattr(items, '__iter__'):
         return frozenset(freeze(item) for item in items)
     return items
+
+
+from typing import Mapping, Iterable
+def harden(data):
+    """
+    >>> harden({"a": [1,2,3]})
+    mappingproxy({'a': (1, 2, 3)})
+    >>> harden({"a": [1,2, {3}] })
+    mappingproxy({'a': (1, 2, (3,))})
+    >>> harden({"a": [1,2, {"b": 2}] })
+    mappingproxy({'a': (1, 2, mappingproxy({'b': 2}))})
+    >>> harden([1, {"c": True, "d": 3.14, "e": {"no", "no"}}])
+    (1, mappingproxy({'c': True, 'd': 3.14, 'e': ('no',)}))
+    """
+    if isinstance(data, str):
+        return data
+    if isinstance(data, Mapping):
+        return MappingProxyType({k: harden(v) for k, v in data.items()})
+    if isinstance(data, Iterable):
+        return tuple((harden(i) for i in data))
+    return data
 
 
 def extract_subkeys(data, subkey):
