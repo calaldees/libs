@@ -20,7 +20,7 @@ def grouper(n, iterable, fillvalue=None):
     return zip_longest(*((iter(iterable),) * n), fillvalue=fillvalue)
 
 class IteratorCombine():
-    """
+    r"""
     >>> i = IteratorCombine().map(lambda x: x+1).filter(lambda y: y>3)
     >>> tuple(i.process((1,2,3,4,5)))
     (4, 5, 6)
