@@ -380,8 +380,8 @@ export function reframe_value(n, min=0, max=1) {
     return min + ((max - min) * n)
 }
 assertEquals([
-    [reframe_value(0, min=0.5, max=1.0),   0.50],
-    [reframe_value(0.5, min=0.5, max=1.0), 0.75],
+    [reframe_value(0, 0.5, 1.0),   0.50],
+    [reframe_value(0.5, 0.5, 1.0), 0.75],
 ]);
 
 
