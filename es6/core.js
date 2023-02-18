@@ -12,7 +12,7 @@ export function assertEquals(comparison_tuples) {
     for (let [a, b] of comparison_tuples) {
         //console.debug(a, b)
         if (! (a==b)) {throw `${a} should-equal ${b}`}
-        console.assert(a == b, `${a} should-equal ${b}`)  // this does nothing! It prints nothing .. I don't know why. A: Assertions are not enabled by default.
+        console.assert(a == b, `${a} should-equal ${b}`)  // this does nothing! It prints nothing .. I don't know why. A: Assertions are not enabled by default?
     }
 }
 export function assertEqualsObject(comparison_tuples) {
@@ -270,6 +270,11 @@ assertEquals([
     [randomSegment([[0,10],[20,30]], ()=>0.75 ), 25],
 ]);
 
+export function randomItem(array) {return array[Math.floor(Math.random()*array.length)]}
+assertEquals([
+    [randomItem([10]),  10],
+]);
+
 
 // correct modulo operator
 // https://stackoverflow.com/a/17323608
@@ -387,11 +392,6 @@ assertEquals([
 ]);
 
 
-// TODO: export
-function randomElement(array) {
-    return array[Math.floor(Math.random() * array.length)];
-}
-
 // https://stackoverflow.com/a/19746771/3356840
 export function arrayEquals(a,b) {
     return a.length === b.length && a.every((v, i) => v === b[i])
@@ -423,7 +423,16 @@ assertEqualsObject([
 ])
 
 
-
+export function h(type, params, children) {
+    const el = document.createElement(type)
+    for (let [k,v] of Object.entries(params)) {el[k] = v}
+    if (typeof(children)==="string") {el.appendChild(document.createTextNode(children))}
+    else if (hasIterationProtocol(children)) {
+        for (let c of children) {el.append(c)}
+    }
+    else if (children) {el.appendChild(children)}
+    return el
+}
 
 
 export default {
@@ -455,10 +464,12 @@ export default {
     diffStrIndexes,
     randomString,
     randomSegment,
+    randomItem,
     mod,
     Dimension,
     swapEndianness,
     reframe_value,
     hexToBytes,
     hexToBytes2,
+    h,
 }
