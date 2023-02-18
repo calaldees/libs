@@ -1,5 +1,6 @@
 // Consider reading http://es6-features.org
 // https://lodash.com/ es modules
+// Investigate https://www.30secondsofcode.org/js/ snippets for common patterns
 
 // http://stackoverflow.com/a/10284006/3356840
 //export const zip = rows=>rows[0].map((_,c)=>rows.map(row=>row[c]));
@@ -9,13 +10,14 @@
 
 export function assertEquals(comparison_tuples) {
     for (let [a, b] of comparison_tuples) {
-        //console.debug(a, b);
-        console.assert(a == b, `${a} should-equal ${b}`);
+        //console.debug(a, b)
+        if (! (a==b)) {throw `${a} should-equal ${b}`}
+        console.assert(a == b, `${a} should-equal ${b}`)  // this does nothing! It prints nothing .. I don't know why. A: Assertions are not enabled by default.
     }
 }
 export function assertEqualsObject(comparison_tuples) {
     return assertEquals(comparison_tuples.map(v => v.map(JSON.stringify)))
-};
+}
 
 export function isObject(obj) {
     return obj != null && obj.constructor.name === "Object";
@@ -397,6 +399,33 @@ export function arrayEquals(a,b) {
 // TODO: test
 
 
+// https://stackoverflow.com/a/34356351/3356840
+function hexToBytes(hex) {
+    for (var bytes = [], c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+}
+assertEqualsObject([
+    [hexToBytes("00"), [0,]],
+    [hexToBytes("FF"), [255,]],
+    [hexToBytes("FFFF"), [255,255]],
+])
+
+export function hexToBytes2(hex) {
+    for (let c = 0; c < hex.length; c += 2) {
+        yield parseInt(hex.substr(c, 2), 16)
+    }
+}
+assertEqualsObject([
+    [[...hexToBytes2("00")], [0,]],
+    [[...hexToBytes2("FF")], [255,]],
+    [[...hexToBytes2("FFFF")], [255,255]],
+])
+
+
+
+
+
 export default {
     assertEquals,
     assertEqualsObject,
@@ -430,4 +459,6 @@ export default {
     Dimension,
     swapEndianness,
     reframe_value,
+    hexToBytes,
+    hexToBytes2,
 }
