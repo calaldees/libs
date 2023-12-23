@@ -411,7 +411,7 @@ assertEqualsObject([
     [hexToBytes("FFFF"), [255,255]],
 ])
 
-export function hexToBytes2(hex) {
+export function* hexToBytes2(hex) {
     for (let c = 0; c < hex.length; c += 2) {
         yield parseInt(hex.substr(c, 2), 16)
     }
@@ -422,7 +422,7 @@ assertEqualsObject([
     [[...hexToBytes2("FFFF")], [255,255]],
 ])
 
-
+// NOTE: requires hasIterationProtocol
 export function h(type, params, children) {
     const el = document.createElement(type)
     for (let [k,v] of Object.entries(params)) {el[k] = v}
