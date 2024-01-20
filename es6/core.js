@@ -103,6 +103,22 @@ assertEquals([
 ]);
 
 
+export function* nextValueIterator(iterable) {
+    let previous_value = null
+    for (let i of iterable) {
+        if (previous_value==null) {continue}
+        yield [previous_value, i]
+        previous_value = i
+    }
+    yield [previous_value, null]
+}
+assertEquals([
+    [ `${[...nextValueIterator([1,2,3])]}`, `${[ [1,2], [2,3], [3,null]] }`],
+]);
+
+
+
+
 // https://stackoverflow.com/a/37319954/3356840
 export function filterInPlace(a, condition, thisArg) {
     let j = 0;
@@ -446,6 +462,7 @@ export default {
     zip,
     chain,
     previousValueIterator,
+    nextValueIterator,
     filterInPlace,
     buildMapFromObject,
     buildObjectFromMap,
