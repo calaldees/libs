@@ -136,6 +136,15 @@ assertEqualsObject([
 ]);
 
 
+// https://stackoverflow.com/a/63661268/3356840
+export function* filterIter(iter, pred) {
+    for (const item of iter) {
+        if (pred(item)) {
+            yield item
+        }
+    }
+}
+
 
 export function buildMapFromObject(obj) {
     // https://stackoverflow.com/questions/36644438/how-to-convert-a-plain-object-into-an-es6-map
@@ -189,6 +198,10 @@ export function MapDefaultGet(map, function_to_create_new_value) {
 }());
 
 
+// Set Operations
+// Uneeded as of es20??
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
+// `Set` object supports union, deference, intersection
 // https://gist.github.com/clohr/44d4aa6fb749b3abd4e7fcde82e03d29
 // https://stackoverflow.com/a/44827922/3356840
 export const setIntersect = (set1, set2) => [...set1].filter(num => set2.has(num))
@@ -451,6 +464,13 @@ export function h(type, params, children) {
 }
 
 
+// https://stackoverflow.com/a/8831937/3356840
+export function hashString(str) {
+    return Array.from(str).reduce((hash, char) => 0 | (31 * hash + char.charCodeAt(0)), 0)
+}
+
+
+
 export default {
     assertEquals,
     assertEqualsObject,
@@ -464,6 +484,7 @@ export default {
     previousValueIterator,
     nextValueIterator,
     filterInPlace,
+    filterIter,
     buildMapFromObject,
     buildObjectFromMap,
     invertMap,
@@ -489,4 +510,5 @@ export default {
     hexToBytes,
     hexToBytes2,
     h,
+    hashString,
 }
