@@ -1,6 +1,9 @@
 from itertools import chain, zip_longest, filterfalse
 from functools import partial, reduce
 
+# TODO: Consider for inspriation
+# WindowFixed, WindowSliding, Scan, Fold
+# OpenJDK [JEP 473: Stream Gatherers (Second Preview)](https://openjdk.org/jeps/473)
 
 def flatten(iterable):
     """
