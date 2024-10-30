@@ -24,6 +24,31 @@ def set_attr_or_item_all(source, target):
     for field in get_keys(source):
         set_attr_or_item(target, field, get_attr_or_item(source, field))
 
+
+from collections.abc import Mapping, Sequence
+def get_path(data: Sequence | Mapping, path: str | list[str]):
+    """
+    >>> data = {'a': 1, 'b': 2, 'c': [{'d': 4}, 6, {'g': 7}], 'e': 5}
+    >>> _get_path(data, 'a')
+    1
+    >>> _get_path(data, 'c.0')
+    {'d': 4}
+    >>> _get_path(data, 'c.0.d')
+    4
+    >>> _get_path(data, 'c.0.e')
+    >>> _get_path(data, 'g')
+    >>> _get_path(data, 'b.not_real.thing')
+    """
+    _path: list[str] = path.split('.') if isinstance(path, str) else list(path)
+    while _path and (key := _path.pop(0)):
+        key = int(key) if isinstance(data, Sequence) else key  # type: ignore[assignment]
+        try:
+            data = data[key]  # type: ignore[call-overload]
+        except (IndexError, KeyError, TypeError):
+            return None
+    return data
+
+
 # Depricate in preference to DictSet?
 def subdict(d, keys):
     return {k: v for k, v in d.items() if k in keys}
