@@ -2,6 +2,8 @@
 def subdict(d, keys):
     return {k: v for k, v in d.items() if k in keys}
 
+# Some of these can be superceeded by python3.9
+#   https://peps.python.org/pep-0584/
 # consider https://docs.python.org/3/library/functools.html#functools.total_ordering
 # just __eq__ and __lt__
 #@total_ordering
