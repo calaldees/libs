@@ -1,18 +1,17 @@
-from types import MappingProxyType
 import typing as t
-from urllib.parse import urlunparse, urlparse, urlencode
+from urllib.parse import urlencode, urlparse, urlunparse
 
 
 def compose_url(
-        urlstring: str = '',
-        scheme='',
-        netloc: str='',
-        host: str='',
-        port: int = 0,
-        path: str = '',
-        params: str = '',
-        query: str | t.Mapping[str, str] = '',
-        fragment: str = '',
+    urlstring: str = "",
+    scheme: str = "",
+    netloc: str = "",
+    host: str = "",
+    port: int = 0,
+    path: str = "",
+    params: str = "",
+    query: str | t.Mapping[str, str] = "",
+    fragment: str = "",
 ) -> str:
     """
     Utility for combining `urlparse` with overlaying parts of the url
@@ -38,20 +37,20 @@ def compose_url(
         for kwarg_value, baseurl_value, fallback_value in zip(
             (
                 scheme,
-                netloc if netloc else host + (f':{port}' if port else ''),
+                netloc if netloc else host + (f":{port}" if port else ""),
                 path,
                 params,
                 urlencode(query) if isinstance(query, t.Mapping) else query,
-                fragment
+                fragment,
             ),
             urlparse(urlstring),
             (
-                'http',  # scheme
-                'localhost',  # netloc
-                '/',  # path
-                '',  # params
-                '',  # query
-                '',  # fragment
-            )
+                "http",  # scheme
+                "localhost",  # netloc
+                "/",  # path
+                "",  # params
+                "",  # query
+                "",  # fragment
+            ),
         )
     )
