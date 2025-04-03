@@ -211,7 +211,18 @@ export const isSetEqual = (a, b) => a.size === b.size && [...a].every(value => b
 
 // https://stackoverflow.com/a/44586654/3356840
 export const hasIterationProtocol = variable => variable !== null && Symbol.iterator in Object(variable);
+export const hasAllProperties = (obj, keys) => setIntersect(Object.getOwnPropertyNames(obj), new Set(keys)).length == keys.length
+assertEqualsObject([
+    [ hasAllProperties({a:1, b:2},['a']), true ],
+    [ hasAllProperties({a:1, b:2},['b', 'a']), true ],
+    [ hasAllProperties({a:1, b:2},['b', 'a', 'c']), false ],
+    [ hasAllProperties({a:1, b:2},['d']), false ],
+])
 
+// https://stackoverflow.com/a/56592365/3356840
+export const pick = (obj, ...keys) => Object.fromEntries(keys.filter(key => key in obj).map(key => [key, obj[key]]))
+export const inclusivePick = (obj, ...keys) => Object.fromEntries(keys.map(key => [key, obj[key]]))
+export const omit = (obj, ...keys) => Object.fromEntries(Object.entries(obj).filter(([key]) => !keys.includes(key)))
 
 
 export const capitalize = (s) => {
@@ -248,14 +259,14 @@ assertEqualsObject([
 
 // https://medium.com/@TCAS3/debounce-deep-dive-javascript-es6-e6f8d983b7a1
 // https://chrisboakes.com/how-a-javascript-debounce-function-works/
-export function debounce(fn, time) {
-    let timeout;
+function debounce(fn, time=10) {  // TODO: async? how do I wrap this in a promise?
+    let timeout
     return function() {
-        const functionCall = () => fn.apply(this, arguments);
-        clearTimeout(timeout);
-        timeout = setTimeout(functionCall, time);
+        clearTimeout(timeout)
+        timeout = setTimeout(() => fn.apply(this, arguments), time)
     }
 }
+
 
 
 export function* diffStrIndexes(aa, bb) {
@@ -452,10 +463,10 @@ assertEqualsObject([
 ])
 
 // NOTE: requires hasIterationProtocol
-function h(type, params, children) {
+export function h(type, params, children) {
     const el = document.createElement(type)
-    for (let [k,v] of Object.entries(params)) {el[k] = v}
-    if      (typeof(children)==="string"   ) {el.appendChild(document.createTextNode(children))}
+    for (let [k,v] of Object.entries(params)) {el.setAttribute(k,v)}
+    if      (["string","number"].indexOf(typeof(children))>=0) {el.appendChild(document.createTextNode(children))}
     else if (hasIterationProtocol(children)) {for (let c of children) {el.append(c)}}
     else if (children                      ) {el.appendChild(children)}
     return el
@@ -466,6 +477,11 @@ function h(type, params, children) {
 export function hashString(str) {
     return Array.from(str).reduce((hash, char) => 0 | (31 * hash + char.charCodeAt(0)), 0)
 }
+
+
+// https://stackoverflow.com/a/33292942/3356840
+// use with `await timeout(5000)`
+export function timeout(ms) {return new Promise(resolve => setTimeout(resolve, ms))}
 
 
 
@@ -509,4 +525,8 @@ export default {
     hexToBytes2,
     h,
     hashString,
+    pick,
+    inclusivePick,
+    omit,
+    timeout
 }
