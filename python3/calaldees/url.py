@@ -1,22 +1,36 @@
+from types import MappingProxyType
+import typing as t
 from urllib.parse import urlunparse, urlparse, urlencode
 
 
-def build_url(baseurl='', path='', query_string_dict=None, scheme='', netloc='', host='', port=0, parameters='', fragment=''):
+def compose_url(
+        urlstring: str = '',
+        scheme='',
+        netloc: str='',
+        host: str='',
+        port: int = 0,
+        path: str = '',
+        params: str = '',
+        query: str | t.Mapping[str, str] = '',
+        fragment: str = '',
+) -> str:
     """
-    For url_part index's - refer to https://docs.python.org/2/library/urlparse.html#urlparse.urlparse
+    Utility for combining `urlparse` with overlaying parts of the url
+
+    For url_part index's - refer to https://docs.python.org/3.14/library/urllib.parse.html#urllib.parse.urlparse
     scheme://netloc/path;parameters?query#fragment
 
-    >>> build_url('myhostname')
+    >>> compose_url('myhostname')
     'http://localhost/myhostname'
-    >>> build_url(host='myhostname')
+    >>> compose_url(host='myhostname')
     'http://myhostname/'
-    >>> build_url(host='myhostname', port=8000)
+    >>> compose_url(host='myhostname', port=8000)
     'http://myhostname:8000/'
-    >>> build_url(host='myhostname', port=8000, query_string_dict={'a':1, 'b':2})
+    >>> compose_url(host='myhostname', port=8000, query={'a':1, 'b':2})
     'http://myhostname:8000/?a=1&b=2'
-    >>> build_url(baseurl='https://drive.google.com/files')
+    >>> compose_url(urlstring='https://drive.google.com/files')
     'https://drive.google.com/files'
-    >>> build_url(baseurl='https://drive.google.com/files', path='/alternate/files')
+    >>> compose_url(urlstring='https://drive.google.com/files', path='/alternate/files')
     'https://drive.google.com/alternate/files'
     """
     return urlunparse(
@@ -24,20 +38,20 @@ def build_url(baseurl='', path='', query_string_dict=None, scheme='', netloc='',
         for kwarg_value, baseurl_value, fallback_value in zip(
             (
                 scheme,
-                netloc if netloc else host + (':{}'.format(int(port)) if port else ''),
+                netloc if netloc else host + (f':{port}' if port else ''),
                 path,
-                parameters,
-                urlencode(query_string_dict or {}),
+                params,
+                urlencode(query) if isinstance(query, t.Mapping) else query,
                 fragment
             ),
-            urlparse(baseurl),
+            urlparse(urlstring),
             (
-                'http',
-                'localhost',
-                '/',
-                '',
-                '',
-                '',
+                'http',  # scheme
+                'localhost',  # netloc
+                '/',  # path
+                '',  # params
+                '',  # query
+                '',  # fragment
             )
         )
     )
