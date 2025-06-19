@@ -1,17 +1,17 @@
-import typing as t
+from collections.abc import Mapping
 from urllib.parse import urlencode, urlparse, urlunparse
 
 
 def compose_url(
-    urlstring: str = "",
-    scheme: str = "",
-    netloc: str = "",
-    host: str = "",
+    urlstring: str = '',
+    scheme: str = '',
+    netloc: str = '',
+    host: str = '',
     port: int = 0,
-    path: str = "",
-    params: str = "",
-    query: str | t.Mapping[str, str] = "",
-    fragment: str = "",
+    path: str = '',
+    params: str = '',
+    query: str | Mapping[str, str] = '',
+    fragment: str = '',
 ) -> str:
     """
     Utility for combining `urlparse` with overlaying parts of the url
@@ -25,7 +25,7 @@ def compose_url(
     'http://myhostname/'
     >>> compose_url(host='myhostname', port=8000)
     'http://myhostname:8000/'
-    >>> compose_url(host='myhostname', port=8000, query={'a':1, 'b':2})
+    >>> compose_url(host='myhostname', port=8000, query={'a': 1, 'b': 2})
     'http://myhostname:8000/?a=1&b=2'
     >>> compose_url(urlstring='https://drive.google.com/files')
     'https://drive.google.com/files'
@@ -37,20 +37,20 @@ def compose_url(
         for kwarg_value, baseurl_value, fallback_value in zip(
             (
                 scheme,
-                netloc if netloc else host + (f":{port}" if port else ""),
+                netloc if netloc else host + (f':{port}' if port else ''),
                 path,
                 params,
-                urlencode(query) if isinstance(query, t.Mapping) else query,
+                urlencode(query) if isinstance(query, Mapping) else query,
                 fragment,
             ),
             urlparse(urlstring),
             (
-                "http",  # scheme
-                "localhost",  # netloc
-                "/",  # path
-                "",  # params
-                "",  # query
-                "",  # fragment
+                'http',  # scheme
+                'localhost',  # netloc
+                '/',  # path
+                '',  # params
+                '',  # query
+                '',  # fragment
             ),
         )
     )
