@@ -36,18 +36,14 @@ def cache_filesystem(
         log.info(f"decorator - function level setup {test=}")
 
         if asyncio.iscoroutinefunction(fn):
-
             async def async_decorated(*args: P.args, **kwargs: P.kwargs) -> T:
                 logging.info(f"Async {fn.__name__} was called")
                 return await fn(*args, **kwargs)
-
             return functools.wraps(fn)(async_decorated)
         else:
-
             def sync_decorated(*args: P.args, **kwargs: P.kwargs) -> T:
                 logging.info(f"Sync {fn.__name__} was called")
                 return fn(*args, **kwargs)
-
             return functools.wraps(fn)(sync_decorated)
 
     return _typed_decorator
