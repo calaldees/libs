@@ -33,7 +33,7 @@ def cache_filesystem(
     @overload
     def _typed_decorator(fn: Callable[P, T]) -> Callable[P, T]: ...
     def _typed_decorator(fn: Callable[P, T]) -> Callable:
-        log.info("decorator - function level setup")
+        log.info(f"decorator - function level setup {test=}")
 
         if asyncio.iscoroutinefunction(fn):
 
