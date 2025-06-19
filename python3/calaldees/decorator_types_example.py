@@ -28,33 +28,26 @@ def cache_filesystem(
     test: str,
     cache_path: CachePath = CachePath(),
 ) -> Callable:
-    log.info("setup decorator - module level")
-
     @overload
-    def _typed_decorator(
-        fn: Callable[P, Awaitable[T]],
-    ) -> Callable[P, Awaitable[T]]: ...
+    def _typed_decorator(fn: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]: ...
     @overload
     def _typed_decorator(fn: Callable[P, T]) -> Callable[P, T]: ...
-
     def _typed_decorator(fn: Callable[P, T]) -> Callable:
+        log.info("decorator - function level setup")
+
         if asyncio.iscoroutinefunction(fn):
 
-            #@functools.wraps(fn)
             async def async_decorated(*args: P.args, **kwargs: P.kwargs) -> T:
                 logging.info(f"Async {fn.__name__} was called")
                 return await fn(*args, **kwargs)
 
-            #return async_decorated
             return functools.wraps(fn)(async_decorated)
         else:
 
-            #@functools.wraps(fn)
             def sync_decorated(*args: P.args, **kwargs: P.kwargs) -> T:
                 logging.info(f"Sync {fn.__name__} was called")
                 return fn(*args, **kwargs)
 
-            #return sync_decorated
             return functools.wraps(fn)(sync_decorated)
 
     return _typed_decorator
@@ -80,8 +73,10 @@ async def main():
 if __name__ == "__main__":
     log.info("main")
     asyncio.run(main())
-    value = add_sync(3, 4)
+    value = add_sync(1, 2)
     print(value)
+
+    value = add_sync(3, 4)
     breakpoint()
 
 
