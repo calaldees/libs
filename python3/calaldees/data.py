@@ -1,7 +1,16 @@
 import collections
+from collections.abc import Mapping, Sequence
 from functools import reduce, partial
 from itertools import tee, zip_longest, cycle, chain
 from types import MappingProxyType
+from typing import Any
+
+
+type JsonPrimitives = str | int | float | bool | None
+type JsonObject = Mapping[str, Json | JsonPrimitives]
+type JsonSequence = Sequence[Json | JsonPrimitives]
+type Json = JsonObject | JsonSequence
+
 
 
 def get_keys(obj):
@@ -25,8 +34,24 @@ def set_attr_or_item_all(source, target):
         set_attr_or_item(target, field, get_attr_or_item(source, field))
 
 
-from collections.abc import Mapping, Sequence
-def get_path(data: Sequence | Mapping, path: str | list[str]):
+def isiterable(iterable):
+    """
+    https://stackoverflow.com/a/36407550/3356840
+
+    Alternate:
+    if isinstance(item, collections.abc.Iterable) and not isinstance(item, str):
+    """
+    if isinstance(iterable, (str, bytes)):
+        return False
+    try:
+        _ = iter(iterable)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
+def get_path(data: Sequence | Mapping, path: str | Sequence[str]) -> Any:
     """
     >>> data = {'a': 1, 'b': 2, 'c': [{'d': 4}, 6, {'g': 7}], 'e': 5}
     >>> _get_path(data, 'a')
@@ -224,23 +249,6 @@ def first(iterable):
             return i
 
 
-def isiterable(iterable):
-    """
-    https://stackoverflow.com/a/36407550/3356840
-
-    Alternate:
-    if isinstance(item, collections.abc.Iterable) and not isinstance(item, str):
-    """
-    if isinstance(iterable, (str, bytes)):
-        return False
-    try:
-        _ = iter(iterable)
-    except TypeError:
-        return False
-    else:
-        return True
-
-
 def flatten(*args, dict_values=True):
     """
     http://stackoverflow.com/questions/2158395/flatten-an-irregular-list-of-lists-in-python
@@ -256,7 +264,7 @@ def flatten(*args, dict_values=True):
         if isiterable(iterable):
             for item in iterable:
                 if isiterable(item):
-                    if dict_values and isinstance(item, collections.abc.Mapping):
+                    if dict_values and isinstance(item, Mapping):
                         yield from item.values()
                     else:
                         yield from flatten(item)

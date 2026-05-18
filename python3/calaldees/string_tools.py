@@ -78,3 +78,26 @@ def substring_in(substrings, string_list, ignore_case=True):
                 return True
     return False
 
+
+def contains_any_sub_string_insensitive(s: str, *sub_strings: str) -> bool:
+    """
+    >>> contains = contains_any_sub_strings_insensitive
+    >>> s = 'My string of StUfF'
+
+    >>> contains(s, 'string')
+    True
+    >>> contains(s, 'stuff')
+    True
+    >>> contains(s, 'StufF')
+    True
+    >>> contains(s, 'not stuff')
+    False
+    >>> contains(s, 'stuff', 'things')
+    True
+    >>> contains(s, 'things', 'should', 'be present')
+    False
+    """
+    for ss in sub_strings:
+        if ss.lower() in s.lower():
+            return True
+    return False
