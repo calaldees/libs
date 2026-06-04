@@ -1,6 +1,6 @@
 import asyncio
 from functools import lru_cache, wraps
-from typing import Any, Awaitable, TypeVar, Generator
+from typing import Any, Awaitable, Callable, Generator, TypeVar
 
 # python/cpython: [Add an async variant of lru_cache for coroutines. #90780](https://github.com/python/cpython/issues/90780)
 
@@ -41,3 +41,24 @@ def async_lru_cache(maxsize=128, typed=False):
         return lru_cache(maxsize, typed)(reawaitable(user_function))
 
     return decorating_function
+
+
+# -------
+
+
+def async_cached_property[T, **P](fn: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+    CACHED_VALUE_VARIABLE_NAME = '_' + fn.__name__
+    ASYNC_LOCK_VARIABLE_NAME = CACHED_VALUE_VARIABLE_NAME + '_lock'
+
+    @wraps(fn)
+    async def decorated(*args: P.args, **kwargs: P.kwargs) -> T:
+        self = args[0]
+        if not hasattr(self, ASYNC_LOCK_VARIABLE_NAME):
+            setattr(self, ASYNC_LOCK_VARIABLE_NAME, asyncio.Lock())
+        async with getattr(self, ASYNC_LOCK_VARIABLE_NAME):
+            if not hasattr(self, CACHED_VALUE_VARIABLE_NAME):
+                value = await fn(*args, **kwargs)
+                setattr(self, CACHED_VALUE_VARIABLE_NAME, value)
+            return getattr(self, CACHED_VALUE_VARIABLE_NAME)
+
+    return decorated
